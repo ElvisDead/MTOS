@@ -1,3 +1,6 @@
+Computational model of attention dynamics in a cyclic temporal environment.
+Part of the Metabolic Weather research framework.
+
 # Metabolic Tzolkin Operating System (MTOS)
 
 Computational model of attention dynamics in a cyclic temporal environment.
@@ -70,14 +73,6 @@ collective attention statistics
 
 dynamic interaction networks
 
-## Reproducibility
-
-All simulations use deterministic initialization:
-
-np.random.seed(42)
-
-This ensures reproducibility of computational experiments.
-
 ## Status
 
 MTOS is currently an experimental research framework intended for exploratory simulations of cyclic cognitive systems.
@@ -110,6 +105,23 @@ The simulation then produces:
 • collective attention metrics
 • dynamic interaction networks
 
+## Reproducibility
+
+The MTOS model is designed as a reproducible computational experiment.
+
+All stochastic components use deterministic initialization:
+
+np.random.seed(42)
+
+This guarantees that repeated runs of the simulation with identical inputs
+will produce identical computational trajectories.
+
+This allows researchers to replicate the attention dynamics,
+attractor structures, and cognitive climate patterns described in the MTOS paper.
+
+Paper DOI:
+https://doi.org/10.5281/zenodo.18980265
+
 ## Citation
 
 If you use MTOS in research or derivative work, please cite:
@@ -118,4 +130,5 @@ Dead, E. (2026).
 **Metabolic Tzolkin Operating System (MTOS):  
 A Computational Model of Attention Dynamics in a 260-Day Cognitive Cycle.**  
 Zenodo. https://doi.org/10.5281/zenodo.18980265
+
 
