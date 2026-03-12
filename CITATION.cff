@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: "Metabolic Tzolkin Operating System (MTOS)"
+message: "If you use this software, please cite it using the metadata below."
+type: software
+
+authors:
+  - family-names: Dead
+    given-names: Elvis
+
+version: "1.2"
+date-released: 2026
+
+doi: 10.5281/zenodo.18980265
+
+repository-code: https://github.com/ElvisDead/MTOS
+
+abstract: >
+  MTOS is a computational model of attention dynamics
+  based on the 260-day Tzolkin cognitive cycle. The system
+  simulates attention fluctuations, cognitive climate states,
+  attractor dynamics and collective attention fields.
+
+keywords:
+  - cognitive dynamics
+  - attention modeling
+  - tzolkin
+  - complex systems
+  - computational consciousness
+
+license: MIT
