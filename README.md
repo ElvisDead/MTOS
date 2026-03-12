@@ -84,6 +84,32 @@ MTOS is currently an experimental research framework intended for exploratory si
 
 Future work may include large-scale agent simulations, empirical calibration, and visualization of dynamic interaction networks.
 
+## Running the MTOS Simulation
+
+Requirements:
+
+Python 3.10+
+numpy
+
+Run:
+
+python mtos_engine_v1_2.py
+
+The program will ask for:
+
+Name
+Year of birth
+Month
+Day
+
+The simulation then produces:
+
+• attention forecasts
+• focus windows
+• attractor maps
+• collective attention metrics
+• dynamic interaction networks
+
 ## Citation
 
 If you use MTOS in research or derivative work, please cite:
@@ -92,3 +118,4 @@ Dead, E. (2026).
 **Metabolic Tzolkin Operating System (MTOS):  
 A Computational Model of Attention Dynamics in a 260-Day Cognitive Cycle.**  
 Zenodo. https://doi.org/10.5281/zenodo.18980265
+
