@@ -379,7 +379,8 @@ def run_mtos(name,year,month,day):
         "predictability":predictability(series)
     }
 
-    return result
+    import json
+return json.dumps(result)
 
 def mtos_series(name,year,month,day,days=30):
 
