@@ -501,13 +501,30 @@ def mtos_wave_structure():
 
 def mtos_collective():
 
-    db=load_attention()
+    db = load_attention()
 
-    if len(db)<2:
+    if len(db) == 0:
+        return json.dumps({"state":"no_data"})
 
-        return {
-            "state":"no_data"
-        }
+    values=[d["attention"] for d in db]
+
+    mean=float(np.mean(values))
+    std=float(np.std(values))
+
+    if mean>0.65:
+        state="HIGH"
+    elif mean<0.35:
+        state="LOW"
+    else:
+        state="NEUTRAL"
+
+    result={
+        "mean":mean,
+        "volatility":std,
+        "state":state
+    }
+
+    return json.dumps(result)
 
     values=[d["attention"] for d in db]
 
