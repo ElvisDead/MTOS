@@ -22,6 +22,7 @@ Year: 2026
 
 import datetime
 import numpy as np
+import datetime
 import json
 import os
 
@@ -402,7 +403,12 @@ def simulate(user_i,user_tone,start,days):
 def entropy(series):
 
 	hist,_=np.histogram(series,bins=20,range=(0,1))
-	p=hist/np.sum(hist)
+	s = np.sum(hist)
+
+if s == 0:
+    return 0
+
+p = hist / s
 
 	p=p[p>0]
 
@@ -428,7 +434,7 @@ def lyapunov(series):
 	diffs=diffs[diffs>0]
 
 	if len(diffs)==0:
-		return 0
+	return 0
 
 	v = np.mean(np.log(diffs))
 
@@ -444,7 +450,7 @@ def predictability(series):
 	for i,d in enumerate(diffs):
 
 		if d>0.12:
-			return i
+	return i
 
 	return len(series)
 
