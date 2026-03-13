@@ -674,9 +674,9 @@ def mtos_collective():
 
     if len(db) == 0:
         result = {
-            "mean":0.5,
-            "volatility":0,
-            "state":"NEUTRAL"
+            "mean": 0.5,
+            "volatility": 0,
+            "state": "NEUTRAL"
         }
         return json.dumps(result)
 
@@ -693,9 +693,9 @@ def mtos_collective():
         state = "NEUTRAL"
 
     result = {
-        "mean":mean,
-        "volatility":std,
-        "state":state
+        "mean": mean,
+        "volatility": std,
+        "state": state
     }
 
     return json.dumps(result)
