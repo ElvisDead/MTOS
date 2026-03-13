@@ -42,26 +42,9 @@ margin:auto;
 display:block;
 }
 
-#state{
-font-size:18px;
-margin-top:20px;
-}
-
 .metric{
 margin:10px;
 font-size:18px;
-}
-
-#kinmap{
-width:520px;
-margin:auto;
-}
-
-.cell{
-width:10px;
-height:10px;
-display:inline-block;
-margin:1px;
 }
 
 .heatmap{
@@ -69,6 +52,13 @@ margin:auto;
 display:grid;
 grid-gap:2px;
 justify-content:center;
+}
+
+.cell{
+width:10px;
+height:10px;
+display:inline-block;
+margin:1px;
 }
 
 </style>
@@ -112,6 +102,9 @@ justify-content:center;
 <h3>30 days</h3>
 <canvas id="chart30" width="700" height="200"></canvas>
 
+<h3>260 days</h3>
+<canvas id="chart260" width="700" height="200"></canvas>
+
 </section>
 
 <section>
@@ -130,15 +123,22 @@ justify-content:center;
 
 <section>
 
-<h2>Climate Atlas</h2>
+<h2>Climate Atlas (20×20)</h2>
 <div id="atlas" class="heatmap"></div>
 
 </section>
 
 <section>
 
-<h2>Attractor Map</h2>
+<h2>Attractor Map (20×20)</h2>
 <div id="attractor" class="heatmap"></div>
+
+</section>
+
+<section>
+
+<h2>Phase Matrix (260×13)</h2>
+<div id="phase" class="heatmap"></div>
 
 </section>
 
@@ -149,9 +149,24 @@ justify-content:center;
 
 </section>
 
+<section>
+
+<h2>Collective Attention</h2>
+<div id="collective"></div>
+
+</section>
+
+<section>
+
+<h2>User Interaction Network</h2>
+<div id="network"></div>
+
+</section>
+
 <script>
 
 let pyodideReady = loadPyodide()
+let charts={}
 
 async function run(){
 
@@ -177,7 +192,7 @@ let result=pyodide.runPython(`
 run_mtos(name,year,month,day)
 `)
 
-let data = JSON.parse(result)
+let data=JSON.parse(result)
 
 document.getElementById("state").innerHTML=
 `
@@ -196,53 +211,69 @@ document.getElementById("metrics").innerHTML=
 <div class="metric">Predictability: ${data.predictability}</div>
 `
 
-let series7 = pyodide.runPython(`
-mtos_series(name,year,month,day,7)
-`).toJs()
+let s7 = pyodide.runPython(`mtos_series(name,year,month,day,7)`).toJs()
+let s30 = pyodide.runPython(`mtos_series(name,year,month,day,30)`).toJs()
+let s260 = pyodide.runPython(`mtos_series(name,year,month,day,260)`).toJs()
 
-let series30 = pyodide.runPython(`
-mtos_series(name,year,month,day,30)
-`).toJs()
+drawChart("chart7",s7)
+drawChart("chart30",s30)
+drawChart("chart260",s260)
 
-drawChart("chart7",series7,"7 day forecast")
-drawChart("chart30",series30,"30 day forecast")
-
-let weather = pyodide.runPython(`
-mtos_260_weather(name,year,month,day)
-`).toJs()
-
+let weather=pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
 drawKinMap(weather)
 
-let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
+let atlas=pyodide.runPython(`mtos_climate_atlas()`).toJs()
 drawHeatmap("atlas",atlas,20)
 
-let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
+let attractor=pyodide.runPython(`mtos_attractor_map()`).toJs()
 drawHeatmap("attractor",attractor,20)
 
-let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
+let phase=pyodide.runPython(`mtos_phase_matrix()`).toJs()
+drawHeatmap("phase",phase,13)
+
+let wave=pyodide.runPython(`mtos_wave_structure()`).toJs()
 drawHeatmap("wave",wave,20)
+
+let collective=pyodide.runPython(`mtos_collective()`).toJs()
+
+document.getElementById("collective").innerHTML=
+`
+Mean attention: ${collective.mean ?? "N/A"}<br>
+Volatility: ${collective.volatility ?? "N/A"}<br>
+State: ${collective.state}
+`
+
+let network=pyodide.runPython(`mtos_user_network()`).toJs()
+
+let netHTML=""
+
+network.forEach(e=>{
+netHTML+=`${e.a} ↔ ${e.b} : ${e.value.toFixed(2)}<br>`
+})
+
+document.getElementById("network").innerHTML=netHTML
 
 }
 
-function drawChart(id,data,label){
+function drawChart(id,data){
+
+if(charts[id]) charts[id].destroy()
 
 let ctx=document.getElementById(id)
 
-new Chart(ctx,{
+charts[id]=new Chart(ctx,{
 type:"line",
 data:{
 labels:data.map((_,i)=>i+1),
 datasets:[{
-label:label,
 data:data,
 borderColor:"cyan",
 fill:false
 }]
 },
 options:{
-scales:{
-y:{min:0,max:1}
-}
+plugins:{legend:{display:false}},
+scales:{y:{min:0,max:1}}
 }
 })
 
@@ -273,27 +304,27 @@ map.appendChild(c)
 
 }
 
-function drawHeatmap(id,data,size){
+function drawHeatmap(id,data,cols){
 
 let map=document.getElementById(id)
 
-map.style.gridTemplateColumns=`repeat(${size},12px)`
-
 map.innerHTML=""
+
+map.style.gridTemplateColumns=`repeat(${cols},12px)`
 
 data.forEach(v=>{
 
+let val=(v+2)/4
+if(val<0) val=0
+if(val>1) val=1
+
+let r=Math.floor(val*255)
+let b=255-r
+
 let c=document.createElement("div")
-
-let color="blue"
-
-if(v>0.6) color="green"
-if(v>0.75) color="yellow"
-if(v>0.9) color="red"
-
 c.style.width="12px"
 c.style.height="12px"
-c.style.background=color
+c.style.background=`rgb(${r},0,${b})`
 
 map.appendChild(c)
 
