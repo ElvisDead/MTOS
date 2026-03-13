@@ -1,10 +1,11 @@
+```html
 <!DOCTYPE html>
 <html>
 
 <head>
 
 <meta charset="UTF-8">
-<title>MTOS Dashboard</title>
+<title>MTOS Scientific Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,10 +20,19 @@ text-align:center;
 padding:40px;
 }
 
+h1{
+margin-bottom:5px;
+}
+
+section{
+margin-top:50px;
+}
+
 input{
 padding:10px;
 margin:5px;
 font-size:16px;
+width:120px;
 }
 
 button{
@@ -31,14 +41,24 @@ font-size:16px;
 cursor:pointer;
 }
 
-section{
-margin-top:50px;
-}
-
 canvas{
 background:#000;
 margin:auto;
 display:block;
+}
+
+#state{
+font-size:18px;
+margin-top:20px;
+}
+
+#metrics{
+margin-top:20px;
+}
+
+.metric{
+margin:8px;
+font-size:18px;
 }
 
 #kinmap{
@@ -51,11 +71,6 @@ width:10px;
 height:10px;
 display:inline-block;
 margin:1px;
-}
-
-.metric{
-margin:10px;
-font-size:18px;
 }
 
 </style>
@@ -85,7 +100,6 @@ font-size:18px;
 <section>
 
 <h2>Current Cognitive State</h2>
-
 <div id="state"></div>
 
 </section>
@@ -94,7 +108,10 @@ font-size:18px;
 
 <h2>Forecast</h2>
 
+<h3>7 Days</h3>
 <canvas id="chart7" width="700" height="200"></canvas>
+
+<h3>30 Days</h3>
 <canvas id="chart30" width="700" height="200"></canvas>
 
 </section>
@@ -102,7 +119,6 @@ font-size:18px;
 <section>
 
 <h2>System Metrics</h2>
-
 <div id="metrics"></div>
 
 </section>
@@ -110,7 +126,6 @@ font-size:18px;
 <section>
 
 <h2>260 Kin Cognitive Weather</h2>
-
 <div id="kinmap"></div>
 
 </section>
@@ -147,10 +162,10 @@ let data = JSON.parse(result)
 
 document.getElementById("state").innerHTML=
 `
-Kin: ${data.kin} <br>
-Seal: ${data.seal} <br>
-Tone: ${data.tone} <br>
-Attention: ${data.attention.toFixed(3)} <br>
+Kin: ${data.kin}<br>
+Seal: ${data.seal}<br>
+Tone: ${data.tone}<br>
+Attention: ${data.attention.toFixed(3)}<br>
 State: ${data.state}
 `
 
@@ -162,18 +177,18 @@ document.getElementById("metrics").innerHTML=
 <div class="metric">Predictability: ${data.predictability}</div>
 `
 
-let series7=pyodide.runPython(`
+let series7 = pyodide.runPython(`
 mtos_series(name,year,month,day,7)
 `).toJs()
 
-let series30=pyodide.runPython(`
+let series30 = pyodide.runPython(`
 mtos_series(name,year,month,day,30)
 `).toJs()
 
 drawChart("chart7",series7,"7 day forecast")
 drawChart("chart30",series30,"30 day forecast")
 
-let weather=pyodide.runPython(`
+let weather = pyodide.runPython(`
 mtos_260_weather(name,year,month,day)
 `).toJs()
 
@@ -234,4 +249,4 @@ map.appendChild(c)
 
 </body>
 </html>
-
+```
