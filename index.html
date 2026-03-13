@@ -18,6 +18,8 @@ color:#eee;
 font-family:Arial;
 text-align:center;
 padding:40px;
+max-width:1400px;
+margin:auto;
 }
 
 section{
@@ -229,7 +231,7 @@ let attractor=pyodide.runPython(`mtos_attractor_map()`).toJs()
 drawHeatmap("attractor",attractor,20)
 
 let phase=pyodide.runPython(`mtos_phase_matrix()`).toJs()
-drawHeatmap("phase",phase,13)
+drawHeatmap("phase",phase,13,260)
 
 let wave=pyodide.runPython(`mtos_wave_structure()`).toJs()
 drawHeatmap("wave",wave,20)
@@ -285,6 +287,9 @@ let map=document.getElementById("kinmap")
 
 map.innerHTML=""
 
+map.style.display="grid"
+map.style.gridTemplateColumns="repeat(20,12px)"
+
 weather.forEach(v=>{
 
 let c=document.createElement("div")
@@ -295,7 +300,8 @@ if(v<0.35) color="red"
 else if(v<0.55) color="orange"
 else if(v<0.75) color="yellow"
 
-c.className="cell"
+c.style.width="12px"
+c.style.height="12px"
 c.style.background=color
 
 map.appendChild(c)
@@ -304,15 +310,18 @@ map.appendChild(c)
 
 }
 
-function drawHeatmap(id,data,cols){
+function drawHeatmap(id,data,cols,rows){
 
 let map=document.getElementById(id)
 
 map.innerHTML=""
 
-map.style.gridTemplateColumns=`repeat(${cols},12px)`
+map.style.display="grid"
+map.style.gridTemplateColumns=`repeat(${cols},10px)`
 
-data.forEach(v=>{
+for(let i=0;i<data.length;i++){
+
+let v=data[i]
 
 let val=(v+2)/4
 if(val<0) val=0
@@ -322,13 +331,13 @@ let r=Math.floor(val*255)
 let b=255-r
 
 let c=document.createElement("div")
-c.style.width="12px"
-c.style.height="12px"
+c.style.width="10px"
+c.style.height="10px"
 c.style.background=`rgb(${r},0,${b})`
 
 map.appendChild(c)
 
-})
+}
 
 }
 
@@ -337,3 +346,4 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
