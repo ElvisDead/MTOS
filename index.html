@@ -57,27 +57,27 @@ async function run(){
 
 let pyodide = await loadPyodide()
 
+let name = document.getElementById("name").value
+let year = document.getElementById("year").value
+let month = document.getElementById("month").value
+let day = document.getElementById("day").value
+
+let engine = await fetch("MTOS_Engine_v1.2.py").then(r => r.text())
+
+pyodide.runPython(engine)
+
 let code = `
-name = "${document.getElementById("name").value}"
-year = int("${document.getElementById("year").value}")
-month = int("${document.getElementById("month").value}")
-day = int("${document.getElementById("day").value}")
+name="${name}"
+year=${year}
+month=${month}
+day=${day}
 
-result = f"""
-MTOS Simulation
-
-Name: {name}
-Birth: {year}-{month}-{day}
-
-Simulation initialized successfully.
-"""
-
-result
+run_mtos(name,year,month,day)
 `
 
 let result = pyodide.runPython(code)
 
-document.getElementById("output").innerText = result
+document.getElementById("output").innerText=result
 
 }
 
@@ -85,3 +85,4 @@ document.getElementById("output").innerText = result
 
 </body>
 </html>
+
