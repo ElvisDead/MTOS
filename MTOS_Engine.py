@@ -571,6 +571,24 @@ def mtos_user_network():
 
     return json.dumps(edges)
 
+# ==========================================================
+# GLOBAL KIN DISTRIBUTION
+# ==========================================================
+
+def mtos_global_kin_map():
+
+    users = load_users()
+
+    kin_counts = [0]*260
+
+    for name,data in users.items():
+
+        kin = data["kin"]
+
+        kin_counts[kin-1] += 1
+
+    return json.dumps(kin_counts)
+
 def mtos_climate_atlas():
 
     matrix=np.zeros((20,20))
