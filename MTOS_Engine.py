@@ -138,31 +138,38 @@ def climate(a):
     return "RECOVERY"
 
 # ==========================================================
-# DATABASE
+# DATABASE (BROWSER STORAGE)
 # ==========================================================
+
+from js import localStorage
 
 def load_users():
 
-    if not os.path.exists(USERS_FILE):
+    data = localStorage.getItem("mtos_users")
+
+    if data is None:
         return {}
 
-    localStorage.getItem("mtos_users") as f:
-        return json.load(f)
+    return json.loads(data)
+
 
 def save_users(users):
 
-    with open(USERS_FILE,"w") as f:
-        json.dump(users,f,indent=2)
+    localStorage.setItem(
+        "mtos_users",
+        json.dumps(users)
+    )
+
 
 def register_user(name,birth,kin,tone,seal):
 
-    users=load_users()
+    users = load_users()
 
-    users[name]={
-        "birth":str(birth),
-        "kin":kin,
-        "tone":tone,
-        "seal":seal
+    users[name] = {
+        "birth": str(birth),
+        "kin": kin,
+        "tone": tone,
+        "seal": seal
     }
 
     save_users(users)
@@ -208,21 +215,27 @@ def store_attention(user,date,kin,attention):
     save_attention(db)
 
 # ==========================================================
-# GLOBAL ATTENTION FIELD
+# GLOBAL ATTENTION FIELD (Browser Storage)
 # ==========================================================
+
+from js import localStorage
 
 def load_global_field():
 
-    if not os.path.exists(FIELD_FILE):
+    data = localStorage.getItem("mtos_global_field")
+
+    if data is None:
         return {"field":[0.5]*260}
 
-    with open(FIELD_FILE) as f:
-        return json.load(f)
+    return json.loads(data)
+
 
 def save_global_field(field):
 
-    with open(FIELD_FILE,"w") as f:
-        json.dump(field,f,indent=2)
+    localStorage.setItem(
+        "mtos_global_field",
+        json.dumps(field)
+    )
 
 def global_attention(date):
 
