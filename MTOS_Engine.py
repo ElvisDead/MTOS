@@ -37,6 +37,20 @@ FIELD_FILE="mtos_global_field.json"
 METRICS_FILE="mtos_metrics.json"
 
 # ==========================================================
+# ARCHETYPE MEMORY
+# ==========================================================
+
+SEAL_MEMORY = [0.5]*20
+
+def update_seal_memory(seal_index,attention):
+
+    global SEAL_MEMORY
+
+    old = SEAL_MEMORY[seal_index]
+
+    SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
+
+# ==========================================================
 # TZOLKIN STRUCTURE
 # ==========================================================
 
@@ -91,9 +105,26 @@ def seal_resonance(a,b):
 
 def tone_wave(tone):
 
-    phase=2*np.pi*(tone/13)
+    phase = 2*np.pi*((tone-1)/13)
 
-    return 0.06*np.cos(phase)
+    return 0.05*np.sin(phase)
+
+# ==========================================================
+# TONE RESONANCE
+# ==========================================================
+
+def tone_resonance(user_tone,day_tone):
+
+    if user_tone == day_tone:
+        return 0.08
+
+    if abs(user_tone - day_tone) == 1:
+        return 0.04
+
+    if abs(user_tone - day_tone) == 6:
+        return -0.05
+
+    return 0
 
 # ==========================================================
 # FATIGUE MODEL
@@ -112,15 +143,19 @@ def fatigue_step(f,a):
 
 def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
-    r=seal_resonance(user_i,day_i)
+    r = seal_resonance(user_i,day_i)
 
-    tone_effect=tone_wave(day_tone)
+    tone_effect = tone_wave(day_tone)
 
-    a=a+r+tone_effect
+    tone_sync = tone_resonance(user_tone,day_tone)
 
-    f=fatigue_step(f,a)
+    memory = SEAL_MEMORY[day_i] - 0.5
 
-    a=a-f*0.07
+    a = a + r + tone_effect + tone_sync + memory*0.10
+
+    f = fatigue_step(f,a)
+
+    a = a - f*0.07
 
     return max(0,min(a,1)),f
 
@@ -178,8 +213,6 @@ def register_user(name,birth,kin,tone,seal):
 # ATTENTION DATABASE
 # ==========================================================
 
-from js import localStorage
-
 def load_attention():
 
     data = localStorage.getItem("mtos_attention")
@@ -212,8 +245,6 @@ def store_attention(user,date,kin,attention):
 # ==========================================================
 # GLOBAL ATTENTION FIELD (Browser Storage)
 # ==========================================================
-
-from js import localStorage
 
 def load_global_field():
 
@@ -291,6 +322,22 @@ def adaptive_learning():
         adjust-=0.01
 
     return adjust
+# ==========================================================
+# COLLECTIVE WAVE
+# ==========================================================
+
+def collective_wave():
+
+    db = load_attention()
+
+    if len(db) < 20:
+        return 0
+
+    values = [d["attention"] for d in db[-60:]]
+
+    wave = np.sin(np.mean(values)*np.pi)
+
+    return float(wave)
 
 # ==========================================================
 # SIMULATION
@@ -305,6 +352,8 @@ def simulate(user_i,user_tone,start,days):
 
     series = []
 
+    wave = collective_wave()
+
     for t in range(days):
 
         date = start + datetime.timedelta(days=t)
@@ -312,6 +361,10 @@ def simulate(user_i,user_tone,start,days):
         kin,tone,seal,i = kin_from_date(date)
 
         a,f = attention_step(a,f,user_i,user_tone,i,tone)
+
+        update_seal_memory(i,a)
+
+        a = a + wave*0.03
 
         field = global_attention(date)
         a = a + (field - 0.5) * 0.2
@@ -469,22 +522,17 @@ def mtos_attractor_map():
 
 def mtos_phase_matrix():
 
-    matrix=[]
+    matrix = []
 
-    for k in range(260):
+    for tone in range(13):
+        for seal in range(20):
 
-        row=[]
+            value = np.sin(tone/13) + np.cos(seal/20)
 
-        for t in range(13):
-
-            v=np.sin(k/20)+np.cos(t/13)
-
-            row.append(float(v))
-
-        matrix.extend(row)
+            matrix.append(float(value))
 
     return matrix
-
+    
 def mtos_wave_structure():
 
     matrix=[]
@@ -506,43 +554,25 @@ def mtos_collective():
     if len(db) == 0:
         return json.dumps({"state":"no_data"})
 
-    values=[d["attention"] for d in db]
+    values = [d["attention"] for d in db]
 
-    mean=float(np.mean(values))
-    std=float(np.std(values))
+    mean = float(np.mean(values))
+    std = float(np.std(values))
 
-    if mean>0.65:
-        state="HIGH"
-    elif mean<0.35:
-        state="LOW"
+    if mean > 0.65:
+        state = "HIGH"
+    elif mean < 0.35:
+        state = "LOW"
     else:
-        state="NEUTRAL"
+        state = "NEUTRAL"
 
-    result={
+    result = {
         "mean":mean,
         "volatility":std,
         "state":state
     }
 
     return json.dumps(result)
-
-    values=[d["attention"] for d in db]
-
-    mean=float(np.mean(values))
-    std=float(np.std(values))
-
-    if mean>0.65:
-        state="HIGH"
-    elif mean<0.35:
-        state="LOW"
-    else:
-        state="NEUTRAL"
-
-    return {
-        "mean":mean,
-        "volatility":std,
-        "state":state
-    }
 
 def mtos_user_network():
 
@@ -564,22 +594,22 @@ def mtos_user_network():
             r=seal_resonance(ia,ib)
 
             if r >= 0.25:
-            label="STRONG SYNERGY"
+                label="STRONG SYNERGY"
 
             elif r >= 0.15:
-            label="COLLABORATE"
+                label="COLLABORATE"
 
             elif r >= 0.10:
-            label="SUPPORT"
+                label="SUPPORT"
 
             elif r > -0.10:
-            label="NEUTRAL"
+                label="NEUTRAL"
 
             elif r > -0.25:
-            label="TENSION"
+                label="TENSION"
 
             else:
-            label="AVOID"
+                label="AVOID"
 
             edges.append({
             "a":names[i],
@@ -626,7 +656,7 @@ def mtos_tzolkin_structure():
     for tone in range(13):
         for seal in range(20):
 
-            kin = tone*20 + seal
+            kin = (tone + seal*13) % 260
 
             value = np.sin(tone/13) + np.cos(seal/20)
 
