@@ -85,7 +85,7 @@ def kin_from_date(date):
 	tone=((kin-1)%13)+1
 	seal_index=(kin-1)%20
 
-return kin,tone,seals[seal_index],seal_index
+	return kin,tone,seals[seal_index],seal_index
 
 # ==========================================================
 # TZOLKIN GEOMETRY
