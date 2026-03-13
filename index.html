@@ -240,7 +240,9 @@ drawHeatmap("phase",phase,13)
 let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
 drawHeatmap("wave",wave,20)
 
-let collective = pyodide.runPython(`mtos_collective()`).toJs()
+let collective = JSON.parse(
+    pyodide.runPython(`mtos_collective()`)
+)
 
 document.getElementById("collective").innerHTML=
 `
@@ -249,7 +251,9 @@ Volatility: ${collective.volatility ?? "N/A"}<br>
 State: ${collective.state}
 `
 
-let network = pyodide.runPython(`mtos_user_network()`).toJs()
+let network = JSON.parse(
+    pyodide.runPython(`mtos_user_network()`)
+)
 
 let netHTML=""
 
@@ -343,6 +347,7 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
 
 
 
