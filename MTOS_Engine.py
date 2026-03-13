@@ -241,7 +241,7 @@ def load_attention():
 
 		return []
 		
-		return json.loads(data)
+	return json.loads(data)
 
 def save_attention(db):
 
