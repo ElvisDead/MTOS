@@ -45,19 +45,19 @@
 	
 	def update_seal_memory(seal_index,attention):
 	
-	global SEAL_MEMORY
+		global SEAL_MEMORY
 	
-	old = SEAL_MEMORY[seal_index]
+		old = SEAL_MEMORY[seal_index]
 	
-	SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
+		SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
 	
 	def update_kin_memory(kin,attention):
 	
-	global KIN_MEMORY
+		global KIN_MEMORY
 	
-	old = KIN_MEMORY[kin-1]
+		old = KIN_MEMORY[kin-1]
 	
-	KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
+		KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
 	
 	
 	# ==========================================================
@@ -65,10 +65,10 @@
 	# ==========================================================
 	
 	seals=[
-	"Dragon","Wind","Night","Seed","Serpent",
-	"Worldbridger","Hand","Star","Moon","Dog",
-	"Monkey","Human","Skywalker","Wizard","Eagle",
-	"Warrior","Earth","Mirror","Storm","Sun"
+		"Dragon","Wind","Night","Seed","Serpent",
+		"Worldbridger","Hand","Star","Moon","Dog",
+		"Monkey","Human","Skywalker","Wizard","Eagle",
+		"Warrior","Earth","Mirror","Storm","Sun"
 	]
 	
 	BASE_DATE=datetime.date(1987,7,26)
@@ -80,11 +80,11 @@
 	
 	def kin_from_date(date):
 	
-	delta=(date-BASE_DATE).days
-	kin=((BASE_KIN+delta-1)%260)+1
+		delta=(date-BASE_DATE).days
+		kin=((BASE_KIN+delta-1)%260)+1
 	
-	tone=((kin-1)%13)+1
-	seal_index=(kin-1)%20
+		tone=((kin-1)%13)+1
+		seal_index=(kin-1)%20
 	
 	return kin,tone,seals[seal_index],seal_index
 	
@@ -102,19 +102,19 @@
 	
 	def seal_resonance(a,b):
 	
-	if b == a:
-		return 0.30
+		if b == a:
+			return 0.30
 	
-	if b == analog(a):
-		return 0.18
+		if b == analog(a):
+			return 0.18
 	
-	if b == occult(a):
-		return 0.12
+		if b == occult(a):
+			return 0.12
 	
-	if b == antipode(a):
-		return -0.28
+		if b == antipode(a):
+			return -0.28
 	
-	return 0
+		return 0
 	
 	# ==========================================================
 	# TONE WAVE
@@ -122,7 +122,7 @@
 	
 	def tone_wave(tone):
 	
-	phase = 2*np.pi*((tone-1)/13)
+		phase = 2*np.pi*((tone-1)/13)
 	
 	return 0.05*np.sin(phase)
 	
@@ -152,8 +152,8 @@
 	
 	def fatigue_step(f,a):
 	
-	f=f+a*0.05
-	f=f-0.03
+		f=f+a*0.05
+		f=f-0.03
 	
 	return max(0,min(f,1))
 	
@@ -163,23 +163,23 @@
 	
 	def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 	
-	r = seal_resonance(user_i,day_i)
+		r = seal_resonance(user_i,day_i)
 	
-	tone_effect = tone_wave(day_tone)
+		tone_effect = tone_wave(day_tone)
 	
-	tone_sync = tone_resonance(user_tone,day_tone)
+		tone_sync = tone_resonance(user_tone,day_tone)
 	
-	memory = SEAL_MEMORY[day_i] - 0.5
+		memory = SEAL_MEMORY[day_i] - 0.5
 	
-	kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
+		kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
 	
-	noise = np.random.normal(0,0.015)
+		noise = np.random.normal(0,0.015)
 	
-	a = a + r + tone_effect + tone_sync + memory*0.10 + kin_memory*0.05 + noise
+		a = a + r + tone_effect + tone_sync + memory*0.10 + kin_memory*0.05 + noise
 	
-	f = fatigue_step(f,a)
+		f = fatigue_step(f,a)
 	
-	a = a - f*0.07
+		a = a - f*0.07
 	
 	return max(0,min(a,1)),f
 	
@@ -189,10 +189,10 @@
 	
 	def climate(a):
 	
-	if a>0.8: return "FOCUS"
-	if a>0.65: return "FLOW"
-	if a>0.45: return "NEUTRAL"
-	if a>0.3: return "FATIGUE"
+		if a>0.8: return "FOCUS"
+		if a>0.65: return "FLOW"
+		if a>0.45: return "NEUTRAL"
+		if a>0.3: return "FATIGUE"
 	
 	return "RECOVERY"
 	
@@ -211,7 +211,6 @@
 		return {}
 	
 	return json.loads(data)
-	
 	
 	def save_users(users):
 	
@@ -240,33 +239,33 @@
 	
 	def load_attention():
 	
-	data = localStorage.getItem("mtos_attention")
+		data = localStorage.getItem("mtos_attention")
 	
-	if data is None:
+		if data is None:
 	
-		return []
+			return []
 	
 	return json.loads(data)
 	
 	def save_attention(db):
 	
-	localStorage.setItem(
+		localStorage.setItem(
 		"mtos_attention",
 		json.dumps(db)
-	)
+		)
 	
 	def store_attention(user,date,kin,attention):
 	
-	db=load_attention()
+		db=load_attention()
 	
-	db.append({
+		db.append({
 		"user":user,
 		"date":str(date),
 		"kin":kin,
 		"attention":round(float(attention),3)
-	})
+		})
 	
-	save_attention(db)
+		save_attention(db)
 	
 	# ==========================================================
 	# GLOBAL ATTENTION FIELD (Browser Storage)
@@ -274,7 +273,7 @@
 	
 	def load_global_field():
 	
-	data = localStorage.getItem("mtos_global_field")
+		data = localStorage.getItem("mtos_global_field")
 	
 	if data is None:
 		
@@ -285,26 +284,26 @@
 	
 	def save_global_field(field):
 	
-	localStorage.setItem(
-		"mtos_global_field",
-		json.dumps(field)
-	)
+		localStorage.setItem(
+			"mtos_global_field",
+			json.dumps(field)
+		)
 	
 	def global_attention(date):
 	
-	kin,_,_,_=kin_from_date(date)
-	field=load_global_field()["field"]
+		kin,_,_,_=kin_from_date(date)
+		field=load_global_field()["field"]
 	
 	return field[(kin-1)%260]
 	
 	def update_global_field(date,value):
 	
-	kin,_,_,_=kin_from_date(date)
+		kin,_,_,_=kin_from_date(date)
 	
-	data=load_global_field()
-	field=data["field"]
+		data=load_global_field()
+		field=data["field"]
 	
-	field[(kin-1)%260]=(field[(kin-1)%260]*0.9)+(value*0.1)
+		field[(kin-1)%260]=(field[(kin-1)%260]*0.9)+(value*0.1)
 	
 	save_global_field({"field":field})
 	
@@ -314,41 +313,41 @@
 	
 	def learning_adjust():
 	
-	db=load_attention()
+		db=load_attention()
 	
 	if len(db)<30:
 		
 		return 0
 	
-	values=[d["attention"] for d in db[-30:]]
+		values=[d["attention"] for d in db[-30:]]
 	
-	trend=np.mean(np.diff(values))
+		trend=np.mean(np.diff(values))
 	
-	if trend>0: return 0.01
-	if trend<0: return -0.01
+	if trend > 0: return 0.01
+	if trend < 0: return -0.01
 	
-	return 0
+		return 0
 	
 	def adaptive_learning():
 	
-	db=load_attention()
+		db=load_attention()
 	
 	if len(db)<50:
 		
 		return 0
 	
-	values=[d["attention"] for d in db[-50:]]
+		values=[d["attention"] for d in db[-50:]]
 	
-	mean=np.mean(values)
-	volatility=np.std(values)
+		mean=np.mean(values)
+		volatility=np.std(values)
 	
-	adjust=0
+		adjust = 0
 	
-	if mean>0.65:
-		adjust+=0.01
+	if mean > 0.65:
+		adjust += 0.01
 	
-	if volatility>0.15:
-		adjust-=0.01
+	if volatility > 0.15:
+		adjust -= 0.01
 	
 	return adjust
 	# ==========================================================
@@ -400,6 +399,8 @@
 	env_noise = np.random.normal(0,0.01)
 	
 	a = a + env_noise
+
+	a = max(0,min(a,1))
 	
 	field = global_attention(date)
 	a = a + (field - 0.5) * 0.2
