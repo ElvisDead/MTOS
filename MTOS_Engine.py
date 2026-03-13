@@ -140,7 +140,7 @@ def tone_resonance(user_tone,day_tone):
 	if abs(user_tone - day_tone) == 6:
 		return -0.05
 
-return 0
+	return 0
 
 # ==========================================================
 # FATIGUE MODEL
@@ -151,7 +151,7 @@ def fatigue_step(f,a):
 	f=f+a*0.05
 	f=f-0.03
 
-return max(0,min(f,1))
+	return max(0,min(f,1))
 
 # ==========================================================
 # ATTENTION DYNAMICS
@@ -177,7 +177,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
 	a = a - f*0.07
 
-return max(0,min(a,1)),f
+	return max(0,min(a,1)),f
 
 # ==========================================================
 # CLIMATE STATE
@@ -190,7 +190,7 @@ def climate(a):
 	if a>0.45: return "NEUTRAL"
 	if a>0.3: return "FATIGUE"
 
-return "RECOVERY"
+	return "RECOVERY"
 
 # ==========================================================
 # USERS DATABASE (localStorage)
@@ -206,7 +206,7 @@ def load_users():
 	
 		return {}
 
-return json.loads(data)
+	return json.loads(data)
 
 def save_users(users):
 
