@@ -713,8 +713,8 @@ def mtos_user_network():
 
     for i in range(len(names)):
         for j in range(i+1,len(names)):
-
-			a = users[names[i]]
+			
+            a = users[names[i]]
 			b = users[names[j]]
 
 			ia = seals.index(a["seal"])
