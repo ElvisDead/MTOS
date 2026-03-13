@@ -382,7 +382,7 @@ def simulate(user_i,user_tone,start,days):
 
 	for t in range(days):
 
-	date = start + datetime.timedelta(days=t)
+		date = start + datetime.timedelta(days=t)
 
 	kin,tone,seal,i = kin_from_date(date)
 
@@ -467,9 +467,9 @@ def predictability(series):
 
 	for i,d in enumerate(diffs):
 
-	if d>0.12:
+		if d>0.12:
 	
-		return i
+			return i
 
 return len(series)
 
@@ -483,11 +483,11 @@ def attention_attractors(series):
 
 	for i,v in enumerate(hist):
 
-	if v > mean*1.3:
+		if v > mean*1.3:
 
-	center = (i+0.5)/12
+			center = (i+0.5)/12
 
-	attractors.append(float(center))
+			attractors.append(float(center))
 
 return attractors
 
@@ -497,7 +497,7 @@ def tzolkin_attractor_map(user_i,user_tone,start):
 
 	for k in range(260):
 
-	series = simulate(user_i,user_tone,start,260)
+		series = simulate(user_i,user_tone,start,260)
 
 	attractors = attention_attractors(series)
 
@@ -592,9 +592,9 @@ def mtos_user_climate(user_seal):
 	for u in range(20):
 	for d in range(20):
 
-	r=seal_resonance(user_seal,d)
+		r=seal_resonance(user_seal,d)
 
-	matrix[u][d]=0.5+r
+		matrix[u][d]=0.5+r
 
 return matrix.flatten().tolist()
 
@@ -605,25 +605,25 @@ def mtos_attractor_map():
 	for us in range(20):
 	for ds in range(20):
 
-	total=0
+		total=0
 
 	for ut in range(13):
 	for dt in range(13):
 
-	a=0.55
-	f=0.2
+		a=0.55
+		f=0.2
 
 	for _ in range(40):
 
-	a,f=attention_step(
-	a,f,
-	us,ut+1,
-	ds,dt+1
-	)
+		a,f=attention_step(
+		a,f,
+		us,ut+1,
+		ds,dt+1
+		)
 
-	total+=a
+		total+=a
 
-	matrix[us][ds]=total/(13*13)
+		matrix[us][ds]=total/(13*13)
 
 return matrix.flatten().tolist()
 
@@ -634,10 +634,10 @@ def mtos_phase_matrix():
 	for tone in range(13):
 	for seal in range(20):
 	
-	kin = tone*20 + seal
-	value = np.sin(kin/260 * 2*np.pi)
+		kin = tone*20 + seal
+		value = np.sin(kin/260 * 2*np.pi)
 
-	matrix.append(float(value))
+		matrix.append(float(value))
 
 return matrix
 
@@ -649,9 +649,9 @@ def mtos_wave_structure():
 
 	for s in range(20):
 
-	matrix.append(
-	float(np.sin(t/13)+np.cos(s/20))
-	)
+		matrix.append(
+		float(np.sin(t/13)+np.cos(s/20))
+		)
 
 return matrix
 
@@ -661,13 +661,13 @@ def mtos_collective():
 
 	if len(db) == 0:
 	
-return json.dumps({"state":"no_data"})
+		return json.dumps({"state":"no_data"})
 
-	values = [d["attention"] for d in db]
+		values = [d["attention"] for d in db]
 
-	mean = float(np.mean(values))
-	std = float(np.std(values))
-
+		mean = float(np.mean(values))
+		std = float(np.std(values))
+	
 	if mean > 0.65:
 		state = "HIGH"
 	elif mean < 0.35:
@@ -697,25 +697,25 @@ def mtos_user_network():
 	for i in range(len(names)):
 	for j in range(i+1,len(names)):
 
-	a = users[names[i]]
-	b = users[names[j]]
+		a = users[names[i]]
+		b = users[names[j]]
 
-	ia = seals.index(a["seal"])
-	ib = seals.index(b["seal"])
+		ia = seals.index(a["seal"])
+		ib = seals.index(b["seal"])
 
-	r = seal_resonance(ia, ib)
+		r = seal_resonance(ia, ib)
 
-	day_effect = (
-	seal_resonance(ia, today_i) +
-	seal_resonance(ib, today_i)
-	) * 0.25
+		day_effect = (
+		seal_resonance(ia, today_i) +
+		seal_resonance(ib, today_i)
+		) * 0.25
 
-	tone_effect = (
-	tone_resonance(a["tone"], today_tone) +
-	tone_resonance(b["tone"], today_tone)
-	) * 0.2
+		tone_effect = (
+		tone_resonance(a["tone"], today_tone) +
+		tone_resonance(b["tone"], today_tone)
+		) * 0.2
 
-	r = r + day_effect + tone_effect
+		r = r + day_effect + tone_effect
 
 	if r >= 0.25:
 		label="STRONG SYNERGY"
@@ -735,12 +735,12 @@ def mtos_user_network():
 	else:
 		label="AVOID"
 
-	edges.append({
-	"a":names[i],
-	"b":names[j],
-	"value":r,
-	"label":label
-	})
+		edges.append({
+		"a":names[i],
+		"b":names[j],
+		"value":r,
+		"label":label
+		})
 
 return json.dumps(edges)
 
@@ -756,20 +756,20 @@ def mtos_global_kin_map():
 
 	for name,data in users.items():
 
-	kin = data["kin"]
+		kin = data["kin"]
 
-	kin_counts[kin-1] += 1
+		kin_counts[kin-1] += 1
 
 return json.dumps(kin_counts)
 
 	def mtos_climate_atlas():
 
-	matrix=np.zeros((20,20))
+		matrix=np.zeros((20,20))
 
 	for u in range(20):
 	for d in range(20):
 
-	matrix[u][d]=0.5+seal_resonance(u,d)
+		matrix[u][d]=0.5+seal_resonance(u,d)
 
 return matrix.flatten().tolist()
 
@@ -780,10 +780,10 @@ def mtos_tzolkin_structure():
 	for tone in range(13):
 	for seal in range(20):
 
-	kin = (tone + seal*13) % 260
+		kin = (tone + seal*13) % 260
 
-	value = np.sin(tone/13) + np.cos(seal/20)
+		value = np.sin(tone/13) + np.cos(seal/20)
 
-	matrix.append(float(value))
+		matrix.append(float(value))
 
 return matrix
