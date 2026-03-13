@@ -64,15 +64,17 @@ width:max-content;
 
 .heatmap{
 display:grid;
-grid-gap:2px;
+grid-gap:1px;
 justify-content:center;
 margin:30px auto;
 width:max-content;
+background:#222;
+padding:5px;
 }
 
 .cell{
-width:12px;
-height:12px;
+width:10px;
+height:10px;
 }
 
 </style>
@@ -194,11 +196,10 @@ long-term behavioral attractors of the system.
 
 <section>
 
-<h2>Phase Matrix (260×13)</h2>
+<h2>Phase Matrix (13×20)</h2>
 <p style="max-width:700px;margin:auto;color:#bbb">
-Phase Matrix represents oscillatory dynamics across the full 260-Kin cycle
-and the 13 tones. It shows how attention waves propagate through the
-temporal structure of the Tzolkin calendar.
+Phase Matrix visualizes oscillatory dynamics across the 13 tones and 20 seals of the Tzolkin structure
+(13×20 = 260 Kin).
 </p>
 <div id="phase" class="heatmap"></div>
 
@@ -320,7 +321,7 @@ let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
 drawHeatmap("attractor",attractor,20)
 
 let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
-drawHeatmap("phase",phase,260)
+drawHeatmap("phase",phase,20)
 
 let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
 drawHeatmap("wave",wave,20)
@@ -429,9 +430,9 @@ let c=document.createElement("div")
 
 let color="green"
 
-if(v<0.35) color="red"
-else if(v<0.55) color="orange"
-else if(v<0.75) color="yellow"
+if(v<0.75) color="red"
+else if(v<0.6) color="orange"
+else if(v<0.45) color="yellow"
 
 c.className="cell"
 c.style.background=color
@@ -442,7 +443,7 @@ map.appendChild(c)
 
 }
 
-function drawHeatmap(id,data,cols,rows){
+function drawHeatmap(id,data,cols){
 
 let map=document.getElementById(id)
 
@@ -450,6 +451,7 @@ map.innerHTML=""
 
 map.style.display="grid"
 map.style.gridTemplateColumns=`repeat(${cols},10px)`
+map.style.gridAutoRows="10px"
 
 data.forEach(v=>{
 
@@ -461,8 +463,7 @@ let r=Math.floor(val*255)
 let b=255-r
 
 let c=document.createElement("div")
-c.style.width="6px"
-c.style.height="6px"
+c.className="cell"
 c.style.background=`rgb(${r},0,${b})`
 
 map.appendChild(c)
@@ -476,6 +477,7 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
 
 
 
