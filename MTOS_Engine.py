@@ -320,6 +320,7 @@ def adaptive_learning():
 	db=load_attention()
 
 	if len(db)<50:
+		
 		return 0
 
 	values=[d["attention"] for d in db[-50:]]
@@ -344,7 +345,8 @@ def collective_wave():
 
 	db = load_attention()
 
-if len(db) < 20:
+	if len(db) < 20:
+	
 		return 0
 
 	values = [d["attention"] for d in db[-60:]]
@@ -405,7 +407,8 @@ def entropy(series):
 	hist,_=np.histogram(series,bins=20,range=(0,1))
 	s = np.sum(hist)
 
-if s == 0:
+	if s == 0:
+		
 	return 0
 
 	p = hist / s
@@ -413,7 +416,8 @@ if s == 0:
 
 	v = -np.sum(p*np.log(p))
 
-if np.isnan(v):
+	if np.isnan(v):
+	
 	return 0
 
 	return float(v)
@@ -422,7 +426,8 @@ def chaos(series):
 
 	v = np.std(np.diff(series))
 
-if np.isnan(v):
+	if np.isnan(v):
+		
     return 0
 
 	return float(v)
@@ -432,12 +437,14 @@ def lyapunov(series):
 	diffs=np.abs(np.diff(series))
 	diffs=diffs[diffs>0]
 
-if len(diffs)==0:
+	if len(diffs)==0:
+		
 	return 0
 
 	v = np.mean(np.log(diffs))
 
-if np.isnan(v):
+	if np.isnan(v):
+		
 	return 0
 
 	return float(v)
@@ -448,7 +455,8 @@ def predictability(series):
 
 	for i,d in enumerate(diffs):
 
-if d>0.12:
+	if d>0.12:
+		
 	return i
 
 	return len(series)
@@ -463,7 +471,7 @@ def attention_attractors(series):
 
 	for i,v in enumerate(hist):
 
-if v > mean*1.3:
+	if v > mean*1.3:
 
 	center = (i+0.5)/12
 
@@ -639,7 +647,8 @@ def mtos_collective():
 
 	db = load_attention()
 
-if len(db) == 0:
+	if len(db) == 0:
+		
 	return json.dumps({"state":"no_data"})
 
 	values = [d["attention"] for d in db]
@@ -647,7 +656,7 @@ if len(db) == 0:
 	mean = float(np.mean(values))
 	std = float(np.std(values))
 
-		if mean > 0.65:
+	if mean > 0.65:
 		state = "HIGH"
 	elif mean < 0.35:
 		state = "LOW"
