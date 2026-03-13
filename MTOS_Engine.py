@@ -138,7 +138,7 @@ def climate(a):
     return "RECOVERY"
 
 # ==========================================================
-# DATABASE (BROWSER STORAGE)
+# USERS DATABASE (localStorage)
 # ==========================================================
 
 from js import localStorage
