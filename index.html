@@ -484,14 +484,12 @@ async function startMTOS() {
 
     const pyodide = await loadPyodide();
 
-    await pyodide.loadPackage("numpy");
+await pyodide.loadPackage("numpy");
 
-    console.log("Loading MTOS engine...");
+const response = await fetch("MTOS_Engine.py");
+const code = await response.text();
 
-    const response = await fetch("MTOS_Engine.py");
-    const code = await response.text();
-
-    await pyodide.runPythonAsync(code);
+await pyodide.runPythonAsync(code);
 
     window.pyodide = pyodide;
 
