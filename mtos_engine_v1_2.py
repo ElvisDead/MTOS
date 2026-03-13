@@ -682,6 +682,7 @@ def phase_matrix():
 
 today=datetime.date.today()
 
+"""
 print("\nUSER NAME")
 name=input("Name: ")
 
@@ -743,3 +744,48 @@ user_influence(today)
 state=climate(series[0])
 
 store_attention(name,today,kin,series[0])
+"""
+
+# ==========================================================
+# WEB API
+# ==========================================================
+
+def run_mtos(name,year,month,day):
+
+    import datetime
+
+    birth=datetime.date(year,month,day)
+
+    kin,tone,seal,i=kin_from_date(birth)
+
+    today=datetime.date.today()
+
+    today_kin,today_tone,today_seal,today_i=kin_from_date(today)
+
+    series=simulate(i,tone,today,30)
+
+    state=climate(series[0])
+
+    result=f"""
+MTOS RESULT
+
+Name: {name}
+Birth: {year}-{month}-{day}
+
+Kin: {kin}
+Seal: {seal}
+Tone: {tone}
+
+Today:
+Kin {today_kin}
+Seal {today_seal}
+Tone {today_tone}
+
+Current cognitive state:
+{state}
+
+Attention level:
+{round(float(series[0]),3)}
+"""
+
+    return result
