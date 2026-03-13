@@ -364,12 +364,12 @@ def run_mtos(name,year,month,day):
 
     series = simulate(i,tone,today,260)
 
-    register_user(name,birth,kin,tone,seal)
-    
-    store_attention(name,today,kin,series[0])
-
     state = climate(series[0])
 
+    register_user(name,birth,kin,tone,seal)
+    store_attention(name,today,kin,series[0])
+    update_global_field(today,series[0])
+    
     result = {
         "name":name,
         "kin":kin,
