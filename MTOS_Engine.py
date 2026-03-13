@@ -408,17 +408,19 @@ def mtos_260_weather(name,year,month,day):
 
     return series.tolist()
 
-def mtos_climate_atlas():
+def mtos_user_climate(user_seal):
 
     matrix=np.zeros((20,20))
 
     for u in range(20):
         for d in range(20):
 
-            matrix[u][d]=0.5+seal_resonance(u,d)
+            r=seal_resonance(user_seal,d)
+
+            matrix[u][d]=0.5+r
 
     return matrix.flatten().tolist()
-
+    
 def mtos_attractor_map():
 
     matrix=np.zeros((20,20))
