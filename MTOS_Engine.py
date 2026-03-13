@@ -789,3 +789,16 @@ Attention level:
 """
 
     return result
+
+def mtos_series(name,year,month,day):
+
+    import datetime
+
+    birth=datetime.date(year,month,day)
+    kin,tone,seal,i=kin_from_date(birth)
+
+    today=datetime.date.today()
+
+    series=simulate(i,tone,today,30)
+
+    return series.tolist()
