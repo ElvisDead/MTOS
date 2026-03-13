@@ -599,3 +599,18 @@ def mtos_climate_atlas():
             matrix[u][d]=0.5+seal_resonance(u,d)
 
     return matrix.flatten().tolist()
+
+def mtos_tzolkin_structure():
+
+    matrix=[]
+
+    for tone in range(13):
+        for seal in range(20):
+
+            kin = tone*20 + seal
+
+            value = np.sin(tone/13) + np.cos(seal/20)
+
+            matrix.append(float(value))
+
+    return matrix
