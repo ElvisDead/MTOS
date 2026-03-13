@@ -377,9 +377,9 @@ def simulate(user_i,user_tone,start,days):
 
         update_seal_memory(i,a)
 
-	update_seal_memory(i,a)
+		update_seal_memory(i,a)
 
-	update_kin_memory(kin,a)
+		update_kin_memory(kin,a)
 
         a = a + wave*0.03
 
