@@ -102,10 +102,17 @@ def occult(i): return (19-i)%20
 
 def seal_resonance(a,b):
 
-	if b==a: return 0.30
-	if b==analog(a): return 0.18
-	if b==occult(a): return 0.12
-	if b==antipode(a): return -0.28
+    if b == a:
+        return 0.30
+
+    if b == analog(a):
+        return 0.18
+
+    if b == occult(a):
+        return 0.12
+
+    if b == antipode(a):
+        return -0.28
 
     return 0
 
