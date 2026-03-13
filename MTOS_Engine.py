@@ -719,21 +719,21 @@ def mtos_user_network():
 
 			ia = seals.index(a["seal"])
 			ib = seals.index(b["seal"])
-
+			
 			r = 0
 			
 			r = seal_resonance(ia, ib)
-
+			
 			day_effect = (
-			seal_resonance(ia, today_i) +
-			seal_resonance(ib, today_i)
+				seal_resonance(ia, today_i) +
+				seal_resonance(ib, today_i)
 			) * 0.25
-
+			
 			tone_effect = (
-			tone_resonance(a["tone"], today_tone) +
-			tone_resonance(b["tone"], today_tone)
+				tone_resonance(a["tone"], today_tone) +
+				tone_resonance(b["tone"], today_tone)
 			) * 0.2
-
+			
 			r = r + day_effect + tone_effect
 
     if r >= 0.25:
@@ -753,54 +753,54 @@ def mtos_user_network():
 
     else:
 		label="AVOID"
-
+		
 		edges.append({
-		"a":names[i],
-		"b":names[j],
-		"value":r,
-		"label":label
+			"a":names[i],
+			"b":names[j],
+			"value":r,
+			"label":label
 		})
-
-    return json.dumps(edges)
+		
+	return json.dumps(edges)
 
 # ==========================================================
 # GLOBAL KIN DISTRIBUTION
 # ==========================================================
 
 def mtos_global_kin_map():
-
-    users = load_users()
-
-    kin_counts = [0]*260
-
-    for name,data in users.items():
-
+	
+	users = load_users()
+	
+	kin_counts = [0]*260
+	
+	for name,data in users.items():
+		
 		kin = data["kin"]
-
+		
 		kin_counts[kin-1] += 1
-
-    return json.dumps(kin_counts)
+		
+		return json.dumps(kin_counts)
 
 def mtos_climate_atlas():
-
-    matrix = np.zeros((20,20))
-
-    for u in range(20):
-        for d in range(20):
-            matrix[u][d] = 0.5 + seal_resonance(u,d)
-
-    return matrix.flatten().tolist()
+	
+	matrix = np.zeros((20,20))
+	
+	for u in range(20):
+		for d in range(20):
+			matrix[u][d] = 0.5 + seal_resonance(u,d)
+			
+		return matrix.flatten().tolist()
 
 def mtos_tzolkin_structure():
-
-    matrix=[]
-
+	
+	matrix=[]
+	
 	for tone in range(13):
 		for seal in range(20):
-
+			
 			kin = (tone + seal*13) % 260
 			value = np.sin(tone/13) + np.cos(seal/20)
-
+			
 			matrix.append(float(value))
 
 	return matrix
