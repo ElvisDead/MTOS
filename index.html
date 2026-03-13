@@ -143,7 +143,7 @@ let result=pyodide.runPython(`
 run_mtos(name,year,month,day)
 `)
 
-let data=result.toJs()
+let data = JSON.parse(result)
 
 document.getElementById("state").innerHTML=
 `
@@ -234,3 +234,4 @@ map.appendChild(c)
 
 </body>
 </html>
+
