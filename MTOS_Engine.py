@@ -277,14 +277,16 @@ def load_global_field():
     try:
         obj = json.loads(data)
 
-        if obj is None or "field" not in obj:
+        if obj is None:
+            return {"field":[0.5]*260}
+
+        if "field" not in obj:
             return {"field":[0.5]*260}
 
         return obj
 
     except:
         return {"field":[0.5]*260}
-
 
 def save_global_field(field):
 
@@ -302,15 +304,14 @@ def global_attention(date):
 
 def update_global_field(date,value):
 
-	kin,_,_,_=kin_from_date(date)
+    kin,_,_,_ = kin_from_date(date)
 
-	data=load_global_field()
-	field=data["field"]
+    data = load_global_field()
+    field = data["field"]
 
-	field[(kin-1)%260]=(field[(kin-1)%260]*0.9)+(value*0.1)
+    field[(kin-1)%260] = field[(kin-1)%260]*0.9 + value*0.1
 
-	save_global_field({"field":field})
-
+    save_global_field({"field":field})
 # ==========================================================
 # LEARNING
 # ==========================================================
