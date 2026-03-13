@@ -21,6 +21,11 @@ max-width:1400px;
 margin:auto;
 }
 
+#phase{
+max-width:100%;
+overflow-x:auto;
+}
+
 section{
 margin-top:50px;
 }
@@ -166,6 +171,11 @@ Brighter cells indicate that more users belong to that Kin.
 <section>
 
 <h2>Climate Atlas (20×20)</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+Climate Atlas visualizes resonance between the 20 archetypal seals.
+Each cell represents interaction between two archetypes.
+Brighter regions indicate stronger cognitive resonance patterns.
+</p>
 <div id="atlas" class="heatmap"></div>
 
 </section>
@@ -173,6 +183,11 @@ Brighter cells indicate that more users belong to that Kin.
 <section>
 
 <h2>Attractor Map (20×20)</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+The attractor map shows stable states of attention that emerge from the
+interaction of archetypal seals and tones. These areas represent
+long-term behavioral attractors of the system.
+</p>
 <div id="attractor" class="heatmap"></div>
 
 </section>
@@ -180,6 +195,11 @@ Brighter cells indicate that more users belong to that Kin.
 <section>
 
 <h2>Phase Matrix (260×13)</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+Phase Matrix represents oscillatory dynamics across the full 260-Kin cycle
+and the 13 tones. It shows how attention waves propagate through the
+temporal structure of the Tzolkin calendar.
+</p>
 <div id="phase" class="heatmap"></div>
 
 </section>
@@ -187,10 +207,32 @@ Brighter cells indicate that more users belong to that Kin.
 <section>
 
 <h2>Wave Structure (13×20)</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+Wave Structure visualizes the fundamental Tzolkin geometry:
+13 tones unfolding across 20 archetypal seals.  
+This structure forms the base wave pattern of the MTOS system.
+</p>
 <div id="wave" class="heatmap"></div>
 
 </section>
 
+<section>
+
+<h2>Tzolkin Structure Map (13×20)</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map shows the fundamental structure of the Tzolkin calendar.
+The vertical axis represents the 13 tones (temporal waves),
+while the horizontal axis represents the 20 archetypal seals.
+
+Each cell corresponds to one Kin — a unique combination of tone and seal.
+Together they form the 260-day cycle that underlies the MTOS system.
+</p>
+
+<div id="tzolkin" class="heatmap"></div>
+
+</section>
+    
 <section>
 
 <h2>Collective Attention</h2>
@@ -278,10 +320,13 @@ let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
 drawHeatmap("attractor",attractor,20)
 
 let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
-drawHeatmap("phase",phase,13)
+drawHeatmap("phase",phase,260)
 
 let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
 drawHeatmap("wave",wave,20)
+
+let tz = pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
+drawHeatmap("tzolkin",tz,20)
 
 let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
@@ -409,8 +454,8 @@ let r=Math.floor(val*255)
 let b=255-r
 
 let c=document.createElement("div")
-c.style.width="10px"
-c.style.height="10px"
+c.style.width="6px"
+c.style.height="6px"
 c.style.background=`rgb(${r},0,${b})`
 
 map.appendChild(c)
@@ -424,6 +469,7 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
 
 
 
