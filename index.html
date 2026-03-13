@@ -104,7 +104,12 @@ height:12px;
 <section>
 
 <h2>Forecast</h2>
-
+<p style="max-width:700px;margin:auto;color:#bbb">
+These charts show predicted attention dynamics for the next days.
+The model combines Tzolkin archetypal resonance, fatigue dynamics,
+and the global attention field.
+</p>
+    
 <h3>7 days</h3>
 <canvas id="chart7" width="700" height="200"></canvas>
 
@@ -119,6 +124,10 @@ height:12px;
 <section>
 
 <h2>System Metrics</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+These metrics describe the dynamics of attention in the MTOS system.
+They measure how stable, chaotic or predictable the attention flow is.
+</p>
 <div id="metrics"></div>
 
 </section>
@@ -126,6 +135,17 @@ height:12px;
 <section>
 
 <h2>260 Kin Cognitive Weather</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map represents the 260-day Tzolkin cycle — a kind of "cognitive weather".
+Each cell shows the predicted attention level for a specific Kin in the cycle.
+</p>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+Green = recovery phase<br>
+Yellow = neutral state<br>
+Orange = increased activity<br>
+Red = high concentration
+</p>
 <div id="kinmap"></div>
 
 </section>
@@ -133,6 +153,11 @@ height:12px;
 <section>
 
 <h2>Global Kin Distribution</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map shows where users are located within the 260 Kin cycle.
+Each cell corresponds to a Kin position.
+Brighter cells indicate that more users belong to that Kin.
+</p>
 
 <div id="kinDistribution" class="heatmap"></div>
 
@@ -169,6 +194,10 @@ height:12px;
 <section>
 
 <h2>Collective Attention</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+This value represents the average attention state of all users in the system.
+It describes the overall cognitive climate of the group.
+</p>
 <div id="collective"></div>
 
 </section>
@@ -176,6 +205,12 @@ height:12px;
 <section>
 
 <h2>User Interaction Network</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+This network shows potential interactions between users based on their
+Tzolkin archetypal positions. Some combinations enhance cooperation,
+while others may produce tension.
+</p>
+    
 <div id="network"></div>
 
 </section>
@@ -389,6 +424,7 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
 
 
 
