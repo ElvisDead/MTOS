@@ -537,27 +537,27 @@ def run_mtos(name,year,month,day):
 
 	state = climate(series[0])
 
-register_user(name,birth,kin,tone,seal)
-store_attention(name,today,kin,series[0])
-update_global_field(today,series[0])
+	register_user(name,birth,kin,tone,seal)
+	store_attention(name,today,kin,series[0])
+	update_global_field(today,series[0])
 
-result = {
-	"name":name,
-	"kin":kin,
-	"seal":seal,
-	"tone":tone,
-	"today_kin":today_kin,
-	"today_seal":today_seal,
-	"today_tone":today_tone,
-	"attention":float(series[0]),
-	"state":state,
-	"entropy":entropy(series),
-	"chaos":chaos(series),
-	"lyapunov":lyapunov(series),
-	"predictability":predictability(series),
-	"attractors": attractors,
-	"tzolkin_attractors": attractor_map,
-}
+	result = {
+		"name":name,
+		"kin":kin,
+		"seal":seal,
+		"tone":tone,
+		"today_kin":today_kin,
+		"today_seal":today_seal,
+		"today_tone":today_tone,
+		"attention":float(series[0]),
+		"state":state,
+		"entropy":entropy(series),
+		"chaos":chaos(series),
+		"lyapunov":lyapunov(series),
+		"predictability":predictability(series),
+		"attractors": attractors,
+		"tzolkin_attractors": attractor_map,
+	}
 
 return json.dumps(result)
 
