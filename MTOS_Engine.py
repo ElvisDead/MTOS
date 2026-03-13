@@ -508,7 +508,7 @@ def mtos_collective():
 
     db=load_attention()
 
-    if len(db)<10:
+    if len(db)<1:
 
         return {
             "state":"no_data"
