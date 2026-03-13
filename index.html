@@ -20,10 +20,6 @@ text-align:center;
 padding:40px;
 }
 
-h1{
-margin-bottom:5px;
-}
-
 section{
 margin-top:50px;
 }
@@ -32,7 +28,6 @@ input{
 padding:10px;
 margin:5px;
 font-size:16px;
-width:120px;
 }
 
 button{
@@ -52,12 +47,8 @@ font-size:18px;
 margin-top:20px;
 }
 
-#metrics{
-margin-top:20px;
-}
-
 .metric{
-margin:8px;
+margin:10px;
 font-size:18px;
 }
 
@@ -73,13 +64,20 @@ display:inline-block;
 margin:1px;
 }
 
+.heatmap{
+margin:auto;
+display:grid;
+grid-gap:2px;
+justify-content:center;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>MTOS Dashboard</h1>
+<h1>MTOS Scientific Dashboard</h1>
 <p>Metabolic Tzolkin Operating System</p>
 
 <section>
@@ -108,10 +106,10 @@ margin:1px;
 
 <h2>Forecast</h2>
 
-<h3>7 Days</h3>
+<h3>7 days</h3>
 <canvas id="chart7" width="700" height="200"></canvas>
 
-<h3>30 Days</h3>
+<h3>30 days</h3>
 <canvas id="chart30" width="700" height="200"></canvas>
 
 </section>
@@ -127,6 +125,27 @@ margin:1px;
 
 <h2>260 Kin Cognitive Weather</h2>
 <div id="kinmap"></div>
+
+</section>
+
+<section>
+
+<h2>Climate Atlas</h2>
+<div id="atlas" class="heatmap"></div>
+
+</section>
+
+<section>
+
+<h2>Attractor Map</h2>
+<div id="attractor" class="heatmap"></div>
+
+</section>
+
+<section>
+
+<h2>Wave Structure (13×20)</h2>
+<div id="wave" class="heatmap"></div>
 
 </section>
 
@@ -194,6 +213,15 @@ mtos_260_weather(name,year,month,day)
 
 drawKinMap(weather)
 
+let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
+drawHeatmap("atlas",atlas,20)
+
+let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
+drawHeatmap("attractor",attractor,20)
+
+let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
+drawHeatmap("wave",wave,20)
+
 }
 
 function drawChart(id,data,label){
@@ -237,6 +265,34 @@ else if(v<0.55) color="orange"
 else if(v<0.75) color="yellow"
 
 c.className="cell"
+c.style.background=color
+
+map.appendChild(c)
+
+})
+
+}
+
+function drawHeatmap(id,data,size){
+
+let map=document.getElementById(id)
+
+map.style.gridTemplateColumns=`repeat(${size},12px)`
+
+map.innerHTML=""
+
+data.forEach(v=>{
+
+let c=document.createElement("div")
+
+let color="blue"
+
+if(v>0.6) color="green"
+if(v>0.75) color="yellow"
+if(v>0.9) color="red"
+
+c.style.width="12px"
+c.style.height="12px"
 c.style.background=color
 
 map.appendChild(c)
