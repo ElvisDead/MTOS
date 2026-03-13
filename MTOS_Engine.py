@@ -40,24 +40,25 @@
 	# ==========================================================
 	
 	SEAL_MEMORY = [0.5]*20
-	
 	KIN_MEMORY = [0.5]*260
-	
-	def update_seal_memory(seal_index,attention):
-	
-		global SEAL_MEMORY
-	
-		old = SEAL_MEMORY[seal_index]
-	
-		SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
-	
-	def update_kin_memory(kin,attention):
-	
-		global KIN_MEMORY
-	
-		old = KIN_MEMORY[kin-1]
-	
-		KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
+
+
+def update_seal_memory(seal_index,attention):
+
+    global SEAL_MEMORY
+
+    old = SEAL_MEMORY[seal_index]
+
+    SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
+
+
+def update_kin_memory(kin,attention):
+
+    global KIN_MEMORY
+
+    old = KIN_MEMORY[kin-1]
+
+    KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
 	
 	
 	# ==========================================================
