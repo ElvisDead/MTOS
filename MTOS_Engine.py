@@ -200,11 +200,6 @@ def store_attention(user,date,kin,attention):
 
     db=load_attention()
 
-    for d in db:
-
-        if d["user"]==user and d["date"]==str(date):
-            return
-
     db.append({
         "user":user,
         "date":str(date),
