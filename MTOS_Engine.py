@@ -131,21 +131,18 @@ def update_kin_memory(kin,attention):
 	# TONE RESONANCE
 	# ==========================================================
 	
-	def tone_resonance(user_tone,day_tone):
-	
-	if user_tone == day_tone:
-		
-		return 0.08
-	
-	if abs(user_tone - day_tone) == 1:
-		
-		return 0.04
-	
-	if abs(user_tone - day_tone) == 6:
-		
-		return -0.05
-	
-		return 0
+def tone_resonance(user_tone,day_tone):
+
+    if user_tone == day_tone:
+        return 0.08
+
+    if abs(user_tone - day_tone) == 1:
+        return 0.04
+
+    if abs(user_tone - day_tone) == 6:
+        return -0.05
+
+    return 0
 	
 	# ==========================================================
 	# FATIGUE MODEL
