@@ -13,6 +13,8 @@ Features:
 - attention dynamics
 - attractor analysis
 - cognitive climate modeling
+- collective cognition model
+- interaction networks
 
 Author: MTOS Research
 Year: 2026
@@ -32,6 +34,7 @@ np.random.seed(42)
 USERS_FILE="mtos_users.json"
 ATTENTION_FILE="mtos_attention_db.json"
 FIELD_FILE="mtos_global_field.json"
+METRICS_FILE="mtos_metrics.json"
 
 # ==========================================================
 # TZOLKIN STRUCTURE
@@ -61,7 +64,6 @@ def kin_from_date(date):
 
     return kin,tone,seals[seal_index],seal_index
 
-
 # ==========================================================
 # TZOLKIN GEOMETRY
 # ==========================================================
@@ -69,7 +71,6 @@ def kin_from_date(date):
 def analog(i): return (i+7)%20
 def antipode(i): return (i+10)%20
 def occult(i): return (19-i)%20
-
 
 # ==========================================================
 # RESONANCE FIELD
@@ -84,7 +85,6 @@ def seal_resonance(a,b):
 
     return 0
 
-
 # ==========================================================
 # TONE WAVE
 # ==========================================================
@@ -94,7 +94,6 @@ def tone_wave(tone):
     phase=2*np.pi*(tone/13)
 
     return 0.06*np.cos(phase)
-
 
 # ==========================================================
 # FATIGUE MODEL
@@ -106,7 +105,6 @@ def fatigue_step(f,a):
     f=f-0.03
 
     return max(0,min(f,1))
-
 
 # ==========================================================
 # ATTENTION DYNAMICS
@@ -126,7 +124,6 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
     return max(0,min(a,1)),f
 
-
 # ==========================================================
 # CLIMATE STATE
 # ==========================================================
@@ -139,7 +136,6 @@ def climate(a):
     if a>0.3: return "FATIGUE"
 
     return "RECOVERY"
-
 
 # ==========================================================
 # DATABASE
@@ -170,7 +166,6 @@ def register_user(name,birth,kin,tone,seal):
     }
 
     save_users(users)
-
 
 # ==========================================================
 # ATTENTION DATABASE
@@ -207,28 +202,6 @@ def store_attention(user,date,kin,attention):
 
     save_attention(db)
 
-
-# ==========================================================
-# LEARNING
-# ==========================================================
-
-def learning_adjust():
-
-    db=load_attention()
-
-    if len(db)<30:
-        return 0
-
-    values=[d["attention"] for d in db[-30:]]
-
-    trend=np.mean(np.diff(values))
-
-    if trend>0: return 0.01
-    if trend<0: return -0.01
-
-    return 0
-
-
 # ==========================================================
 # GLOBAL ATTENTION FIELD
 # ==========================================================
@@ -249,7 +222,6 @@ def save_global_field(field):
 def global_attention(date):
 
     kin,_,_,_=kin_from_date(date)
-
     field=load_global_field()["field"]
 
     return field[(kin-1)%260]
@@ -259,17 +231,31 @@ def update_global_field(date,value):
     kin,_,_,_=kin_from_date(date)
 
     data=load_global_field()
-
     field=data["field"]
 
     field[(kin-1)%260]=(field[(kin-1)%260]*0.9)+(value*0.1)
 
     save_global_field({"field":field})
 
+# ==========================================================
+# LEARNING
+# ==========================================================
 
-# ==========================================================
-# ADAPTIVE LEARNING
-# ==========================================================
+def learning_adjust():
+
+    db=load_attention()
+
+    if len(db)<30:
+        return 0
+
+    values=[d["attention"] for d in db[-30:]]
+
+    trend=np.mean(np.diff(values))
+
+    if trend>0: return 0.01
+    if trend<0: return -0.01
+
+    return 0
 
 def adaptive_learning():
 
@@ -292,7 +278,6 @@ def adaptive_learning():
         adjust-=0.01
 
     return adjust
-
 
 # ==========================================================
 # SIMULATION
@@ -322,7 +307,6 @@ def simulate(user_i,user_tone,start,days):
 
     return np.array(series)
 
-
 # ==========================================================
 # METRICS
 # ==========================================================
@@ -331,6 +315,7 @@ def entropy(series):
 
     hist,_=np.histogram(series,bins=20,range=(0,1))
     p=hist/np.sum(hist)
+
     p=p[p>0]
 
     return float(-np.sum(p*np.log(p)))
@@ -349,6 +334,16 @@ def lyapunov(series):
 
     return float(np.mean(np.log(diffs)))
 
+def predictability(series):
+
+    diffs=np.abs(np.diff(series))
+
+    for i,d in enumerate(diffs):
+
+        if d>0.12:
+            return i
+
+    return len(series)
 
 # ==========================================================
 # WEB API
@@ -364,33 +359,29 @@ def run_mtos(name,year,month,day):
 
     today_kin,today_tone,today_seal,today_i=kin_from_date(today)
 
-    series=simulate(i,tone,today,30)
+    series=simulate(i,tone,today,260)
 
     state=climate(series[0])
 
-    return f"""
-MTOS RESULT
+    result={
+        "name":name,
+        "kin":kin,
+        "seal":seal,
+        "tone":tone,
+        "today_kin":today_kin,
+        "today_seal":today_seal,
+        "today_tone":today_tone,
+        "attention":float(series[0]),
+        "state":state,
+        "entropy":entropy(series),
+        "chaos":chaos(series),
+        "lyapunov":lyapunov(series),
+        "predictability":predictability(series)
+    }
 
-Name: {name}
-Birth: {year}-{month}-{day}
+    return result
 
-Kin: {kin}
-Seal: {seal}
-Tone: {tone}
-
-Today:
-Kin {today_kin}
-Seal {today_seal}
-Tone {today_tone}
-
-Current cognitive state:
-{state}
-
-Attention level:
-{round(float(series[0]),3)}
-"""
-
-def mtos_series(name,year,month,day):
+def mtos_series(name,year,month,day,days=30):
 
     birth=datetime.date(year,month,day)
 
@@ -398,6 +389,18 @@ def mtos_series(name,year,month,day):
 
     today=datetime.date.today()
 
-    series=simulate(i,tone,today,30)
+    series=simulate(i,tone,today,days)
+
+    return series.tolist()
+
+def mtos_260_weather(name,year,month,day):
+
+    birth=datetime.date(year,month,day)
+
+    kin,tone,seal,i=kin_from_date(birth)
+
+    today=datetime.date.today()
+
+    series=simulate(i,tone,today,260)
 
     return series.tolist()
