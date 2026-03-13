@@ -753,9 +753,9 @@ for i in range(len(names)):
             "value": r,
             "label": label
         })
-		
-	return json.dumps(edges)
 
+    return json.dumps(edges)
+	
 # ==========================================================
 # GLOBAL KIN DISTRIBUTION
 # ==========================================================
