@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MTOS</title>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+
+<style>
+body{
+font-family: Arial;
+background:#111;
+color:#eee;
+text-align:center;
+padding:40px;
+}
+input{
+padding:10px;
+margin:5px;
+font-size:18px;
+}
+button{
+padding:10px 20px;
+font-size:18px;
+}
+#output{
+margin-top:30px;
+white-space:pre-wrap;
+text-align:left;
+max-width:700px;
+margin:auto;
+}
+</style>
+</head>
+
+<body>
+
+<h1>MTOS</h1>
+
+<p>Name</p>
+<input id="name">
+
+<p>Birth date</p>
+<input id="year" placeholder="year">
+<input id="month" placeholder="month">
+<input id="day" placeholder="day">
+
+<br><br>
+
+<button onclick="run()">Run MTOS</button>
+
+<div id="output"></div>
+
+<script>
+
+async function run(){
+
+let pyodide = await loadPyodide()
+
+let code = `
+name = "${document.getElementById("name").value}"
+year = int("${document.getElementById("year").value}")
+month = int("${document.getElementById("month").value}")
+day = int("${document.getElementById("day").value}")
+
+print("MTOS simulation running")
+print("Name:", name)
+print("Birth:", year, month, day)
+`
+
+let result = pyodide.runPython(code)
+
+document.getElementById("output").innerText = result
+
+}
+
+</script>
+
+</body>
+</html>
