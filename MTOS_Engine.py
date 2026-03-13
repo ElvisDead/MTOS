@@ -322,7 +322,7 @@ def learning_adjust():
 	if trend > 0: return 0.01
 	if trend < 0: return -0.01
 
-return 0
+	return 0
 
 def adaptive_learning():
 
