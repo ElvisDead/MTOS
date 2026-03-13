@@ -107,7 +107,7 @@ def seal_resonance(a,b):
 	if b==occult(a): return 0.12
 	if b==antipode(a): return -0.28
 
-	return 0
+		return 0
 
 # ==========================================================
 # TONE WAVE
