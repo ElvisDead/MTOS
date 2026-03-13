@@ -772,7 +772,7 @@ def mtos_global_kin_map():
 		
 		kin_counts[kin-1] += 1
 		
-		return json.dumps(kin_counts)
+	return json.dumps(kin_counts)
 
 def mtos_climate_atlas():
 	
