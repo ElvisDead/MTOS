@@ -63,9 +63,16 @@ year = int("${document.getElementById("year").value}")
 month = int("${document.getElementById("month").value}")
 day = int("${document.getElementById("day").value}")
 
-print("MTOS simulation running")
-print("Name:", name)
-print("Birth:", year, month, day)
+result = f"""
+MTOS Simulation
+
+Name: {name}
+Birth: {year}-{month}-{day}
+
+Simulation initialized successfully.
+"""
+
+result
 `
 
 let result = pyodide.runPython(code)
