@@ -375,26 +375,24 @@ def simulate(user_i,user_tone,start,days):
 
         a,f = attention_step(a,f,user_i,user_tone,i,tone)
 
-        update_seal_memory(i,a)
-
 		update_seal_memory(i,a)
 
 		update_kin_memory(kin,a)
 
-        a = a + wave*0.03
+		a = a + wave*0.03
 
 	env_noise = np.random.normal(0,0.01)
 
 	a = a + env_noise
 
-        field = global_attention(date)
-        a = a + (field - 0.5) * 0.2
+		field = global_attention(date)
+		a = a + (field - 0.5) * 0.2
 
 	learning = (field - 0.5) * 0.05
 
 	a = a + learning
 
-        series.append(a)
+		series.append(a)
 
     return np.array(series)
 
