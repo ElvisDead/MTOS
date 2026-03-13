@@ -146,7 +146,7 @@ def load_users():
     if not os.path.exists(USERS_FILE):
         return {}
 
-    with open(USERS_FILE) as f:
+    localStorage.getItem("mtos_users") as f:
         return json.load(f)
 
 def save_users(users):
@@ -171,18 +171,23 @@ def register_user(name,birth,kin,tone,seal):
 # ATTENTION DATABASE
 # ==========================================================
 
+from js import localStorage
+
 def load_attention():
 
-    if not os.path.exists(ATTENTION_FILE):
+    data = localStorage.getItem("mtos_attention")
+
+    if data is None:
         return []
 
-    with open(ATTENTION_FILE) as f:
-        return json.load(f)
+    return json.loads(data)
 
 def save_attention(db):
 
-    with open(ATTENTION_FILE,"w") as f:
-        json.dump(db,f,indent=2)
+    localStorage.setItem(
+        "mtos_attention",
+        json.dumps(db)
+    )
 
 def store_attention(user,date,kin,attention):
 
