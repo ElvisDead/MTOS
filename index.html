@@ -229,7 +229,7 @@ drawChart("chart260",s260)
 let weather = pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
 drawKinMap(weather)
 
-let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
+let atlas = pyodide.runPython(`mtos_climate_atlas(seals.index(data.seal))`).toJs()
 drawHeatmap("atlas",atlas,20)
 
 let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
@@ -342,3 +342,4 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
