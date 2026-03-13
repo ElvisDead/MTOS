@@ -408,7 +408,7 @@ def simulate(user_i,user_tone,start,days):
 
 		series.append(a)
 
-return np.array(series)
+	return np.array(series)
 
 # ==========================================================
 # METRICS
@@ -432,7 +432,7 @@ def entropy(series):
 
 		return 0
 
-return float(v)
+	return float(v)
 
 def chaos(series):
 
@@ -442,7 +442,7 @@ def chaos(series):
 	
 		return 0
 
-return float(v)
+	return float(v)
 
 def lyapunov(series):
 
@@ -459,7 +459,7 @@ def lyapunov(series):
 	
 		return 0
 
-return float(v)
+	return float(v)
 
 def predictability(series):
 
@@ -471,7 +471,7 @@ def predictability(series):
 	
 			return i
 
-return len(series)
+	return len(series)
 
 def attention_attractors(series):
 
@@ -489,7 +489,7 @@ def attention_attractors(series):
 
 			attractors.append(float(center))
 
-return attractors
+	return attractors
 
 def tzolkin_attractor_map(user_i,user_tone,start):
 
@@ -510,7 +510,7 @@ def tzolkin_attractor_map(user_i,user_tone,start):
 
 	start = start + datetime.timedelta(days=1)
 
-return attractor_map
+	return attractor_map
 
 # ==========================================================
 # WEB API
@@ -559,7 +559,7 @@ def run_mtos(name,year,month,day):
 		"tzolkin_attractors": attractor_map,
 	}
 
-return json.dumps(result)
+	return json.dumps(result)
 
 def mtos_series(name,year,month,day,days=30):
 
@@ -571,7 +571,7 @@ def mtos_series(name,year,month,day,days=30):
 
 	series=simulate(i,tone,today,days)
 
-return series.tolist()
+	return series.tolist()
 
 def mtos_260_weather(name,year,month,day):
 
@@ -583,7 +583,7 @@ def mtos_260_weather(name,year,month,day):
 
 	series=simulate(i,tone,today,260)
 
-return series.tolist()
+	return series.tolist()
 
 def mtos_user_climate(user_seal):
 
@@ -643,7 +643,7 @@ def mtos_phase_matrix():
 
 			matrix.append(float(value))
 
-return matrix
+	return matrix
 
 def mtos_wave_structure():
 
@@ -685,7 +685,7 @@ def mtos_collective():
 		"state":state
 	}
 
-return json.dumps(result)
+	return json.dumps(result)
 
 def mtos_user_network():
 
@@ -747,7 +747,7 @@ def mtos_user_network():
 		"label":label
 		})
 
-return json.dumps(edges)
+	return json.dumps(edges)
 
 # ==========================================================
 # GLOBAL KIN DISTRIBUTION
@@ -765,7 +765,7 @@ def mtos_global_kin_map():
 
 		kin_counts[kin-1] += 1
 
-return json.dumps(kin_counts)
+	return json.dumps(kin_counts)
 
 def mtos_climate_atlas():
 
