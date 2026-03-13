@@ -702,7 +702,7 @@ def mtos_collective():
 
 def mtos_user_network():
 
-	users = load_users()
+    users = load_users()
 
 	today = datetime.date.today()
 	today_kin, today_tone, today_seal, today_i = kin_from_date(today)
