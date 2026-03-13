@@ -364,6 +364,10 @@ def run_mtos(name,year,month,day):
 
     series = simulate(i,tone,today,260)
 
+    register_user(name,birth,kin,tone,seal)
+    
+    store_attention(name,today,kin,series[0])
+
     state = climate(series[0])
 
     result = {
@@ -537,3 +541,13 @@ def mtos_user_network():
 
     return edges
 
+def mtos_climate_atlas():
+
+    matrix=np.zeros((20,20))
+
+    for u in range(20):
+        for d in range(20):
+
+            matrix[u][d]=0.5+seal_resonance(u,d)
+
+    return matrix.flatten().tolist()
