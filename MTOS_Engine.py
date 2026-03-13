@@ -590,6 +590,7 @@ def mtos_user_climate(user_seal):
 	matrix=np.zeros((20,20))
 
 	for u in range(20):
+		
 		for d in range(20):
 
 			r=seal_resonance(user_seal,d)
@@ -603,27 +604,29 @@ def mtos_attractor_map():
 	matrix=np.zeros((20,20))
 
 	for us in range(20):
+		
 		for ds in range(20):
 
 			total=0
 
-	for ut in range(13):
-		for dt in range(13):
+			for ut in range(13):
+		
+				for dt in range(13):
 
-			a=0.55
-			f=0.2
+					a=0.55
+					f=0.2
 
-	for _ in range(40):
+					for _ in range(40):
 
-		a,f=attention_step(
-		a,f,
-		us,ut+1,
-		ds,dt+1
-		)
+						a,f=attention_step(
+						a,f,
+						us,ut+1,
+						ds,dt+1
+						)
 
-		total+=a
+					total+=a
 
-		matrix[us][ds]=total/(13*13)
+				matrix[us][ds]=total/(13*13)
 
 	return matrix.flatten().tolist()
 
@@ -632,10 +635,11 @@ def mtos_phase_matrix():
 	matrix = []
 
 	for tone in range(13):
+		
 		for seal in range(20):
 	
-		kin = tone*20 + seal
-		value = np.sin(kin/260 * 2*np.pi)
+			kin = tone*20 + seal
+			value = np.sin(kin/260 * 2*np.pi)
 
 		matrix.append(float(value))
 
@@ -695,6 +699,7 @@ def mtos_user_network():
 	edges = []
 
 	for i in range(len(names)):
+		
 		for j in range(i+1,len(names)):
 
 			a = users[names[i]]
@@ -767,6 +772,7 @@ return json.dumps(kin_counts)
 		matrix=np.zeros((20,20))
 
 	for u in range(20):
+		
 		for d in range(20):
 
 			matrix[u][d]=0.5+seal_resonance(u,d)
@@ -778,6 +784,7 @@ def mtos_tzolkin_structure():
 	matrix=[]
 
 	for tone in range(13):
+		
 		for seal in range(20):
 
 			kin = (tone + seal*13) % 260
