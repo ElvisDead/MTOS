@@ -391,7 +391,7 @@ def simulate(user_i,user_tone,start,days):
 
 	a = a + learning
 
-		series.append(a)
+	series.append(a)
 
 	return np.array(series)
 
