@@ -527,7 +527,8 @@ def mtos_phase_matrix():
     for tone in range(13):
         for seal in range(20):
 
-            value = np.sin(tone/13) + np.cos(seal/20)
+            kin = tone*20 + seal
+            value = np.sin(kin/260 * 2*np.pi)
 
             matrix.append(float(value))
 
