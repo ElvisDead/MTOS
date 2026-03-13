@@ -271,7 +271,7 @@ def load_global_field():
 
 	if data is None:
 		
-	return {"field":[0.5]*260}
+		return {"field":[0.5]*260}
 
 	return json.loads(data)
 
