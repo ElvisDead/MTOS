@@ -718,13 +718,13 @@ def mtos_user_network():
 			b = users[names[j]]
 
 			ia = seals.index(a["seal"])
-			ib = seals.index(b["seal"])
+            ib = seals.index(b["seal"])
 			
-			r = 0
+            r = 0
 			
-			r = seal_resonance(ia, ib)
+            r = seal_resonance(ia, ib)
 			
-			day_effect = (
+            day_effect = (
 				seal_resonance(ia, today_i) +
 				seal_resonance(ib, today_i)
 			) * 0.25
