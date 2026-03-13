@@ -409,7 +409,6 @@ def entropy(series):
     return 0
 
 	p = hist / s
-
 	p=p[p>0]
 
 	v = -np.sum(p*np.log(p))
