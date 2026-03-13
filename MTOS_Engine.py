@@ -107,7 +107,7 @@ def seal_resonance(a,b):
 	if b==occult(a): return 0.12
 	if b==antipode(a): return -0.28
 
-	return 0
+		return 0
 
 # ==========================================================
 # TONE WAVE
@@ -137,7 +137,7 @@ def tone_resonance(user_tone,day_tone):
 		
 		return -0.05
 
-	return 0
+		return 0
 
 # ==========================================================
 # FATIGUE MODEL
@@ -311,7 +311,7 @@ def learning_adjust():
 
 	if len(db)<30:
 		
-	return 0
+		return 0
 
 	values=[d["attention"] for d in db[-30:]]
 
@@ -320,7 +320,7 @@ def learning_adjust():
 	if trend>0: return 0.01
 	if trend<0: return -0.01
 
-	return 0
+		return 0
 
 def adaptive_learning():
 
@@ -328,7 +328,7 @@ def adaptive_learning():
 
 	if len(db)<50:
 		
-	return 0
+		return 0
 
 	values=[d["attention"] for d in db[-50:]]
 
@@ -354,7 +354,7 @@ def collective_wave():
 
 	if len(db) < 20:
 	
-	return 0
+		return 0
 
 	values = [d["attention"] for d in db[-60:]]
 
@@ -416,7 +416,7 @@ def entropy(series):
 
 	if s == 0:
 		
-	return 0
+		return 0
 
 	p = hist / s
 	p=p[p>0]
@@ -425,7 +425,7 @@ def entropy(series):
 
 	if np.isnan(v):
 	
-	return 0
+		return 0
 
 	return float(v)
 
@@ -435,7 +435,7 @@ def chaos(series):
 
 	if np.isnan(v):
 		
-    return 0
+		return 0
 
 	return float(v)
 
@@ -446,13 +446,13 @@ def lyapunov(series):
 
 	if len(diffs)==0:
 		
-	return 0
+		return 0
 
 	v = np.mean(np.log(diffs))
 
 	if np.isnan(v):
 		
-	return 0
+		return 0
 
 	return float(v)
 
