@@ -351,19 +351,22 @@ def predictability(series):
 
 def run_mtos(name,year,month,day):
 
-    birth=datetime.date(year,month,day)
+    import json
+    import datetime
 
-    kin,tone,seal,i=kin_from_date(birth)
+    birth = datetime.date(year,month,day)
 
-    today=datetime.date.today()
+    kin,tone,seal,i = kin_from_date(birth)
 
-    today_kin,today_tone,today_seal,today_i=kin_from_date(today)
+    today = datetime.date.today()
 
-    series=simulate(i,tone,today,260)
+    today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
-    state=climate(series[0])
+    series = simulate(i,tone,today,260)
 
-    result={
+    state = climate(series[0])
+
+    result = {
         "name":name,
         "kin":kin,
         "seal":seal,
@@ -379,8 +382,7 @@ def run_mtos(name,year,month,day):
         "predictability":predictability(series)
     }
 
-    import json
-return json.dumps(result)
+    return json.dumps(result)
 
 def mtos_series(name,year,month,day,days=30):
 
