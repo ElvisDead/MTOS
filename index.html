@@ -4,8 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-
-<title>MTOS — Metabolic Tzolkin Operating System</title>
+<title>MTOS Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,9 +12,9 @@
 <style>
 
 body{
-font-family: Arial;
 background:#111;
 color:#eee;
+font-family:Arial;
 text-align:center;
 padding:40px;
 }
@@ -23,12 +22,12 @@ padding:40px;
 input{
 padding:10px;
 margin:5px;
-font-size:18px;
+font-size:16px;
 }
 
 button{
 padding:10px 20px;
-font-size:18px;
+font-size:16px;
 cursor:pointer;
 }
 
@@ -36,12 +35,10 @@ section{
 margin-top:50px;
 }
 
-#output{
-margin-top:30px;
-white-space:pre-wrap;
-text-align:left;
-max-width:700px;
+canvas{
+background:#000;
 margin:auto;
+display:block;
 }
 
 #kinmap{
@@ -56,9 +53,9 @@ display:inline-block;
 margin:1px;
 }
 
-canvas{
-background:#000;
-margin-top:20px;
+.metric{
+margin:10px;
+font-size:18px;
 }
 
 </style>
@@ -67,15 +64,14 @@ margin-top:20px;
 
 <body>
 
-<h1>MTOS</h1>
-<h3>Metabolic Tzolkin Operating System</h3>
+<h1>MTOS Dashboard</h1>
+<p>Metabolic Tzolkin Operating System</p>
 
 <section>
 
-<p>Name</p>
-<input id="name">
+<h2>User</h2>
 
-<p>Birth date</p>
+<input id="name" placeholder="name">
 <input id="year" placeholder="year">
 <input id="month" placeholder="month">
 <input id="day" placeholder="day">
@@ -88,57 +84,53 @@ margin-top:20px;
 
 <section>
 
-<h2>MTOS Result</h2>
-<div id="output"></div>
+<h2>Current Cognitive State</h2>
+
+<div id="state"></div>
 
 </section>
 
 <section>
 
-<h2>Attention Forecast (30 Days)</h2>
-<canvas id="chart" width="700" height="300"></canvas>
+<h2>Forecast</h2>
+
+<canvas id="chart7" width="700" height="200"></canvas>
+<canvas id="chart30" width="700" height="200"></canvas>
 
 </section>
 
 <section>
 
-<h2>260 Kin Cognitive Climate</h2>
+<h2>System Metrics</h2>
+
+<div id="metrics"></div>
+
+</section>
+
+<section>
+
+<h2>260 Kin Cognitive Weather</h2>
+
 <div id="kinmap"></div>
-
-</section>
-
-<section>
-
-<h2>Global Cognitive Weather Map</h2>
-<canvas id="atlas" width="500" height="500"></canvas>
-
-</section>
-
-<section>
-
-<h2>User Interaction Network</h2>
-<div id="network"></div>
 
 </section>
 
 <script>
 
-let pyodideReadyPromise = loadPyodide()
+let pyodideReady = loadPyodide()
 
 async function run(){
 
-const pyodide = await pyodideReadyPromise
+const pyodide = await pyodideReady
 
 await pyodide.loadPackage("numpy")
 
-let name = document.getElementById("name").value
-let year = parseInt(document.getElementById("year").value)
-let month = parseInt(document.getElementById("month").value)
-let day = parseInt(document.getElementById("day").value)
+let name=document.getElementById("name").value
+let year=parseInt(document.getElementById("year").value)
+let month=parseInt(document.getElementById("month").value)
+let day=parseInt(document.getElementById("day").value)
 
-document.getElementById("output").innerText="Loading MTOS..."
-
-let engine = await fetch("MTOS_Engine.py").then(r=>r.text())
+let engine=await fetch("MTOS_Engine.py").then(r=>r.text())
 
 pyodide.runPython(engine)
 
@@ -147,34 +139,59 @@ pyodide.globals.set("year",year)
 pyodide.globals.set("month",month)
 pyodide.globals.set("day",day)
 
-let result = pyodide.runPython(`
+let result=pyodide.runPython(`
 run_mtos(name,year,month,day)
 `)
 
-document.getElementById("output").innerText=result
+let data=result.toJs()
 
-let series = pyodide.runPython(`
-mtos_series(name,year,month,day)
-`)
+document.getElementById("state").innerHTML=
+`
+Kin: ${data.kin} <br>
+Seal: ${data.seal} <br>
+Tone: ${data.tone} <br>
+Attention: ${data.attention.toFixed(3)} <br>
+State: ${data.state}
+`
 
-drawChart(series)
-drawKinMap(series)
-drawAtlas()
-drawNetwork()
+document.getElementById("metrics").innerHTML=
+`
+<div class="metric">Entropy: ${data.entropy.toFixed(3)}</div>
+<div class="metric">Chaos: ${data.chaos.toFixed(4)}</div>
+<div class="metric">Lyapunov: ${data.lyapunov.toFixed(4)}</div>
+<div class="metric">Predictability: ${data.predictability}</div>
+`
+
+let series7=pyodide.runPython(`
+mtos_series(name,year,month,day,7)
+`).toJs()
+
+let series30=pyodide.runPython(`
+mtos_series(name,year,month,day,30)
+`).toJs()
+
+drawChart("chart7",series7,"7 day forecast")
+drawChart("chart30",series30,"30 day forecast")
+
+let weather=pyodide.runPython(`
+mtos_260_weather(name,year,month,day)
+`).toJs()
+
+drawKinMap(weather)
 
 }
 
-function drawChart(series){
+function drawChart(id,data,label){
 
-let ctx=document.getElementById("chart")
+let ctx=document.getElementById(id)
 
 new Chart(ctx,{
 type:"line",
 data:{
-labels:series.map((_,i)=>i+1),
+labels:data.map((_,i)=>i+1),
 datasets:[{
-label:"Attention",
-data:series,
+label:label,
+data:data,
 borderColor:"cyan",
 fill:false
 }]
@@ -188,15 +205,15 @@ y:{min:0,max:1}
 
 }
 
-function drawKinMap(series){
+function drawKinMap(weather){
 
-let container=document.getElementById("kinmap")
+let map=document.getElementById("kinmap")
 
-container.innerHTML=""
+map.innerHTML=""
 
-for(let i=0;i<260;i++){
+weather.forEach(v=>{
 
-let v=Math.random()
+let c=document.createElement("div")
 
 let color="green"
 
@@ -204,73 +221,12 @@ if(v<0.35) color="red"
 else if(v<0.55) color="orange"
 else if(v<0.75) color="yellow"
 
-let cell=document.createElement("div")
+c.className="cell"
+c.style.background=color
 
-cell.className="cell"
-cell.style.background=color
+map.appendChild(c)
 
-container.appendChild(cell)
-
-}
-
-}
-
-function drawAtlas(){
-
-let canvas=document.getElementById("atlas")
-let ctx=canvas.getContext("2d")
-
-let size=20
-let cell=25
-
-for(let y=0;y<size;y++){
-
-for(let x=0;x<size;x++){
-
-let v=Math.random()
-
-let color="blue"
-
-if(v>0.7) color="green"
-if(v<0.3) color="red"
-
-ctx.fillStyle=color
-ctx.fillRect(x*cell,y*cell,cell,cell)
-
-}
-
-}
-
-}
-
-function drawNetwork(){
-
-let users=["Alice","Bob","Eve","Mark"]
-
-let container=document.getElementById("network")
-
-container.innerHTML=""
-
-for(let i=0;i<users.length;i++){
-
-for(let j=i+1;j<users.length;j++){
-
-let r=Math.random()
-
-let relation="NEUTRAL"
-
-if(r>0.65) relation="COLLABORATE"
-if(r<0.3) relation="CONFLICT"
-
-let line=document.createElement("div")
-
-line.innerText=users[i]+" ↔ "+users[j]+" : "+relation
-
-container.appendChild(line)
-
-}
-
-}
+})
 
 }
 
