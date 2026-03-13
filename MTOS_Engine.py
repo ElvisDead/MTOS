@@ -240,8 +240,8 @@ def load_attention():
 	if data is None:
 
 		return []
-
-return json.loads(data)
+		
+		return json.loads(data)
 
 def save_attention(db):
 
@@ -274,8 +274,8 @@ def load_global_field():
 	if data is None:
 	
 		return {"field":[0.5]*260}
-
-return json.loads(data)
+		
+		return json.loads(data)
 
 
 def save_global_field(field):
@@ -290,7 +290,7 @@ def global_attention(date):
 	kin,_,_,_=kin_from_date(date)
 	field=load_global_field()["field"]
 
-return field[(kin-1)%260]
+	return field[(kin-1)%260]
 
 def update_global_field(date,value):
 
@@ -345,7 +345,7 @@ def adaptive_learning():
 	if volatility > 0.15:
 		adjust -= 0.01
 
-return adjust
+	return adjust
 
 # ==========================================================
 # COLLECTIVE WAVE
@@ -363,7 +363,7 @@ def collective_wave():
 
 	wave = np.sin(np.mean(values)*np.pi)
 
-return float(wave)
+	return float(wave)
 
 # ==========================================================
 # SIMULATION
