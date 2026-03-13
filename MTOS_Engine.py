@@ -569,7 +569,7 @@ def mtos_user_network():
                 "value":r
             })
 
-    return edges
+    return json.dumps(edges)
 
 def mtos_climate_atlas():
 
