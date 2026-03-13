@@ -123,7 +123,7 @@ def tone_wave(tone):
 
 	phase = 2*np.pi*((tone-1)/13)
 
-return 0.05*np.sin(phase)
+	return 0.05*np.sin(phase)
 
 # ==========================================================
 # TONE RESONANCE
