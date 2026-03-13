@@ -769,13 +769,13 @@ return json.dumps(kin_counts)
 
 def mtos_climate_atlas():
 
-	matrix=np.zeros((20,20))
+    matrix = np.zeros((20,20))
 
-	for u in range(20):
-		for d in range(20):
-			matrix[u][d]=0.5+seal_resonance(u,d)
+    for u in range(20):
+        for d in range(20):
+            matrix[u][d] = 0.5 + seal_resonance(u,d)
 
-	return matrix.flatten().tolist()
+    return matrix.flatten().tolist()
 
 def mtos_tzolkin_structure():
 
