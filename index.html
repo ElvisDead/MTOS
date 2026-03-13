@@ -352,7 +352,14 @@ let network = JSON.parse(
 let netHTML=""
 
 network.forEach(e=>{
-netHTML+=`${e.a} ↔ ${e.b} : ${e.value.toFixed(2)}<br>`
+
+netHTML+=`
+${e.a} ↔ ${e.b}
+: <b>${e.label}</b>
+(${e.value.toFixed(2)})
+<br>
+`
+
 })
 
 document.getElementById("network").innerHTML=netHTML
@@ -469,6 +476,7 @@ map.appendChild(c)
 </body>
 </html>
 ```
+
 
 
 
