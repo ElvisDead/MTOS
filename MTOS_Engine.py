@@ -237,7 +237,7 @@ def load_attention():
 
 	if data is None:
 	
-	return []
+		return []
 
 	return json.loads(data)
 
@@ -464,7 +464,7 @@ def predictability(series):
 
 	if d>0.12:
 		
-	return i
+		return i
 
 	return len(series)
 
@@ -656,7 +656,7 @@ def mtos_collective():
 
 	if len(db) == 0:
 		
-	return json.dumps({"state":"no_data"})
+		return json.dumps({"state":"no_data"})
 
 	values = [d["attention"] for d in db]
 
