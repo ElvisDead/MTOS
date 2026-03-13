@@ -269,13 +269,21 @@ def store_attention(user,date,kin,attention):
 
 def load_global_field():
 
-	data = localStorage.getItem("mtos_global_field")
+    data = localStorage.getItem("mtos_global_field")
 
-	if data is None:
-	
-		return {"field":[0.5]*260}
-		
-		return json.loads(data)
+    if data is None:
+        return {"field":[0.5]*260}
+
+    try:
+        obj = json.loads(data)
+
+        if obj is None or "field" not in obj:
+            return {"field":[0.5]*260}
+
+        return obj
+
+    except:
+        return {"field":[0.5]*260}
 
 
 def save_global_field(field):
