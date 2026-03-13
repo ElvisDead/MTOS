@@ -49,18 +49,26 @@ margin:10px;
 font-size:18px;
 }
 
-.heatmap{
+#kinmap{
+display:grid;
+grid-template-columns:repeat(20,12px);
+grid-gap:2px;
+justify-content:center;
 margin:auto;
+width:max-content;
+}
+
+.heatmap{
 display:grid;
 grid-gap:2px;
 justify-content:center;
+margin:30px auto;
+width:max-content;
 }
 
 .cell{
-width:10px;
-height:10px;
-display:inline-block;
-margin:1px;
+width:12px;
+height:12px;
 }
 
 </style>
@@ -190,10 +198,7 @@ pyodide.globals.set("year",year)
 pyodide.globals.set("month",month)
 pyodide.globals.set("day",day)
 
-let result=pyodide.runPython(`
-run_mtos(name,year,month,day)
-`)
-
+let result=pyodide.runPython(`run_mtos(name,year,month,day)`)
 let data=JSON.parse(result)
 
 document.getElementById("state").innerHTML=
@@ -221,22 +226,22 @@ drawChart("chart7",s7)
 drawChart("chart30",s30)
 drawChart("chart260",s260)
 
-let weather=pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
+let weather = pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
 drawKinMap(weather)
 
-let atlas=pyodide.runPython(`mtos_climate_atlas()`).toJs()
+let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
 drawHeatmap("atlas",atlas,20)
 
-let attractor=pyodide.runPython(`mtos_attractor_map()`).toJs()
+let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
 drawHeatmap("attractor",attractor,20)
 
-let phase=pyodide.runPython(`mtos_phase_matrix()`).toJs()
-drawHeatmap("phase",phase,13,260)
+let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
+drawHeatmap("phase",phase,13)
 
-let wave=pyodide.runPython(`mtos_wave_structure()`).toJs()
+let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
 drawHeatmap("wave",wave,20)
 
-let collective=pyodide.runPython(`mtos_collective()`).toJs()
+let collective = pyodide.runPython(`mtos_collective()`).toJs()
 
 document.getElementById("collective").innerHTML=
 `
@@ -245,7 +250,7 @@ Volatility: ${collective.volatility ?? "N/A"}<br>
 State: ${collective.state}
 `
 
-let network=pyodide.runPython(`mtos_user_network()`).toJs()
+let network = pyodide.runPython(`mtos_user_network()`).toJs()
 
 let netHTML=""
 
@@ -284,11 +289,7 @@ scales:{y:{min:0,max:1}}
 function drawKinMap(weather){
 
 let map=document.getElementById("kinmap")
-
 map.innerHTML=""
-
-map.style.display="grid"
-map.style.gridTemplateColumns="repeat(20,12px)"
 
 weather.forEach(v=>{
 
@@ -300,8 +301,7 @@ if(v<0.35) color="red"
 else if(v<0.55) color="orange"
 else if(v<0.75) color="yellow"
 
-c.style.width="12px"
-c.style.height="12px"
+c.className="cell"
 c.style.background=color
 
 map.appendChild(c)
@@ -310,18 +310,14 @@ map.appendChild(c)
 
 }
 
-function drawHeatmap(id,data,cols,rows){
+function drawHeatmap(id,data,cols){
 
 let map=document.getElementById(id)
 
 map.innerHTML=""
-
-map.style.display="grid"
 map.style.gridTemplateColumns=`repeat(${cols},10px)`
 
-for(let i=0;i<data.length;i++){
-
-let v=data[i]
+data.forEach(v=>{
 
 let val=(v+2)/4
 if(val<0) val=0
@@ -337,7 +333,7 @@ c.style.background=`rgb(${r},0,${b})`
 
 map.appendChild(c)
 
-}
+})
 
 }
 
@@ -346,4 +342,3 @@ map.appendChild(c)
 </body>
 </html>
 ```
-
