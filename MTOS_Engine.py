@@ -514,7 +514,7 @@ def run_mtos(name,year,month,day):
 		"entropy":entropy(series),
 		"chaos":chaos(series),
 		"lyapunov":lyapunov(series),
-		"predictability":predictability(series)
+		"predictability":predictability(series),
 		"attractors": attractors,
 		"tzolkin_attractors": attractor_map,
 	}
