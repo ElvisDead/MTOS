@@ -384,29 +384,29 @@ def simulate(user_i,user_tone,start,days):
 
 		date = start + datetime.timedelta(days=t)
 
-	kin,tone,seal,i = kin_from_date(date)
+		kin,tone,seal,i = kin_from_date(date)
 
-	a,f = attention_step(a,f,user_i,user_tone,i,tone)
+		a,f = attention_step(a,f,user_i,user_tone,i,tone)
 
-	update_seal_memory(i,a)
-	update_kin_memory(kin,a)
+		update_seal_memory(i,a)
+		update_kin_memory(kin,a)
 
-	a = a + wave*0.03
+		a = a + wave*0.03
 
-	env_noise = np.random.normal(0,0.01)
+		env_noise = np.random.normal(0,0.01)
 
-	a = a + env_noise
+		a = a + env_noise
 
-	a = max(0,min(a,1))
+		a = max(0,min(a,1))
 
-	field = global_attention(date)
-	a = a + (field - 0.5) * 0.2
+		field = global_attention(date)
+		a = a + (field - 0.5) * 0.2
 
-	learning = (field - 0.5) * 0.05
+		learning = (field - 0.5) * 0.05
 
-	a = a + learning
+		a = a + learning
 
-	series.append(a)
+		series.append(a)
 
 return np.array(series)
 
