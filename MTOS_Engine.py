@@ -25,8 +25,6 @@ import numpy as np
 import json
 import os
 
-np.random.seed(42)
-
 # ==========================================================
 # FILES
 # ==========================================================
@@ -42,6 +40,8 @@ METRICS_FILE="mtos_metrics.json"
 
 SEAL_MEMORY = [0.5]*20
 
+KIN_MEMORY = [0.5]*260
+
 def update_seal_memory(seal_index,attention):
 
     global SEAL_MEMORY
@@ -49,6 +49,15 @@ def update_seal_memory(seal_index,attention):
     old = SEAL_MEMORY[seal_index]
 
     SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
+
+def update_kin_memory(kin,attention):
+
+    global KIN_MEMORY
+
+    old = KIN_MEMORY[kin-1]
+
+    KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
+
 
 # ==========================================================
 # TZOLKIN STRUCTURE
@@ -151,7 +160,11 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
     memory = SEAL_MEMORY[day_i] - 0.5
 
-    a = a + r + tone_effect + tone_sync + memory*0.10
+    kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
+
+    noise = np.random.normal(0,0.015)
+
+    a = a + r + tone_effect + tone_sync + memory*0.10 + kin_memory*0.05 + noise
 
     f = fatigue_step(f,a)
 
@@ -364,10 +377,22 @@ def simulate(user_i,user_tone,start,days):
 
         update_seal_memory(i,a)
 
+	update_seal_memory(i,a)
+
+	update_kin_memory(kin,a)
+
         a = a + wave*0.03
+
+	env_noise = np.random.normal(0,0.01)
+
+	a = a + env_noise
 
         field = global_attention(date)
         a = a + (field - 0.5) * 0.2
+
+	learning = (field - 0.5) * 0.05
+
+	a = a + learning
 
         series.append(a)
 
@@ -411,6 +436,24 @@ def predictability(series):
 
     return len(series)
 
+def attention_attractors(series):
+
+    hist,_ = np.histogram(series,bins=12,range=(0,1))
+
+    mean = np.mean(hist)
+
+    attractors = []
+
+    for i,v in enumerate(hist):
+
+        if v > mean*1.3:
+
+            center = (i+0.5)/12
+
+            attractors.append(float(center))
+
+    return attractors
+
 # ==========================================================
 # WEB API
 # ==========================================================
@@ -429,6 +472,8 @@ def run_mtos(name,year,month,day):
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
     series = simulate(i,tone,today,260)
+
+    attractors = attention_attractors(series)
 
     state = climate(series[0])
 
@@ -450,6 +495,7 @@ def run_mtos(name,year,month,day):
         "chaos":chaos(series),
         "lyapunov":lyapunov(series),
         "predictability":predictability(series)
+	"attractors": attractors,
     }
 
     return json.dumps(result)
