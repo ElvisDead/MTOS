@@ -707,11 +707,11 @@ def mtos_user_network():
     today = datetime.date.today()
     today_kin, today_tone, today_seal, today_i = kin_from_date(today)
 
-	names = list(users.keys())
+    names = list(users.keys())
 
-	edges = []
+    edges = []
 
-	for i in range(len(names)):
+    for i in range(len(names)):
 		
 		for j in range(i+1,len(names)):
 
@@ -737,22 +737,22 @@ def mtos_user_network():
 
 			r = r + day_effect + tone_effect
 
-	if r >= 0.25:
+    if r >= 0.25:
 		label="STRONG SYNERGY"
 
-	elif r >= 0.15:
+    elif r >= 0.15:
 		label="COLLABORATE"
 
-	elif r >= 0.10:
+    elif r >= 0.10:
 		label="SUPPORT"
 
-	elif r > -0.10:
+    elif r > -0.10:
 		label="NEUTRAL"
 
-	elif r > -0.25:
+    elif r > -0.25:
 		label="TENSION"
 
-	else:
+    else:
 		label="AVOID"
 
 		edges.append({
@@ -762,7 +762,7 @@ def mtos_user_network():
 		"label":label
 		})
 
-	return json.dumps(edges)
+    return json.dumps(edges)
 
 # ==========================================================
 # GLOBAL KIN DISTRIBUTION
@@ -770,17 +770,17 @@ def mtos_user_network():
 
 def mtos_global_kin_map():
 
-	users = load_users()
+    users = load_users()
 
-	kin_counts = [0]*260
+    kin_counts = [0]*260
 
-	for name,data in users.items():
+    for name,data in users.items():
 
 		kin = data["kin"]
 
 		kin_counts[kin-1] += 1
 
-	return json.dumps(kin_counts)
+    return json.dumps(kin_counts)
 
 def mtos_climate_atlas():
 
@@ -794,7 +794,7 @@ def mtos_climate_atlas():
 
 def mtos_tzolkin_structure():
 
-	matrix=[]
+    matrix=[]
 
 	for tone in range(13):
 		for seal in range(20):
