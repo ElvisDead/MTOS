@@ -126,12 +126,15 @@ def tone_wave(tone):
 def tone_resonance(user_tone,day_tone):
 
 	if user_tone == day_tone:
+		
 		return 0.08
 
 	if abs(user_tone - day_tone) == 1:
+		
 		return 0.04
 
 	if abs(user_tone - day_tone) == 6:
+		
 		return -0.05
 
 	return 0
@@ -197,6 +200,7 @@ def load_users():
 	data = localStorage.getItem("mtos_users")
 
 	if data is None:
+		
 		return {}
 
 	return json.loads(data)
@@ -232,7 +236,8 @@ def load_attention():
 	data = localStorage.getItem("mtos_attention")
 
 	if data is None:
-		return []
+	
+	return []
 
 	return json.loads(data)
 
@@ -265,7 +270,8 @@ def load_global_field():
 	data = localStorage.getItem("mtos_global_field")
 
 	if data is None:
-		return {"field":[0.5]*260}
+		
+	return {"field":[0.5]*260}
 
 	return json.loads(data)
 
@@ -304,7 +310,8 @@ def learning_adjust():
 	db=load_attention()
 
 	if len(db)<30:
-		return 0
+		
+	return 0
 
 	values=[d["attention"] for d in db[-30:]]
 
@@ -321,7 +328,7 @@ def adaptive_learning():
 
 	if len(db)<50:
 		
-		return 0
+	return 0
 
 	values=[d["attention"] for d in db[-50:]]
 
@@ -347,7 +354,7 @@ def collective_wave():
 
 	if len(db) < 20:
 	
-		return 0
+	return 0
 
 	values = [d["attention"] for d in db[-60:]]
 
