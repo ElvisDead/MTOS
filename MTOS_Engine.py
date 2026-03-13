@@ -704,8 +704,8 @@ def mtos_user_network():
 
     users = load_users()
 
-	today = datetime.date.today()
-	today_kin, today_tone, today_seal, today_i = kin_from_date(today)
+    today = datetime.date.today()
+    today_kin, today_tone, today_seal, today_i = kin_from_date(today)
 
 	names = list(users.keys())
 
@@ -721,6 +721,8 @@ def mtos_user_network():
 			ia = seals.index(a["seal"])
 			ib = seals.index(b["seal"])
 
+			r = 0
+			
 			r = seal_resonance(ia, ib)
 
 			day_effect = (
