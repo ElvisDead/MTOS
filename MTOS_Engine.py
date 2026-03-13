@@ -563,11 +563,30 @@ def mtos_user_network():
 
             r=seal_resonance(ia,ib)
 
+            if r >= 0.25:
+            label="STRONG SYNERGY"
+
+            elif r >= 0.15:
+            label="COLLABORATE"
+
+            elif r >= 0.10:
+            label="SUPPORT"
+
+            elif r > -0.10:
+            label="NEUTRAL"
+
+            elif r > -0.25:
+            label="TENSION"
+
+            else:
+            label="AVOID"
+
             edges.append({
-                "a":names[i],
-                "b":names[j],
-                "value":r
-            })
+            "a":names[i],
+            "b":names[j],
+            "value":r,
+            "label":label
+})
 
     return json.dumps(edges)
 
