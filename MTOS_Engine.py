@@ -406,11 +406,21 @@ def entropy(series):
 
 	p=p[p>0]
 
-	return float(-np.sum(p*np.log(p)))
+	v = -np.sum(p*np.log(p))
+
+if np.isnan(v):
+    return 0
+
+return float(v)
 
 def chaos(series):
 
-	return float(np.std(np.diff(series)))
+	v = np.std(np.diff(series))
+
+if np.isnan(v):
+    return 0
+
+return float(v)
 
 def lyapunov(series):
 
@@ -420,7 +430,12 @@ def lyapunov(series):
 	if len(diffs)==0:
 		return 0
 
-	return float(np.mean(np.log(diffs)))
+	v = np.mean(np.log(diffs))
+
+if np.isnan(v):
+    return 0
+
+return float(v)
 
 def predictability(series):
 
