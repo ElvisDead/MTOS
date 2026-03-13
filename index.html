@@ -474,5 +474,33 @@ map.appendChild(c)
 
 </script>
 
+<script type="module">
+
+import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.mjs";
+
+async function startMTOS() {
+
+    console.log("Loading Pyodide...");
+
+    const pyodide = await loadPyodide();
+
+    console.log("Loading MTOS engine...");
+
+    const response = await fetch("MTOS_Engine.py");
+    const code = await response.text();
+
+    await pyodide.runPythonAsync(code);
+
+    window.pyodide = pyodide;
+
+    console.log("MTOS engine loaded");
+
+}
+
+startMTOS();
+
+</script>
+    
 </body>
 </html>
+
