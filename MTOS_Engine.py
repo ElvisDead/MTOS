@@ -407,3 +407,131 @@ def mtos_260_weather(name,year,month,day):
     series=simulate(i,tone,today,260)
 
     return series.tolist()
+
+def mtos_climate_atlas():
+
+    matrix=np.zeros((20,20))
+
+    for u in range(20):
+        for d in range(20):
+
+            matrix[u][d]=0.5+seal_resonance(u,d)
+
+    return matrix.flatten().tolist()
+
+def mtos_attractor_map():
+
+    matrix=np.zeros((20,20))
+
+    for us in range(20):
+        for ds in range(20):
+
+            total=0
+
+            for ut in range(13):
+                for dt in range(13):
+
+                    a=0.55
+                    f=0.2
+
+                    for _ in range(40):
+
+                        a,f=attention_step(
+                            a,f,
+                            us,ut+1,
+                            ds,dt+1
+                        )
+
+                    total+=a
+
+            matrix[us][ds]=total/(13*13)
+
+    return matrix.flatten().tolist()
+
+def mtos_phase_matrix():
+
+    matrix=[]
+
+    for k in range(260):
+
+        row=[]
+
+        for t in range(13):
+
+            v=np.sin(k/20)+np.cos(t/13)
+
+            row.append(float(v))
+
+        matrix.extend(row)
+
+    return matrix
+
+def mtos_wave_structure():
+
+    matrix=[]
+
+    for t in range(13):
+
+        for s in range(20):
+
+            matrix.append(
+                float(np.sin(t/13)+np.cos(s/20))
+            )
+
+    return matrix
+
+def mtos_collective():
+
+    db=load_attention()
+
+    if len(db)<10:
+
+        return {
+            "state":"no_data"
+        }
+
+    values=[d["attention"] for d in db]
+
+    mean=float(np.mean(values))
+    std=float(np.std(values))
+
+    if mean>0.65:
+        state="HIGH"
+    elif mean<0.35:
+        state="LOW"
+    else:
+        state="NEUTRAL"
+
+    return {
+        "mean":mean,
+        "volatility":std,
+        "state":state
+    }
+
+def mtos_user_network():
+
+    users=load_users()
+
+    names=list(users.keys())
+
+    edges=[]
+
+    for i in range(len(names)):
+        for j in range(i+1,len(names)):
+
+            a=users[names[i]]
+            b=users[names[j]]
+
+            ia=seals.index(a["seal"])
+            ib=seals.index(b["seal"])
+
+            r=seal_resonance(ia,ib)
+
+            edges.append({
+                "a":names[i],
+                "b":names[j],
+                "value":r
+            })
+
+    return edges
+
