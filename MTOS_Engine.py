@@ -384,8 +384,8 @@ def simulate(user_i,user_tone,start,days):
 
 	a = a + env_noise
 
-		field = global_attention(date)
-		a = a + (field - 0.5) * 0.2
+	field = global_attention(date)
+	a = a + (field - 0.5) * 0.2
 
 	learning = (field - 0.5) * 0.05
 
