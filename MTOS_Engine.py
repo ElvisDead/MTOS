@@ -712,8 +712,8 @@ def mtos_user_network():
     edges = []
 
     for i in range(len(names)):
-		
-		for j in range(i+1,len(names)):
+
+        for j in range(i+1,len(names)):
 
 			a = users[names[i]]
 			b = users[names[j]]
