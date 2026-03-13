@@ -709,50 +709,50 @@ def mtos_user_network():
 
     names = list(users.keys())
 
-edges = []
+    edges = []
 
-for i in range(len(names)):
-    for j in range(i + 1, len(names)):
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
 
-        a = users[names[i]]
-        b = users[names[j]]
+            a = users[names[i]]
+            b = users[names[j]]
 
-        ia = seals.index(a["seal"])
-        ib = seals.index(b["seal"])
+            ia = seals.index(a["seal"])
+            ib = seals.index(b["seal"])
 
-        r = seal_resonance(ia, ib)
+            r = seal_resonance(ia, ib)
 
-        day_effect = (
-            seal_resonance(ia, today_i) +
-            seal_resonance(ib, today_i)
-        ) * 0.25
+            day_effect = (
+                seal_resonance(ia, today_i) +
+                seal_resonance(ib, today_i)
+            ) * 0.25
 
-        tone_effect = (
-            tone_resonance(a["tone"], today_tone) +
-            tone_resonance(b["tone"], today_tone)
-        ) * 0.2
+            tone_effect = (
+                tone_resonance(a["tone"], today_tone) +
+                tone_resonance(b["tone"], today_tone)
+            ) * 0.2
 
-        r = r + day_effect + tone_effect
+            r = r + day_effect + tone_effect
 
-        if r >= 0.25:
-            label = "STRONG SYNERGY"
-        elif r >= 0.15:
-            label = "COLLABORATE"
-        elif r >= 0.10:
-            label = "SUPPORT"
-        elif r > -0.10:
-            label = "NEUTRAL"
-        elif r > -0.25:
-            label = "TENSION"
-        else:
-            label = "AVOID"
+            if r >= 0.25:
+                label = "STRONG SYNERGY"
+            elif r >= 0.15:
+                label = "COLLABORATE"
+            elif r >= 0.10:
+                label = "SUPPORT"
+            elif r > -0.10:
+                label = "NEUTRAL"
+            elif r > -0.25:
+                label = "TENSION"
+            else:
+                label = "AVOID"
 
-        edges.append({
-            "a": names[i],
-            "b": names[j],
-            "value": r,
-            "label": label
-        })
+            edges.append({
+                "a": names[i],
+                "b": names[j],
+                "value": r,
+                "label": label
+            })
 
     return json.dumps(edges)
 	
