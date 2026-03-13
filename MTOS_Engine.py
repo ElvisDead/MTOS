@@ -700,7 +700,7 @@ def mtos_collective():
 
     return json.dumps(result)
 
-	db = load_attention()
+    db = load_attention()
 
 	if len(db) == 0:
 	
