@@ -1,6 +1,6 @@
 """
 MTOS — Metabolic Tzolkin Operating System
-Version 1.0
+Version 1.2
 
 Computational simulation of attention dynamics
 based on Tzolkin temporal structure.
@@ -31,6 +31,7 @@ np.random.seed(42)
 
 USERS_FILE="mtos_users.json"
 ATTENTION_FILE="mtos_attention_db.json"
+FIELD_FILE="mtos_global_field.json"
 
 # ==========================================================
 # TZOLKIN STRUCTURE
@@ -60,6 +61,7 @@ def kin_from_date(date):
 
     return kin,tone,seals[seal_index],seal_index
 
+
 # ==========================================================
 # TZOLKIN GEOMETRY
 # ==========================================================
@@ -67,6 +69,7 @@ def kin_from_date(date):
 def analog(i): return (i+7)%20
 def antipode(i): return (i+10)%20
 def occult(i): return (19-i)%20
+
 
 # ==========================================================
 # RESONANCE FIELD
@@ -81,6 +84,7 @@ def seal_resonance(a,b):
 
     return 0
 
+
 # ==========================================================
 # TONE WAVE
 # ==========================================================
@@ -90,6 +94,7 @@ def tone_wave(tone):
     phase=2*np.pi*(tone/13)
 
     return 0.06*np.cos(phase)
+
 
 # ==========================================================
 # FATIGUE MODEL
@@ -101,6 +106,7 @@ def fatigue_step(f,a):
     f=f-0.03
 
     return max(0,min(f,1))
+
 
 # ==========================================================
 # ATTENTION DYNAMICS
@@ -120,6 +126,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
     return max(0,min(a,1)),f
 
+
 # ==========================================================
 # CLIMATE STATE
 # ==========================================================
@@ -132,6 +139,7 @@ def climate(a):
     if a>0.3: return "FATIGUE"
 
     return "RECOVERY"
+
 
 # ==========================================================
 # DATABASE
@@ -162,6 +170,7 @@ def register_user(name,birth,kin,tone,seal):
     }
 
     save_users(users)
+
 
 # ==========================================================
 # ATTENTION DATABASE
@@ -198,6 +207,7 @@ def store_attention(user,date,kin,attention):
 
     save_attention(db)
 
+
 # ==========================================================
 # LEARNING
 # ==========================================================
@@ -217,6 +227,72 @@ def learning_adjust():
     if trend<0: return -0.01
 
     return 0
+
+
+# ==========================================================
+# GLOBAL ATTENTION FIELD
+# ==========================================================
+
+def load_global_field():
+
+    if not os.path.exists(FIELD_FILE):
+        return {"field":[0.5]*260}
+
+    with open(FIELD_FILE) as f:
+        return json.load(f)
+
+def save_global_field(field):
+
+    with open(FIELD_FILE,"w") as f:
+        json.dump(field,f,indent=2)
+
+def global_attention(date):
+
+    kin,_,_,_=kin_from_date(date)
+
+    field=load_global_field()["field"]
+
+    return field[(kin-1)%260]
+
+def update_global_field(date,value):
+
+    kin,_,_,_=kin_from_date(date)
+
+    data=load_global_field()
+
+    field=data["field"]
+
+    field[(kin-1)%260]=(field[(kin-1)%260]*0.9)+(value*0.1)
+
+    save_global_field({"field":field})
+
+
+# ==========================================================
+# ADAPTIVE LEARNING
+# ==========================================================
+
+def adaptive_learning():
+
+    db=load_attention()
+
+    if len(db)<50:
+        return 0
+
+    values=[d["attention"] for d in db[-50:]]
+
+    mean=np.mean(values)
+    volatility=np.std(values)
+
+    adjust=0
+
+    if mean>0.65:
+        adjust+=0.01
+
+    if volatility>0.15:
+        adjust-=0.01
+
+    return adjust
+
 
 # ==========================================================
 # SIMULATION
@@ -246,6 +322,7 @@ def simulate(user_i,user_tone,start,days):
 
     return np.array(series)
 
+
 # ==========================================================
 # METRICS
 # ==========================================================
@@ -254,7 +331,6 @@ def entropy(series):
 
     hist,_=np.histogram(series,bins=20,range=(0,1))
     p=hist/np.sum(hist)
-
     p=p[p>0]
 
     return float(-np.sum(p*np.log(p)))
@@ -273,486 +349,12 @@ def lyapunov(series):
 
     return float(np.mean(np.log(diffs)))
 
-def predictability(series):
-
-    diffs=np.abs(np.diff(series))
-
-    for i,d in enumerate(diffs):
-
-        if d>0.12:
-            return i
-
-    return len(series)
-
-METRICS_FILE="mtos_metrics.json"
-
-def save_metrics(series):
-
-    metrics={
-        "entropy":float(entropy(series)),
-        "chaos":float(chaos(series)),
-        "lyapunov":float(lyapunov(series)),
-        "predictability":predictability(series)
-    }
-
-    with open(METRICS_FILE,"w") as f:
-        json.dump(metrics,f,indent=2)
-        
-# ==========================================================
-# GLOBAL ATTENTION FIELD
-# ==========================================================
-
-FIELD_FILE="mtos_global_field.json"
-
-def load_global_field():
-
-    if not os.path.exists(FIELD_FILE):
-
-        return {"field":[0.5]*260}
-
-    with open(FIELD_FILE) as f:
-
-        return json.load(f)
-
-def save_global_field(field):
-
-    with open(FIELD_FILE,"w") as f:
-
-        json.dump(field,f,indent=2)
-
-
-def global_attention(date):
-
-    kin,_,_,_=kin_from_date(date)
-
-    field=load_global_field()["field"]
-
-    return field[(kin-1)%260]
-
-
-def update_global_field(date,value):
-
-    kin,_,_,_=kin_from_date(date)
-
-    data=load_global_field()
-
-    field=data["field"]
-
-    field[(kin-1)%260]=(field[(kin-1)%260]*0.9)+(value*0.1)
-
-    save_global_field({"field":field})
-    
-# ==========================================================
-# ADAPTIVE LEARNING
-# ==========================================================
-
-def adaptive_learning():
-
-    db=load_attention()
-
-    if len(db)<50:
-        return 0
-
-    values=[d["attention"] for d in db[-50:]]
-
-    mean=np.mean(values)
-    volatility=np.std(values)
-
-    adjust=0
-
-    if mean>0.65:
-        adjust+=0.01
-
-    if volatility>0.15:
-        adjust-=0.01
-
-    return adjust
-
-# ==========================================================
-# FORECAST
-# ==========================================================
-
-def forecast(user_i,user_tone,start,days):
-
-    print("\nFORECAST",days,"DAYS\n")
-
-    series=simulate(user_i,user_tone,start,days)
-
-    for i,a in enumerate(series):
-
-        date=start+datetime.timedelta(days=i)
-
-        kin,tone,seal,idx=kin_from_date(date)
-
-        print(date,kin,seal,tone,climate(a))
-
-# ==========================================================
-# FOCUS WINDOWS
-# ==========================================================
-
-def focus_windows(series,start):
-
-    print("\nFOCUS WINDOWS\n")
-
-    windows=[]
-
-    for w in range(3,8):
-
-        for i in range(len(series)-w):
-
-            score=np.mean(series[i:i+w])
-
-            s=start+datetime.timedelta(days=i)
-            e=start+datetime.timedelta(days=i+w)
-
-            windows.append((s,e,w,score))
-
-    windows=sorted(windows,key=lambda x:x[3],reverse=True)
-
-    for w in windows[:10]:
-
-        print(w[0],"→",w[1],"len:",w[2],"score:",round(float(w[3]),3))
-
-# ==========================================================
-# GLOBAL COGNITIVE CLIMATE ATLAS
-# ==========================================================
-
-def climate_atlas():
-
-    print("\nGLOBAL COGNITIVE CLIMATE ATLAS\n")
-
-    matrix=np.zeros((20,20))
-
-    for u in range(20):
-        for d in range(20):
-
-            matrix[u][d]=0.5+seal_resonance(u,d)
-
-    header="     "
-
-    for s in seals:
-        header+=s[:3]+" "
-
-    print(header)
-
-    for i,row in enumerate(matrix):
-
-        line=seals[i][:3]+" "
-
-        for v in row:
-            line+=str(round(float(v),2)).ljust(5)
-
-        print(line)
-
-# ==========================================================
-# GLOBAL ATTENTION ATTRACTORS
-# ==========================================================
-
-def attractor_map():
-
-    print("\nGLOBAL ATTENTION ATTRACTOR MAP\n")
-
-    matrix=np.zeros((20,20))
-
-    for us in range(20):
-        for ds in range(20):
-
-            total=0
-
-            for ut in range(13):
-                for dt in range(13):
-
-                    a=0.55
-                    f=0.2
-
-                    for _ in range(40):
-
-                        a,f=attention_step(
-                            a,f,
-                            us,ut+1,
-                            ds,dt+1
-                        )
-
-                    total+=a
-
-            matrix[us][ds]=total/(13*13)
-
-    header="     "
-
-    for s in seals:
-        header+=s[:3]+" "
-
-    print(header)
-
-    for i,row in enumerate(matrix):
-
-        line=seals[i][:3]+" "
-
-        for v in row:
-            line+=str(round(float(v),2)).ljust(5)
-
-        print(line)
-
-# ==========================================================
-# COLLECTIVE MODEL
-# ==========================================================
-
-def collective_model():
-
-    db=load_attention()
-
-    print("\nCOLLECTIVE ATTENTION MODEL\n")
-
-    if len(db)<10:
-        print("not enough data")
-        return
-
-    values=[d["attention"] for d in db]
-
-    mean=np.mean(values)
-    std=np.std(values)
-
-    print("collective mean:",round(float(mean),3))
-    print("collective volatility:",round(float(std),3))
-
-    if mean>0.65:
-        print("collective state: HIGH ATTENTION")
-
-    elif mean<0.35:
-        print("collective state: LOW ATTENTION")
-
-    else:
-        print("collective state: NEUTRAL")
-
-# ==========================================================
-# USER INTERACTION (DYNAMIC)
-# ==========================================================
-
-def user_influence(today):
-
-    users = load_users()
-    names = list(users.keys())
-
-    today_kin, today_tone, today_seal, today_i = kin_from_date(today)
-
-    print("\nDYNAMIC USER INTERACTION NETWORK\n")
-    print("DAY:", today_seal, "TONE", today_tone, "\n")
-
-    for i in range(len(names)):
-
-        for j in range(i+1,len(names)):
-
-            a = users[names[i]]
-            b = users[names[j]]
-
-            ia = seals.index(a["seal"])
-            ib = seals.index(b["seal"])
-
-            # ------------------------------------------------
-            # PERSON ↔ PERSON
-            # ------------------------------------------------
-
-            r = seal_resonance(ia,ib)
-
-            tone_a = a["tone"]
-            tone_b = b["tone"]
-
-            tone_diff = min(abs(tone_a-tone_b),13-abs(tone_a-tone_b))
-
-            tone_effect = (6-tone_diff)*0.04
-
-            r = r + tone_effect
-
-            # PERSON ↔ DAY
-
-            day_a = seal_resonance(ia,today_i)*0.05
-            day_b = seal_resonance(ib,today_i)*0.05
-
-            # tone resonance with day
-
-            tone_day_diff_a = min(abs(a["tone"]-today_tone),13-abs(a["tone"]-today_tone))
-            tone_day_diff_b = min(abs(b["tone"]-today_tone),13-abs(b["tone"]-today_tone))
-
-            tone_day_a = (6-tone_day_diff_a)*0.03
-            tone_day_b = (6-tone_day_diff_b)*0.03
-
-            r = r + day_a + day_b + tone_day_a + tone_day_b
-
-            # ------------------------------------------------
-            # CLASSIFICATION
-            # ------------------------------------------------
-
-            if r > 0.25:
-                rec = "STRONG"
-
-            elif r > 0.10:
-                rec = "COLLABORATE"
-
-            elif r < -0.25:
-                rec = "CONFLICT"
-
-            elif r < -0.10:
-                rec = "IGNORE"
-
-            else:
-                rec = "NEUTRAL"
-
-            print(f"{names[i]} ↔ {names[j]} {rec} ({round(r,2)})")
-
-# ==========================================================
-# 13×20 WAVE STRUCTURE
-# ==========================================================
-
-def wave_13x20():
-
-    print("\n13×20 COGNITIVE WAVE STRUCTURE\n")
-
-    matrix=np.zeros((13,20))
-
-    for t in range(13):
-        for s in range(20):
-
-            matrix[t][s]=np.sin(t/13)+np.cos(s/20)
-
-    header="     "
-
-    for s in seals:
-        header+=s[:3]+" "
-
-    print(header)
-
-    for t,row in enumerate(matrix):
-
-        line="T"+str(t+1).ljust(3)
-
-        for v in row:
-            line+=str(round(float(v),2)).ljust(5)
-
-        print(line)
-
-# ==========================================================
-# 260 DAY STORMS
-# ==========================================================
-
-def cognitive_storms():
-
-    print("\n260-DAY COGNITIVE STORMS\n")
-
-    for k in range(260):
-
-        val=np.sin(k/13)+np.cos(k/20)
-
-        if abs(val)>1.4:
-
-            tone=((k)%13)+1
-            seal=seals[k%20]
-
-            print("Kin",k+1,seal,"Tone",tone)
-
-# ==========================================================
-# PHASE MATRIX
-# ==========================================================
-
-def phase_matrix():
-
-    print("\n260×13 ATTENTION PHASE MATRIX\n")
-
-    header="Kin "
-
-    for t in range(13):
-        header+="T"+str(t+1)+" "
-
-    print(header)
-
-    for k in range(260):
-
-        line=str(k+1).ljust(4)
-
-        for t in range(13):
-
-            v=np.sin(k/20)+np.cos(t/13)
-
-            line+=str(round(float(v),2)).ljust(5)
-
-        print(line)
-
-# ==========================================================
-# MAIN
-# ==========================================================
-
-today=datetime.date.today()
-
-"""
-print("\nUSER NAME")
-name=input("Name: ")
-
-print("\nENTER BIRTH DATE")
-
-y=int(input("Year: "))
-m=int(input("Month: "))
-d=int(input("Day: "))
-
-birth=datetime.date(y,m,d)
-
-kin,tone,seal,i=kin_from_date(birth)
-
-register_user(name,birth,kin,tone,seal)
-
-print("\nYOUR KIN")
-print(kin,seal,tone)
-
-today_kin,today_tone,today_seal,today_i=kin_from_date(today)
-
-print("\nTODAY")
-print(today_kin,today_seal,today_tone)
-
-series=simulate(i,tone,today,260)
-
-save_metrics(series)
-
-update_global_field(today,series[0])
-
-print("global field:",round(global_attention(today),3))
-
-print("\nSYSTEM METRICS\n")
-
-print("entropy:",round(float(entropy(series)),3))
-print("chaos:",round(float(chaos(series)),4))
-print("lyapunov:",round(float(lyapunov(series)),4))
-print("predictability:",predictability(series))
-
-forecast(i,tone,today,7)
-forecast(i,tone,today,30)
-forecast(i,tone,today,260)
-
-focus_windows(series,today)
-
-climate_atlas()
-
-attractor_map()
-
-collective_model()
-
-wave_13x20()
-
-cognitive_storms()
-
-phase_matrix()
-
-user_influence(today)
-
-state=climate(series[0])
-
-store_attention(name,today,kin,series[0])
-"""
 
 # ==========================================================
 # WEB API
 # ==========================================================
 
 def run_mtos(name,year,month,day):
-
-    import datetime
 
     birth=datetime.date(year,month,day)
 
@@ -766,7 +368,7 @@ def run_mtos(name,year,month,day):
 
     state=climate(series[0])
 
-    result=f"""
+    return f"""
 MTOS RESULT
 
 Name: {name}
@@ -788,13 +390,10 @@ Attention level:
 {round(float(series[0]),3)}
 """
 
-    return result
-
 def mtos_series(name,year,month,day):
 
-    import datetime
-
     birth=datetime.date(year,month,day)
+
     kin,tone,seal,i=kin_from_date(birth)
 
     today=datetime.date.today()
