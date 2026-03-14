@@ -396,48 +396,48 @@ def collective_wave():
 # ==========================================================
 
 def simulate(user_i,user_tone,start,days):
-	
-	if (user_i,user_tone) not in GLOBAL_USERS:
-		GLOBAL_USERS.append((user_i,user_tone))
-		
-	learn = learning_adjust() + adaptive_learning()
-	
-	a = 0.55 + learn
-	f = 0.2
-	
-	series = []
-	
-	wave = collective_wave()
-	
-	for t in range(days):
 
-    date = start + datetime.timedelta(days=t)
+    if (user_i,user_tone) not in GLOBAL_USERS:
+        GLOBAL_USERS.append((user_i,user_tone))
 
-    kin,tone,seal,i = kin_from_date(date)
+    learn = learning_adjust() + adaptive_learning()
 
-    a,f = attention_step(a,f,user_i,user_tone,i,tone)
+    a = 0.55 + learn
+    f = 0.2
 
-    update_seal_memory(i,a)
-    update_kin_memory(kin,a)
+    series = []
 
-    a = a + wave*0.03
+    wave = collective_wave()
 
-    env_noise = np.random.normal(0,0.01)
-    a = a + env_noise
+    for t in range(days):
 
-    a = max(0,min(a,1))
+        date = start + datetime.timedelta(days=t)
 
-    field = global_attention(date)
+        kin,tone,seal,i = kin_from_date(date)
 
-    a = a + (field - 0.5) * 0.2
+        a,f = attention_step(a,f,user_i,user_tone,i,tone)
 
-    learning = (field - 0.5) * 0.05
+        update_seal_memory(i,a)
+        update_kin_memory(kin,a)
 
-    a = a + learning
+        a = a + wave*0.03
 
-    series.append(a)
+        env_noise = np.random.normal(0,0.01)
+        a = a + env_noise
 
-return np.array(series)
+        a = max(0,min(a,1))
+
+        field = global_attention(date)
+
+        a = a + (field - 0.5) * 0.2
+
+        learning = (field - 0.5) * 0.05
+
+        a = a + learning
+
+        series.append(a)
+
+    return np.array(series)
 
 # ==========================================================
 # METRICS
