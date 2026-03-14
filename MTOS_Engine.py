@@ -173,8 +173,8 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 	global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
 
 	network_field = 0
-
-    for ui, ut in GLOBAL_USERS:
+	
+	for ui, ut in GLOBAL_USERS:
 		network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
 	noise = np.random.normal(0,0.015)
