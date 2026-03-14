@@ -98,7 +98,7 @@ height:10px;
 
 <br><br>
 
-<button onclick="run()">Run MTOS</button>
+<button id="runBtn" onclick="run()" disabled>Loading MTOS...</button>
 
 </section>
 
@@ -278,6 +278,11 @@ let charts={}
 async function run(){
 
 const pyodide = window.pyodide
+
+if(!pyodide){
+alert("MTOS engine still loading. Please wait a few seconds.");
+return;
+}
 
 await pyodide.loadPackage("numpy")
 
@@ -568,14 +573,17 @@ async function startMTOS() {
 
     const pyodide = await loadPyodide();
 
+    window.pyodide = pyodide;
+
+    document.getElementById("runBtn").disabled=false
+    document.getElementById("runBtn").innerText="Run MTOS"
+
 await pyodide.loadPackage("numpy");
 
 const response = await fetch("MTOS_Engine.py");
 const code = await response.text();
 
 await pyodide.runPythonAsync(code);
-
-    window.pyodide = pyodide;
 
     console.log("MTOS engine loaded");
 
