@@ -8,7 +8,6 @@
 <meta charset="UTF-8">
 <title>MTOS Scientific Dashboard</title>
 
-<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -274,12 +273,11 @@ while others may produce tension.
 
 <script>
 
-let pyodideReady = loadPyodide()
 let charts={}
 
 async function run(){
 
-const pyodide = await pyodideReady
+const pyodide = window.pyodide
 
 await pyodide.loadPackage("numpy")
 
@@ -317,9 +315,11 @@ document.getElementById("metrics").innerHTML=
 <div class="metric">Predictability: ${data.predictability}</div>
 `
 
-let s7 = pyodide.runPython(`mtos_series(name,year,month,day,7)`).toJs()
-let s30 = pyodide.runPython(`mtos_series(name,year,month,day,30)`).toJs()
-let s260 = pyodide.runPython(`mtos_series(name,year,month,day,260)`).toJs()
+let s7 = Array.from(pyodide.runPython(`mtos_series(name,year,month,day,7)`))
+let s30 = Array.from(pyodide.runPython(`mtos_series(name,year,month,day,30)`))
+let s260 = Array.from(pyodide.runPython(`mtos_series(name,year,month,day,260)`))
+
+console.log("Series7",s7)
 
 drawChart("chart7",s7)
 drawChart("chart30",s30)
@@ -331,8 +331,13 @@ drawKinMap(weather)
 let atlas = pyodide.runPython(`mtos_user_climate(0)`).toJs()
 drawHeatmap("atlas",atlas,20)
 
-let attractor = pyodide.runPython(`mtos_attractor_map()`).toJs()
-drawHeatmap("attractor",attractor,20)
+if(!window.attractorCache){
+
+    window.attractorCache = pyodide.runPython(`mtos_attractor_map()`).toJs()
+
+}
+
+drawHeatmap("attractor",window.attractorCache,20)
 
 let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
 drawHeatmap("phase",phase,20)
@@ -399,7 +404,13 @@ fill:false
 },
 options:{
 plugins:{legend:{display:false}},
-scales:{y:{min:0,max:1}}
+scales:{
+y:{
+type:"linear",
+min:0,
+max:1
+}
+}
 }
 })
 
@@ -444,9 +455,9 @@ let c=document.createElement("div")
 
 let color="green"
 
-if(v<0.75) color="red"
-else if(v<0.6) color="orange"
-else if(v<0.45) color="yellow"
+if(v>0.75) color="red"
+else if(v>0.6) color="orange"
+else if(v>0.45) color="yellow"
 
 c.className="cell"
 c.style.background=color
