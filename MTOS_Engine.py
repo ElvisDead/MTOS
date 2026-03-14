@@ -155,7 +155,7 @@ def fatigue_step(f,a):
 
 def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
-	r = seal_resonance(user_i,day_i)
+	r = seal_resonance(user_i, day_i, day_tone)
 
 	tone_effect = tone_wave(day_tone)
 
