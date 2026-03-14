@@ -733,43 +733,56 @@ def mtos_user_climate(user_seal):
 
     return matrix.flatten().tolist()
 
-def mtos_attractor_map():
+def mtos_attractor_map(name,year,month,day):
 
-    matrix=np.zeros((20,20))
+    series = simulate_user(name,year,month,day,260)
 
-    for us in range(20):
-        
-        for ds in range(20):
+    matrix = np.zeros((20,20))
 
-            total=0
+    for i in range(len(series)-1):
 
-            for ut in range(13):
-        
-                for dt in range(13):
+        a = series[i]
+        b = series[i+1]
 
-                    a=0.55
-                    f=0.2
+        x = min(19,max(0,int(a*19)))
+        y = min(19,max(0,int(b*19)))
 
-                    for _ in range(40):
+        matrix[y][x] += 1
 
-                        kin = (dt*20 + ds) % 260 + 1
+    if np.max(matrix)>0:
+        matrix = matrix/np.max(matrix)
 
-                        a,f=attention_step(
-                        a,f,
-                        us,ut+1,
-                        ds,dt+1,
-                        kin
-                        )
+    return matrix.flatten().tolist()
 
-                    total+=a
+def mtos_pressure_map():
 
-                matrix[us][ds]=total/(13*13)
-                
-    min_v = np.min(matrix)
-    max_v = np.max(matrix)
-                
-    if max_v - min_v > 0:
-        matrix = (matrix - min_v) / (max_v - min_v)
+    matrix = np.zeros((13,20))
+
+    a=0.55
+    f=0.2
+
+    prev=None
+
+    for k in range(260):
+
+        tone = k%13
+        seal = k%20
+
+        a,f = attention_step(a,f,seal,tone)
+
+        if prev is not None:
+            delta = abs(a-prev)
+        else:
+            delta = 0
+
+        matrix[tone][seal] = delta
+
+        prev=a
+
+    maxv=np.max(matrix)
+
+    if maxv>0:
+        matrix = matrix/maxv
 
     return matrix.flatten().tolist()
 
