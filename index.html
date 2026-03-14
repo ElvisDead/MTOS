@@ -284,16 +284,10 @@ alert("MTOS engine still loading. Please wait a few seconds.");
 return;
 }
 
-await pyodide.loadPackage("numpy")
-
 let name=document.getElementById("name").value
 let year=parseInt(document.getElementById("year").value)
 let month=parseInt(document.getElementById("month").value)
 let day=parseInt(document.getElementById("day").value)
-
-let engine=await fetch("MTOS_Engine.py").then(r=>r.text())
-
-pyodide.runPython(engine)
 
 pyodide.globals.set("name",name)
 pyodide.globals.set("year",year)
@@ -472,9 +466,16 @@ function drawKinMap(weather){
 let map=document.getElementById("kinmap")
 map.innerHTML=""
 
-weather.forEach(v=>{
+map.style.display="grid"
+map.style.gridTemplateColumns="repeat(20,12px)"
+
+weather.forEach((v,i)=>{
 
 let c=document.createElement("div")
+
+let kin=i+1
+let tone=(kin-1)%13
+let seal=(kin-1)%20
 
 let color="green"
 
@@ -485,6 +486,8 @@ else if(v>0.45) color="yellow"
 c.className="cell"
 c.style.background=color
 
+c.title="Kin "+kin
+    
 map.appendChild(c)
 
 })
