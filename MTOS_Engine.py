@@ -22,6 +22,7 @@ Year: 2026
 """
 GLOBAL_USERS = []
 GLOBAL_KIN_DISTRIBUTION = [0.5]*260
+GLOBAL_ATTENTION_BUFFER = [0.5]*30
 
 import datetime
 import numpy as np
@@ -173,12 +174,13 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 	global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
 
 	network_field = 0
+	contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
 	for ui, ut in GLOBAL_USERS:
 		network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
-	noise = np.random.normal(0,0.015)
+	noise = np.random.normal(0,0.03)
 
-	a = a + r + tone_effect + tone_sync + memory*0.08 + kin_memory*0.04 + global_field*0.06 + network_field + noise
+	a = a + r + tone_effect + tone_sync + memory*0.08 + kin_memory*0.04 + global_field*0.06 + network_field + contagion*0.08 + noise
 
 	f = fatigue_step(f,a)
 
@@ -320,7 +322,13 @@ def update_global_field(date,value):
 
     field[(kin-1)%260] = field[(kin-1)%260]*0.9 + value*0.1
 
+	GLOBAL_ATTENTION_BUFFER.append(value)
+
+    if len(GLOBAL_ATTENTION_BUFFER) > 30:
+        GLOBAL_ATTENTION_BUFFER.pop(0)
+
     save_global_field({"field":field})
+	
 # ==========================================================
 # LEARNING
 # ==========================================================
