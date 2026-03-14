@@ -445,7 +445,7 @@ def simulate(user_i,user_tone,start,days):
 
         series.append(a)
 
-		update_global_field(date,a)
+        update_global_field(date,a)
 
     return np.array(series)
 
@@ -552,9 +552,9 @@ def tzolkin_attractor_map(user_i,user_tone,start):
 
     for k in range(260):
 
-		reset_memory()
+        reset_memory()
 
-		date = start + datetime.timedelta(days=k)
+        date = start + datetime.timedelta(days=k)
 
         series = simulate(user_i,user_tone,date,40)
 
