@@ -395,9 +395,8 @@ drawKinDistribution(kinMap,kinUsers)
 let collective = JSON.parse(
     pyodide.runPython(`mtos_collective()`)
 )
-
-document.getElementById("collective").innerHTML=
-`
+    
+document.getElementById("collective").innerHTML = `
 Mean attention: ${collective.mean ?? "N/A"}<br>
 Volatility: ${collective.volatility ?? "N/A"}<br>
 State: ${collective.state}
@@ -410,7 +409,7 @@ let phaseSpace = JSON.parse(
 drawPhaseSpace(phaseSpace)
 
 let network = JSON.parse(
-    pyodide.runPython(`mtos_user_network()`)
+    pyodide.runPython(`json.dumps(mtos_user_network())`)
 )
 
 let netHTML=""
