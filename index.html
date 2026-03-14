@@ -173,12 +173,24 @@ Brighter cells indicate that more users belong to that Kin.
 <section>
 
 <h2>Climate Atlas (20×20)</h2>
+
 <p style="max-width:700px;margin:auto;color:#bbb">
 Climate Atlas visualizes resonance between the 20 archetypal seals.
 Each cell represents interaction between two archetypes.
 Brighter regions indicate stronger cognitive resonance patterns.
 </p>
+
 <div id="atlas" class="heatmap"></div>
+
+<div style="margin-top:15px;font-size:14px">
+
+<span style="color:rgb(50,0,200)">■</span> weak resonance &nbsp;&nbsp;
+
+<span style="color:rgb(150,0,150)">■</span> medium &nbsp;&nbsp;
+
+<span style="color:rgb(255,0,0)">■</span> strong
+
+</div>
 
 </section>
 
@@ -449,11 +461,40 @@ let map=document.getElementById(id)
 
 map.innerHTML=""
 
-map.style.display="grid"
-map.style.gridTemplateColumns=`repeat(${cols},10px)`
-map.style.gridAutoRows="10px"
+let seals=[
+"IMIX","IK","AKBAL","KAN","CHICCHAN","CIMI","MANIK","LAMAT","MULUC","OC",
+"CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
+]
 
-data.forEach(v=>{
+map.style.display="grid"
+map.style.gridTemplateColumns=`60px repeat(${cols},14px)`
+map.style.gridAutoRows="14px"
+
+// верхний левый пустой угол
+let empty=document.createElement("div")
+map.appendChild(empty)
+
+// верхняя строка — подписи печатей
+seals.forEach(s=>{
+let h=document.createElement("div")
+h.style.fontSize="8px"
+h.style.color="#aaa"
+h.innerText=s
+map.appendChild(h)
+})
+
+for(let y=0;y<cols;y++){
+
+// левая колонка — подпись строки
+let label=document.createElement("div")
+label.style.fontSize="8px"
+label.style.color="#aaa"
+label.innerText=seals[y]
+map.appendChild(label)
+
+for(let x=0;x<cols;x++){
+
+let v=data[y*cols+x]
 
 let val=(v+2)/4
 if(val<0) val=0
@@ -464,11 +505,17 @@ let b=255-r
 
 let c=document.createElement("div")
 c.className="cell"
+
 c.style.background=`rgb(${r},0,${b})`
+
+// всплывающая подсказка
+c.title=`${seals[y]} ↔ ${seals[x]} : ${v.toFixed(2)}`
 
 map.appendChild(c)
 
-})
+}
+
+}
 
 }
 
