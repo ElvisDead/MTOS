@@ -125,12 +125,22 @@ def seal_resonance(a,b,day_phase=0):
 
     base = (1 - distance*0.05) * ARCHETYPE_WEIGHTS[b]
 
+    # tzolkin structural resonance
+    if b == analog(a):
+        base += 0.18
+
+    if b == antipode(a):
+        base -= 0.12
+
+    if b == occult(a):
+        base += 0.25
+
     angle = (a + b + day_phase) * 0.5
-    wave = math.sin(angle) * 0.35
+    wave = math.sin(angle) * 0.18
 
     value = base + wave
 
-    value = (value + 0.2) / 1.4
+    value = (value + 0.1) / 1.2
 
     if value < 0:
         value = 0
@@ -701,14 +711,12 @@ def mtos_user_climate(user_seal):
     today = datetime.date.today()
     _, day_tone, _, _ = kin_from_date(today)
 
-    matrix = np.zeros((13,20))
+    matrix = np.zeros((20,20))
 
-    for tone in range(13):
-        for seal in range(20):
+    for a in range(20):
+        for b in range(20):
 
-            r = seal_resonance(user_seal, seal, day_tone)
-
-            matrix[tone][seal] = r
+            matrix[a][b] = r
 
     return matrix.flatten().tolist()
 
@@ -902,7 +910,7 @@ def mtos_climate_atlas():
 
     matrix = np.zeros((20,20))
 
-    for tone in range(13):
+    for tone in range(20):
         for seal in range(20):
             matrix[tone][seal] = seal_resonance(seal,seal,day_phase)
 
