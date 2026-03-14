@@ -817,8 +817,8 @@ def mtos_wave_structure():
 
         kin = (today_i + step) % 260
 
-        tone = kin % 13
-        seal = kin % 20
+        tone = (kin-1) % 13
+        seal = (kin-1) % 20
 
         a,f = attention_step(a,f,seal,tone)
 
