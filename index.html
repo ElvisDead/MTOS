@@ -303,6 +303,7 @@ while others may produce tension.
 <script>
 
 let charts={}
+let currentKin = null
 
 async function run(){
 
@@ -325,10 +326,10 @@ pyodide.globals.set("day",day)
 
 let result=pyodide.runPython(`run_mtos(name,year,month,day)`)
 let data=JSON.parse(result)
-let currentKin = state.kin
+currentKin = data.kin
 
 document.getElementById("state").innerHTML=
-
+`
 Kin: ${data.kin}<br>
 Seal: ${data.seal}<br>
 Tone: ${data.tone}<br>
@@ -370,10 +371,6 @@ let attractor = pyodide.runPython(
 
 drawHeatmap("attractor",attractor,20)
 
-}
-
-drawHeatmap("attractor",window.attractorCache,20)
-
 let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
 drawHeatmap("phase",phase,20,13)
 
@@ -382,6 +379,8 @@ drawHeatmap("wave",wave,20,13)
 
 let tz = pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
 drawHeatmap("tzolkin",tz,20,13)
+
+}
 
 let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
