@@ -436,6 +436,19 @@ let map=document.getElementById("kinDistribution")
 
 map.innerHTML=""
 
+// пустой угол
+let empty=document.createElement("div")
+map.appendChild(empty)
+
+// верхняя строка — печати
+seals.forEach(s=>{
+    let h=document.createElement("div")
+    h.style.fontSize="8px"
+    h.style.color="#aaa"
+    h.innerText=s
+    map.appendChild(h)
+})
+
 map.style.display="grid"
 map.style.gridTemplateColumns="repeat(20,12px)"
 map.style.gridTemplateRows="repeat(13,12px)"
@@ -479,9 +492,23 @@ let map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns="repeat(20,12px)"
+map.style.gridTemplateColumns="60px repeat(20,12px)"
+map.style.gridAutoRows="12px"
 
-weather.forEach((v,i)=>{
+for(let t=0;t<13;t++){
+
+    let label=document.createElement("div")
+    label.style.fontSize="8px"
+    label.style.color="#aaa"
+    label.innerText="T"+(t+1)
+    map.appendChild(label)
+
+    for(let s=0;s<20;s++){
+
+        let k=t*20+s
+        let v=weather[k]
+
+        let c=document.createElement("div")
 
 let c=document.createElement("div")
 
