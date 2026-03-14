@@ -436,6 +436,8 @@ def simulate(user_i,user_tone,start,days):
         a = a + learning
 
         series.append(a)
+		
+		update_global_field(date,a)
 
     return np.array(series)
 
