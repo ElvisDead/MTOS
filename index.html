@@ -391,6 +391,17 @@ document.getElementById("network").innerHTML=netHTML
 
 function drawChart(id,data){
 
+const seals=[
+"IMIX","IK","AKBAL","KAN","CHICCHAN","CIMI","MANIK","LAMAT","MULUC","OC",
+"CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
+]
+
+const tones=[
+"Magnetic","Lunar","Electric","Self-Existing","Overtone",
+"Rhythmic","Resonant","Galactic","Solar","Planetary",
+"Spectral","Crystal","Cosmic"
+]
+
 if(charts[id]) charts[id].destroy()
 
 let ctx=document.getElementById(id)
@@ -499,17 +510,6 @@ function drawHeatmap(id,data,cols,rows=cols){
 let map=document.getElementById(id)
 
 map.innerHTML=""
-
-let seals=[
-"IMIX","IK","AKBAL","KAN","CHICCHAN","CIMI","MANIK","LAMAT","MULUC","OC",
-"CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
-]
-
-const tones=[
-"Magnetic","Lunar","Electric","Self-Existing","Overtone",
-"Rhythmic","Resonant","Galactic","Solar","Planetary",
-"Spectral","Crystal","Cosmic"
-]
 
 map.style.display="grid"
 map.style.gridTemplateColumns=`60px repeat(${cols},14px)`
