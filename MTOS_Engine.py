@@ -65,6 +65,14 @@ def update_kin_memory(kin,attention):
 
     KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
 
+def reset_memory():
+
+    global SEAL_MEMORY
+    global KIN_MEMORY
+
+    SEAL_MEMORY = [0.5]*20
+    KIN_MEMORY = [0.5]*260
+
 # ==========================================================
 # TZOLKIN STRUCTURE
 # ==========================================================
