@@ -5,6 +5,9 @@ Version 1.2
 
 Computational simulation of attention dynamics
 based on Tzolkin temporal structure.
+"""
+
+GLOBAL_USERS = []
 
 Features:
 - 260-day cognitive cycle
@@ -40,7 +43,7 @@ METRICS_FILE="mtos_metrics.json"
 # ==========================================================
 SEAL_MEMORY = [0.5]*20
 KIN_MEMORY = [0.5]*260
-
+ARCHETYPE_WEIGHTS = [1.0]*20
 
 def update_seal_memory(seal_index,attention):
 
@@ -49,6 +52,11 @@ def update_seal_memory(seal_index,attention):
     old = SEAL_MEMORY[seal_index]
 
     SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
+
+	global ARCHETYPE_WEIGHTS
+
+	ARCHETYPE_WEIGHTS[seal_index] += (attention - 0.5)*0.02
+	ARCHETYPE_WEIGHTS[seal_index] = max(0.5,min(1.5,ARCHETYPE_WEIGHTS[seal_index]))
 
 
 def update_kin_memory(kin,attention):
@@ -105,7 +113,7 @@ def seal_resonance(a,b,day_phase=0):
 
     distance = abs(a-b)
 
-    base = 1 - distance/20
+    base = (1 - distance/20) * ARCHETYPE_WEIGHTS[b]
 
     wave = math.sin((a+b+day_phase)*0.5)*0.25
 
@@ -165,9 +173,16 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
 	kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
 
+	global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
+
+	network_field = 0
+
+	for ui,ut in GLOBAL_USERS:
+    	network_field += seal_resonance(user_i,ui,day_tone)*0.02
+
 	noise = np.random.normal(0,0.015)
 
-	a = a + (r + tone_effect + tone_sync)*0.35 + memory*0.08 + kin_memory*0.04 + noise
+	a = a + r + tone_effect + tone_sync + memory*0.08 + kin_memory*0.04 + global_field*0.06 + network_field + noise
 
 	f = fatigue_step(f,a)
 
@@ -360,23 +375,26 @@ def adaptive_learning():
 
 def collective_wave():
 
-	db = load_attention()
+    if len(GLOBAL_USERS) == 0:
+        return 0
 
-	if len(db) < 20:
+    wave = 0
 
-		return 0
+    for ui,ut in GLOBAL_USERS:
+        wave += np.sin((ui + ut)*0.3)
 
-	values = [d["attention"] for d in db[-60:]]
+    wave = wave / len(GLOBAL_USERS)
 
-	wave = np.sin(np.mean(values)*np.pi)
-
-	return float(wave)
+    return wave * 0.05
 
 # ==========================================================
 # SIMULATION
 # ==========================================================
 
 def simulate(user_i,user_tone,start,days):
+
+if (user_i,user_tone) not in GLOBAL_USERS:
+    GLOBAL_USERS.append((user_i,user_tone))
 
 	learn = learning_adjust() + adaptive_learning()
 
