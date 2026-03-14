@@ -389,8 +389,6 @@ document.getElementById("network").innerHTML=netHTML
 
 }
 
-function drawChart(id,data){
-
 const seals=[
 "IMIX","IK","AKBAL","KAN","CHICCHAN","CIMI","MANIK","LAMAT","MULUC","OC",
 "CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
@@ -401,6 +399,8 @@ const tones=[
 "Rhythmic","Resonant","Galactic","Solar","Planetary",
 "Spectral","Crystal","Cosmic"
 ]
+    
+function drawChart(id,data){
 
 if(charts[id]) charts[id].destroy()
 
