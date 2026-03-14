@@ -181,7 +181,7 @@ def fatigue_step(f,a):
 # ATTENTION DYNAMICS
 # ==========================================================
 
-def attention_step(a,f,user_i,user_tone,day_i,day_tone):
+def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
 
     r = seal_resonance(user_i, day_i, day_tone)
 
@@ -191,9 +191,9 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
     memory = SEAL_MEMORY[day_i] - 0.5
 
-    kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
+    kin_memory = KIN_MEMORY[kin-1] - 0.5
 
-    global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
+    global_field = GLOBAL_KIN_DISTRIBUTION[kin-1] - 0.5
 
     contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
 
@@ -464,7 +464,7 @@ def simulate(user_i,user_tone,start,days):
 
         kin,tone,seal,i = kin_from_date(date)
 
-        a,f = attention_step(a,f,user_i,user_tone,i,tone)
+        a,f = attention_step(a,f,user_i,user_tone,i,tone,kin)
 
         update_seal_memory(i,a)
         update_kin_memory(kin,a)
@@ -690,10 +690,10 @@ def mtos_user_climate(user_seal):
     today = datetime.date.today()
     _, day_tone, _, day_i = kin_from_date(today)
 
-    matrix = np.zeros((20,20))
+    matrix = np.zeros((13,20))
 
-    for u in range(20):
-        for d in range(20):
+    for tone in range(13):
+        for seal in range(20):
 
             r = seal_resonance(user_seal, d, day_tone)
 
@@ -703,7 +703,7 @@ def mtos_user_climate(user_seal):
 
 def mtos_attractor_map():
 
-    matrix=np.zeros((20,20))
+    matrix=np.zeros((13,20))
 
     for us in range(20):
         
@@ -888,8 +888,8 @@ def mtos_climate_atlas():
 
     matrix = np.zeros((20,20))
 
-    for u in range(20):
-        for d in range(20):
+    for tone in range(13):
+        for seal in range(20):
             matrix[u][d] = seal_resonance(u,d,day_phase)
 
     # НОРМАЛИЗАЦИЯ
