@@ -167,13 +167,13 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
 	noise = np.random.normal(0,0.015)
 
-	a = a + (r + tone_effect + tone_sync)*0.5 + memory*0.08 + kin_memory*0.04 + noise
+	a = a + (r + tone_effect + tone_sync)*0.35 + memory*0.08 + kin_memory*0.04 + noise
 
 	f = fatigue_step(f,a)
 
 	a = a - f*0.07
 
-	a = a * 0.95
+	a = a * 0.93
 
 	return max(0,min(a,1)),f
 
