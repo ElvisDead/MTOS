@@ -444,7 +444,7 @@ def simulate(user_i,user_tone,start,days):
         a = a + learning
 
         series.append(a)
-		
+
 		update_global_field(date,a)
 
     return np.array(series)
@@ -459,7 +459,7 @@ def entropy(series):
 	s = np.sum(hist)
 
 	if s == 0:
-	
+
 		return 0
 
 	p = hist / s
@@ -478,7 +478,7 @@ def chaos(series):
 	v = np.std(np.diff(series))
 
 	if np.isnan(v):
-	
+
 		return 0
 
 	return float(v)
@@ -489,13 +489,13 @@ def lyapunov(series):
 	diffs=diffs[diffs>0]
 
 	if len(diffs)==0:
-	
+
 		return 0
 
 	v = np.mean(np.log(diffs))
 
 	if np.isnan(v):
-	
+
 		return 0
 
 	return float(v)
@@ -507,7 +507,7 @@ def predictability(series):
 	for i,d in enumerate(diffs):
 
 		if d>0.12:
-	
+
 			return i
 
 	return len(series)
