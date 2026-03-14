@@ -797,7 +797,7 @@ def mtos_wave_structure():
 
         for s in range(20):
 
-            value = (t + 1) / 13
+            value = ((t + s) % 13 + 1) / 13
             
             matrix.append(float(value))
 
