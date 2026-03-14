@@ -322,7 +322,7 @@ def update_global_field(date,value):
 
     field[(kin-1)%260] = field[(kin-1)%260]*0.9 + value*0.1
 
-	GLOBAL_ATTENTION_BUFFER.append(value)
+    GLOBAL_ATTENTION_BUFFER.append(value)
 
     if len(GLOBAL_ATTENTION_BUFFER) > 30:
         GLOBAL_ATTENTION_BUFFER.pop(0)
