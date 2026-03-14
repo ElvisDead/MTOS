@@ -551,7 +551,7 @@ def chaos(series):
 def lyapunov(series):
 
     diffs=np.abs(np.diff(series))
-    diffs=diffs[diffs>0]
+    diffs=diffs[diffs>1e-6]
 
     if len(diffs)==0:
 
@@ -735,7 +735,10 @@ def mtos_user_climate(user_seal):
 
 def mtos_attractor_map(name,year,month,day):
 
-    series = simulate_user(name,year,month,day,260)
+    birth=datetime.date(year,month,day)
+    _,tone,_,i=kin_from_date(birth)
+    today=datetime.date.today()
+    series=simulate(i,tone,today,260)
 
     matrix = np.zeros((20,20))
 
@@ -765,10 +768,10 @@ def mtos_pressure_map():
 
     for k in range(260):
 
-        tone = k%13
-        seal = k%20
+        tone = (k % 13) + 1
+        seal = k % 20
 
-        a,f = attention_step(a,f,seal,tone)
+        a,f = attention_step(a,f,seal,tone,seal,tone,k+1)
 
         if prev is not None:
             delta = abs(a-prev)
@@ -860,7 +863,10 @@ def mtos_collective():
 
 def mtos_phase_space(name,year,month,day):
 
-    series = simulate_user(name,year,month,day,260)
+    birth=datetime.date(year,month,day)
+    _,tone,_,i=kin_from_date(birth)
+    today=datetime.date.today()
+    series=simulate(i,tone,today,260)
 
     xs=[]
     ys=[]
