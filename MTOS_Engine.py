@@ -598,7 +598,7 @@ def mtos_user_climate(user_seal):
     for u in range(20):
         for d in range(20):
 
-            r = seal_resonance(u, d, day_tone)
+            r = seal_resonance(user_seal, d, day_tone)
 
             matrix[u][d] = 0.5 + r
 
