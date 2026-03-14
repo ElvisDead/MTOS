@@ -175,7 +175,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 	network_field = 0
 
     for ui, ut in GLOBAL_USERS:
-        network_field += seal_resonance(user_i,ui,day_tone)*0.02
+		network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
 	noise = np.random.normal(0,0.015)
 
