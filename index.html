@@ -327,7 +327,7 @@ drawChart("chart260",s260)
 let weather = pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
 drawKinMap(weather)
 
-let atlas = pyodide.runPython(`mtos_user_climate(0)`).toJs()
+let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
 drawHeatmap("atlas",atlas,20)
 
 if(!window.attractorCache){
