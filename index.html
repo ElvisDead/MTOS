@@ -260,6 +260,22 @@ It describes the overall cognitive climate of the group.
 
 <section>
 
+<section>
+
+<h2>Attention Phase Space</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+Phase space shows the dynamical trajectory of attention.
+Each point represents a transition from attention(t) to attention(t+1).
+Stable clusters indicate attractors of cognitive dynamics.
+</p>
+
+<canvas id="phaseSpace" width="500" height="500"></canvas>
+
+</section>
+
+<section>
+
 <h2>User Interaction Network</h2>
 <p style="max-width:700px;margin:auto;color:#bbb">
 This network shows potential interactions between users based on their
@@ -330,9 +346,11 @@ drawKinMap(weather)
 let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
 drawHeatmap("atlas",atlas,20)
 
-if(!window.attractorCache){
+let attractor = pyodide.runPython(
+`mtos_attractor_map(name,year,month,day)`
+).toJs()
 
-    window.attractorCache = pyodide.runPython(`mtos_attractor_map()`).toJs()
+drawHeatmap("attractor",attractor,20)
 
 }
 
@@ -367,6 +385,12 @@ Mean attention: ${collective.mean ?? "N/A"}<br>
 Volatility: ${collective.volatility ?? "N/A"}<br>
 State: ${collective.state}
 `
+
+let phaseSpace = JSON.parse(
+    pyodide.runPython(`json.dumps(mtos_phase_space(name,year,month,day))`)
+)
+
+drawPhaseSpace(phaseSpace)
 
 let network = JSON.parse(
     pyodide.runPython(`mtos_user_network()`)
@@ -591,6 +615,29 @@ map.appendChild(c)
 }
 
 }
+
+}
+
+function drawPhaseSpace(data){
+
+let ctx=document.getElementById("phaseSpace")
+
+new Chart(ctx,{
+type:"scatter",
+data:{
+datasets:[{
+data:data.x.map((v,i)=>({x:v,y:data.y[i]})),
+pointRadius:2,
+borderColor:"cyan"
+}]
+},
+options:{
+scales:{
+x:{min:0,max:1},
+y:{min:0,max:1}
+}
+}
+})
 
 }
 
