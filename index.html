@@ -380,8 +380,6 @@ drawHeatmap("wave",wave,20,13)
 let tz = pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
 drawHeatmap("tzolkin",tz,20,13)
 
-}
-
 let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
 )
@@ -426,7 +424,6 @@ ${e.a} ↔ ${e.b}
 })
 
 document.getElementById("network").innerHTML=netHTML
-
 }
 
 const seals=[
