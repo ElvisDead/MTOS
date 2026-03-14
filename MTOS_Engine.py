@@ -7,8 +7,6 @@ Computational simulation of attention dynamics
 based on Tzolkin temporal structure.
 """
 
-GLOBAL_USERS = []
-
 Features:
 - 260-day cognitive cycle
 - resonance field of archetypes
@@ -23,6 +21,7 @@ Features:
 Author: MTOS Research
 Year: 2026
 """
+GLOBAL_USERS = []
 
 import datetime
 import numpy as np
@@ -48,17 +47,15 @@ ARCHETYPE_WEIGHTS = [1.0]*20
 def update_seal_memory(seal_index,attention):
 
     global SEAL_MEMORY
+    global ARCHETYPE_WEIGHTS
 
     old = SEAL_MEMORY[seal_index]
 
     SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
 
-	global ARCHETYPE_WEIGHTS
-
-	ARCHETYPE_WEIGHTS[seal_index] += (attention - 0.5)*0.02
-	ARCHETYPE_WEIGHTS[seal_index] = max(0.5,min(1.5,ARCHETYPE_WEIGHTS[seal_index]))
-
-
+    ARCHETYPE_WEIGHTS[seal_index] += (attention - 0.5)*0.02
+    ARCHETYPE_WEIGHTS[seal_index] = max(0.5,min(1.5,ARCHETYPE_WEIGHTS[seal_index]))
+	
 def update_kin_memory(kin,attention):
 
     global KIN_MEMORY
@@ -177,7 +174,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
 	network_field = 0
 
-	for ui,ut in GLOBAL_USERS:
+	for ui, ut in GLOBAL_USERS:
     	network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
 	noise = np.random.normal(0,0.015)
@@ -393,8 +390,8 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days):
 
-if (user_i,user_tone) not in GLOBAL_USERS:
-    GLOBAL_USERS.append((user_i,user_tone))
+	if (user_i,user_tone) not in GLOBAL_USERS:
+    	GLOBAL_USERS.append((user_i,user_tone))
 
 	learn = learning_adjust() + adaptive_learning()
 
