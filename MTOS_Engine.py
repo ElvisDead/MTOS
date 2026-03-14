@@ -351,7 +351,7 @@ def update_global_field(date,value):
     data = load_global_field()
     field = data["field"]
 
-    field[(kin-1)%260] = field[(kin-1)%260]*0.9 + value*0.1
+    field[(kin-1)%260] = field[(kin-1)%260]*0.8 + value*0.2
 
     GLOBAL_ATTENTION_BUFFER.append(value)
 
