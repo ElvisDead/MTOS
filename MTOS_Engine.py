@@ -203,7 +203,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
     else:
         network_field = 0
 
-    noise = np.random.normal(0,0.04)
+    noise = np.random.normal(0,0.015)
 
     a = (
         a*0.72 +
@@ -681,9 +681,18 @@ def mtos_260_weather(name,year,month,day):
 
     today=datetime.date.today()
 
-    series=simulate(i,tone,today,260)
+    series = simulate(i,tone,today,260)
 
-    return series.tolist()
+    matrix = np.zeros((13,20))
+
+    for k in range(260):
+
+        t = k % 13
+        s = (k // 13) % 20
+
+        matrix[t][s] = series[k]
+
+return matrix.flatten().tolist()
 
 def mtos_user_climate(user_seal):
 
@@ -703,7 +712,7 @@ def mtos_user_climate(user_seal):
 
 def mtos_attractor_map():
 
-    matrix=np.zeros((13,20))
+    matrix=np.zeros((20,20))
 
     for us in range(20):
         
@@ -720,10 +729,13 @@ def mtos_attractor_map():
 
                     for _ in range(40):
 
+                        kin = (dt*20 + ds) % 260 + 1
+
                         a,f=attention_step(
                         a,f,
                         us,ut+1,
-                        ds,dt+1
+                        ds,dt+1,
+                        kin
                         )
 
                     total+=a
