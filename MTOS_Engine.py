@@ -238,10 +238,10 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
 
 def climate(a):
 
-    if a>0.8: return "FOCUS"
-    if a>0.65: return "FLOW"
-    if a>0.45: return "NEUTRAL"
-    if a>0.3: return "FATIGUE"
+    if a>0.72: return "FOCUS"
+    if a>0.60: return "FLOW"
+    if a>0.48: return "NEUTRAL"
+    if a>0.36: return "FATIGUE"
 
     return "RECOVERY"
 
@@ -834,7 +834,7 @@ def mtos_user_network():
             ia = seals.index(a["seal"])
             ib = seals.index(b["seal"])
 
-            r = seal_resonance(ia, ib)
+            r = (seal_resonance(ia, ib) - 0.5) * 1.4
 
             day_effect = (
                 seal_resonance(ia, today_i) +
@@ -849,7 +849,7 @@ def mtos_user_network():
             import random
             noise = random.gauss(0, 0.05)
 
-            r = r + day_effect + tone_effect + noise
+            r = r + day_effect*0.5 + tone_effect*0.4 + noise
 
             r = r / 2
 
@@ -928,3 +928,19 @@ def mtos_tzolkin_structure():
             matrix.append(float(value))
 
     return matrix
+
+def mtos_users_by_kin():
+
+    users = load_users()
+
+    kin_map = {i: [] for i in range(1,261)}
+
+    for name,data in users.items():
+
+        kin = data["kin"]
+        tone = data["tone"]
+        seal = data["seal"]
+
+        kin_map[kin].append(f"{name} (Kin {kin}, {seal} T{tone})")
+
+    return json.dumps(kin_map)
