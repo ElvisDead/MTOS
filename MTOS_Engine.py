@@ -692,7 +692,7 @@ def mtos_260_weather(name,year,month,day):
 
         matrix[t][s] = series[k]
 
-    return matrix.flatten().tolist()
+        return matrix.flatten().tolist()
 
 def mtos_user_climate(user_seal):
 
