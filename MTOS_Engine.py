@@ -428,7 +428,7 @@ def simulate(user_i,user_tone,start,days):
 
         a = a + wave*0.07
 
-		a = a + np.sin(2*np.pi*t/13)*0.04
+        a = a + np.sin(2*np.pi*t/13)*0.04
 
         env_noise = np.random.normal(0,0.01)
         a = a + env_noise
