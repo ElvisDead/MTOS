@@ -5,7 +5,6 @@ Version 1.2
 
 Computational simulation of attention dynamics
 based on Tzolkin temporal structure.
-"""
 
 Features:
 - 260-day cognitive cycle
@@ -22,6 +21,7 @@ Author: MTOS Research
 Year: 2026
 """
 GLOBAL_USERS = []
+GLOBAL_KIN_DISTRIBUTION = [0.5]*260
 
 import datetime
 import numpy as np
@@ -495,6 +495,22 @@ def predictability(series):
 
 	return len(series)
 
+def phase_space(series):
+
+    points = []
+
+    for i in range(len(series)-1):
+
+        x = float(series[i])
+        y = float(series[i+1])
+
+        points.append({
+            "x": x,
+            "y": y
+        })
+
+    return points
+
 def attention_attractors(series):
 
 	hist,_ = np.histogram(series,bins=12,range=(0,1))
@@ -551,6 +567,8 @@ def run_mtos(name,year,month,day):
 
 	series = simulate(i,tone,today,260)
 
+	phase = phase_space(series)
+
 	attractor_map = tzolkin_attractor_map(i,tone,today)
 
 	attractors = attention_attractors(series)
@@ -577,6 +595,7 @@ def run_mtos(name,year,month,day):
 		"predictability":predictability(series),
 		"attractors": attractors,
 		"tzolkin_attractors": attractor_map,
+		"phase_space": phase,
 	}
 
 	return json.dumps(result)
