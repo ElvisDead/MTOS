@@ -632,7 +632,7 @@ def run_mtos(name,year,month,day):
 
     kin,tone,seal,i = kin_from_date(birth)
 
-    today = datetime.date.today()
+    today = datetime.datetime.now(datetime.UTC).date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
@@ -706,7 +706,7 @@ def mtos_260_weather(name,year,month,day):
 
 def mtos_user_climate(user_seal):
 
-    today = datetime.date.today()
+    today = datetime.datetime.now(datetime.UTC).date()
     _, day_tone, _, _ = kin_from_date(today)
 
     matrix = np.zeros((20,20))
@@ -824,7 +824,7 @@ def mtos_user_network():
 
     users = load_users()
 
-    today = datetime.date.today()
+    today = datetime.datetime.now(datetime.UTC).date()
     today_kin, today_tone, today_seal, today_i = kin_from_date(today)
 
     names = list(users.keys())
@@ -903,7 +903,7 @@ import datetime
 
 def mtos_climate_atlas():
 
-    today = datetime.datetime.utcnow().timetuple().tm_yday
+    today = datetime.datetime.now(datetime.UTC).timetuple().tm_yday
     day_phase = today % 13
 
     matrix = np.zeros((20,20))
