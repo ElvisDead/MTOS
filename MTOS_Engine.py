@@ -56,7 +56,7 @@ def update_seal_memory(seal_index,attention):
 
     ARCHETYPE_WEIGHTS[seal_index] += (attention - 0.5)*0.02
     ARCHETYPE_WEIGHTS[seal_index] = max(0.5,min(1.5,ARCHETYPE_WEIGHTS[seal_index]))
-	
+    
 def update_kin_memory(kin,attention):
 
     global KIN_MEMORY
@@ -78,10 +78,10 @@ def reset_memory():
 # ==========================================================
 
 seals=[
-	"Dragon","Wind","Night","Seed","Serpent",
-	"Worldbridger","Hand","Star","Moon","Dog",
-	"Monkey","Human","Skywalker","Wizard","Eagle",
-	"Warrior","Earth","Mirror","Storm","Sun"
+    "Dragon","Wind","Night","Seed","Serpent",
+    "Worldbridger","Hand","Star","Moon","Dog",
+    "Monkey","Human","Skywalker","Wizard","Eagle",
+    "Warrior","Earth","Mirror","Storm","Sun"
 ]
 
 BASE_DATE=datetime.date(1987,7,26)
@@ -93,13 +93,13 @@ BASE_KIN=34
 
 def kin_from_date(date):
 
-	delta=(date-BASE_DATE).days
-	kin=((BASE_KIN+delta-1)%260)+1
+    delta=(date-BASE_DATE).days
+    kin=((BASE_KIN+delta-1)%260)+1
 
-	tone=((kin-1)%13)+1
-	seal_index=(kin-1)%20
+    tone=((kin-1)%13)+1
+    seal_index=(kin-1)%20
 
-	return kin,tone,seals[seal_index],seal_index
+    return kin,tone,seals[seal_index],seal_index
 
 # ==========================================================
 # TZOLKIN GEOMETRY
@@ -137,9 +137,9 @@ def seal_resonance(a,b,day_phase=0):
 
 def tone_wave(tone):
 
-	phase = 2*np.pi*((tone-1)/13)
+    phase = 2*np.pi*((tone-1)/13)
 
-	return 0.05*np.sin(phase)
+    return 0.05*np.sin(phase)
 
 # ==========================================================
 # TONE RESONANCE
@@ -147,16 +147,16 @@ def tone_wave(tone):
 
 def tone_resonance(user_tone,day_tone):
 
-	if user_tone == day_tone:
-		return 0.08
+    if user_tone == day_tone:
+        return 0.08
 
-	if abs(user_tone - day_tone) == 1:
-		return 0.04
+    if abs(user_tone - day_tone) == 1:
+        return 0.04
 
-	if abs(user_tone - day_tone) == 6:
-		return -0.05
+    if abs(user_tone - day_tone) == 6:
+        return -0.05
 
-	return 0
+    return 0
 
 # ==========================================================
 # FATIGUE MODEL
@@ -164,10 +164,10 @@ def tone_resonance(user_tone,day_tone):
 
 def fatigue_step(f,a):
 
-	f=f+a*0.05
-	f=f-0.03
+    f=f+a*0.05
+    f=f-0.03
 
-	return max(0,min(f,1))
+    return max(0,min(f,1))
 
 # ==========================================================
 # ATTENTION DYNAMICS
@@ -175,34 +175,34 @@ def fatigue_step(f,a):
 
 def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
-	r = seal_resonance(user_i, day_i, (day_tone + day_i) % 13)
+    r = seal_resonance(user_i, day_i, (day_tone + day_i) % 13)
 
-	tone_effect = tone_wave(day_tone)
+    tone_effect = tone_wave(day_tone)
 
-	tone_sync = tone_resonance(user_tone,day_tone)
+    tone_sync = tone_resonance(user_tone,day_tone)
 
-	memory = SEAL_MEMORY[day_i] - 0.5
+    memory = SEAL_MEMORY[day_i] - 0.5
 
-	kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
+    kin_memory = KIN_MEMORY[(day_i*13 + day_tone - 1) % 260] - 0.5
 
-	global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
+    global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
 
-	network_field = 0
-	contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
-	for ui, ut in GLOBAL_USERS:
-		network_field += seal_resonance(user_i,ui,day_tone)*0.02
+    network_field = 0
+    contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
+    for ui, ut in GLOBAL_USERS:
+        network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
-	noise = np.random.normal(0,0.03)
+    noise = np.random.normal(0,0.03)
 
-	a = a + r + tone_effect + tone_sync + memory*0.08 + kin_memory*0.04 + global_field*0.06 + network_field + contagion*0.08 + noise
+    a = a + r + tone_effect + tone_sync + memory*0.08 + kin_memory*0.04 + global_field*0.06 + network_field + contagion*0.08 + noise
 
-	f = fatigue_step(f,a)
+    f = fatigue_step(f,a)
 
-	a = a - f*0.07
+    a = a - f*0.07
 
-	a = a * 0.98
+    a = a * 0.98
 
-	return max(0,min(a,1)),f
+    return max(0,min(a,1)),f
 
 # ==========================================================
 # CLIMATE STATE
@@ -210,12 +210,12 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
 def climate(a):
 
-	if a>0.8: return "FOCUS"
-	if a>0.65: return "FLOW"
-	if a>0.45: return "NEUTRAL"
-	if a>0.3: return "FATIGUE"
+    if a>0.8: return "FOCUS"
+    if a>0.65: return "FLOW"
+    if a>0.45: return "NEUTRAL"
+    if a>0.3: return "FATIGUE"
 
-	return "RECOVERY"
+    return "RECOVERY"
 
 # ==========================================================
 # USERS DATABASE (localStorage)
@@ -225,34 +225,34 @@ from js import localStorage
 
 def load_users():
 
-	data = localStorage.getItem("mtos_users")
+    data = localStorage.getItem("mtos_users")
 
-	if data is None:
-	
-		return {}
+    if data is None:
+    
+        return {}
 
-	return json.loads(data)
+    return json.loads(data)
 
 def save_users(users):
 
-	localStorage.setItem(
-	"mtos_users",
-	json.dumps(users)
-	)
+    localStorage.setItem(
+    "mtos_users",
+    json.dumps(users)
+    )
 
 
 def register_user(name,birth,kin,tone,seal):
 
-	users = load_users()
+    users = load_users()
 
-	users[name] = {
-	"birth": str(birth),
-	"kin": kin,
-	"tone": tone,
-	"seal": seal
-	}
+    users[name] = {
+    "birth": str(birth),
+    "kin": kin,
+    "tone": tone,
+    "seal": seal
+    }
 
-	save_users(users)
+    save_users(users)
 
 # ==========================================================
 # ATTENTION DATABASE
@@ -260,33 +260,33 @@ def register_user(name,birth,kin,tone,seal):
 
 def load_attention():
 
-	data = localStorage.getItem("mtos_attention")
+    data = localStorage.getItem("mtos_attention")
 
-	if data is None:
+    if data is None:
 
-		return []
-		
-	return json.loads(data)
+        return []
+        
+    return json.loads(data)
 
 def save_attention(db):
 
-	localStorage.setItem(
-	"mtos_attention",
-	json.dumps(db)
-	)
+    localStorage.setItem(
+    "mtos_attention",
+    json.dumps(db)
+    )
 
 def store_attention(user,date,kin,attention):
 
-	db=load_attention()
+    db=load_attention()
 
-	db.append({
-	"user":user,
-	"date":str(date),
-	"kin":kin,
-	"attention":round(float(attention),3)
-	})
+    db.append({
+    "user":user,
+    "date":str(date),
+    "kin":kin,
+    "attention":round(float(attention),3)
+    })
 
-	save_attention(db)
+    save_attention(db)
 
 # ==========================================================
 # GLOBAL ATTENTION FIELD (Browser Storage)
@@ -315,17 +315,17 @@ def load_global_field():
 
 def save_global_field(field):
 
-	localStorage.setItem(
-		"mtos_global_field",
-		json.dumps(field)
-	)
+    localStorage.setItem(
+        "mtos_global_field",
+        json.dumps(field)
+    )
 
 def global_attention(date):
 
-	kin,_,_,_=kin_from_date(date)
-	field=load_global_field()["field"]
+    kin,_,_,_=kin_from_date(date)
+    field=load_global_field()["field"]
 
-	return field[(kin-1)%260]
+    return field[(kin-1)%260]
 
 def update_global_field(date,value):
 
@@ -342,50 +342,50 @@ def update_global_field(date,value):
         GLOBAL_ATTENTION_BUFFER.pop(0)
 
     save_global_field({"field":field})
-	
+    
 # ==========================================================
 # LEARNING
 # ==========================================================
 
 def learning_adjust():
 
-	db=load_attention()
+    db=load_attention()
 
-	if len(db)<30:
-	
-		return 0
+    if len(db)<30:
+    
+        return 0
 
-	values=[d["attention"] for d in db[-30:]]
+    values=[d["attention"] for d in db[-30:]]
 
-	trend=np.mean(np.diff(values))
+    trend=np.mean(np.diff(values))
 
-	if trend > 0: return 0.01
-	if trend < 0: return -0.01
+    if trend > 0: return 0.01
+    if trend < 0: return -0.01
 
-	return 0
+    return 0
 
 def adaptive_learning():
 
-	db=load_attention()
+    db=load_attention()
 
-	if len(db)<50:
-	
-		return 0
+    if len(db)<50:
+    
+        return 0
 
-	values=[d["attention"] for d in db[-50:]]
+    values=[d["attention"] for d in db[-50:]]
 
-	mean=np.mean(values)
-	volatility=np.std(values)
+    mean=np.mean(values)
+    volatility=np.std(values)
 
-	adjust = 0
+    adjust = 0
 
-	if mean > 0.65:
-		adjust += 0.01
+    if mean > 0.65:
+        adjust += 0.01
 
-	if volatility > 0.15:
-		adjust -= 0.01
+    if volatility > 0.15:
+        adjust -= 0.01
 
-	return adjust
+    return adjust
 
 # ==========================================================
 # COLLECTIVE WAVE
@@ -461,62 +461,62 @@ def simulate(user_i,user_tone,start,days):
 
 def entropy(series):
 
-	hist,_=np.histogram(series,bins=20,range=(0,1))
-	s = np.sum(hist)
+    hist,_=np.histogram(series,bins=20,range=(0,1))
+    s = np.sum(hist)
 
-	if s == 0:
+    if s == 0:
 
-		return 0
+        return 0
 
-	p = hist / s
-	p=p[p>0]
+    p = hist / s
+    p=p[p>0]
 
-	v = -np.sum(p*np.log(p))
+    v = -np.sum(p*np.log(p))
 
-	if np.isnan(v):
+    if np.isnan(v):
 
-		return 0
+        return 0
 
-	return float(v)
+    return float(v)
 
 def chaos(series):
 
-	v = np.std(np.diff(series))
+    v = np.std(np.diff(series))
 
-	if np.isnan(v):
+    if np.isnan(v):
 
-		return 0
+        return 0
 
-	return float(v)
+    return float(v)
 
 def lyapunov(series):
 
-	diffs=np.abs(np.diff(series))
-	diffs=diffs[diffs>0]
+    diffs=np.abs(np.diff(series))
+    diffs=diffs[diffs>0]
 
-	if len(diffs)==0:
+    if len(diffs)==0:
 
-		return 0
+        return 0
 
-	v = np.mean(np.log(diffs))
+    v = np.mean(np.log(diffs))
 
-	if np.isnan(v):
+    if np.isnan(v):
 
-		return 0
+        return 0
 
-	return float(v)
+    return float(v)
 
 def predictability(series):
 
-	diffs=np.abs(np.diff(series))
+    diffs=np.abs(np.diff(series))
 
-	for i,d in enumerate(diffs):
+    for i,d in enumerate(diffs):
 
-		if d>0.12:
+        if d>0.12:
 
-			return i
+            return i
 
-	return len(series)
+    return len(series)
 
 def phase_space(series):
 
@@ -536,21 +536,21 @@ def phase_space(series):
 
 def attention_attractors(series):
 
-	hist,_ = np.histogram(series,bins=12,range=(0,1))
+    hist,_ = np.histogram(series,bins=12,range=(0,1))
 
-	mean = np.mean(hist)
+    mean = np.mean(hist)
 
-	attractors = []
+    attractors = []
 
-	for i,v in enumerate(hist):
+    for i,v in enumerate(hist):
 
-		if v > mean*1.3:
+        if v > mean*1.3:
 
-			center = (i+0.5)/12
+            center = (i+0.5)/12
 
-			attractors.append(float(center))
+            attractors.append(float(center))
 
-	return attractors
+    return attractors
 
 def tzolkin_attractor_map(user_i,user_tone,start):
 
@@ -579,75 +579,75 @@ def tzolkin_attractor_map(user_i,user_tone,start):
 
 def run_mtos(name,year,month,day):
 
-	import json
-	import datetime
+    import json
+    import datetime
 
-	birth = datetime.date(year,month,day)
+    birth = datetime.date(year,month,day)
 
-	kin,tone,seal,i = kin_from_date(birth)
+    kin,tone,seal,i = kin_from_date(birth)
 
-	today = datetime.date.today()
+    today = datetime.date.today()
 
-	today_kin,today_tone,today_seal,today_i = kin_from_date(today)
+    today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
-	series = simulate(i,tone,today,260)
+    series = simulate(i,tone,today,260)
 
-	phase = phase_space(series)
+    phase = phase_space(series)
 
-	attractor_map = tzolkin_attractor_map(i,tone,today)
+    attractor_map = tzolkin_attractor_map(i,tone,today)
 
-	attractors = attention_attractors(series)
+    attractors = attention_attractors(series)
 
-	state = climate(series[0])
+    state = climate(series[0])
 
-	register_user(name,birth,kin,tone,seal)
-	store_attention(name,today,kin,series[0])
-	update_global_field(today,series[0])
+    register_user(name,birth,kin,tone,seal)
+    store_attention(name,today,kin,series[0])
+    update_global_field(today,series[0])
 
-	result = {
-		"name":name,
-		"kin":kin,
-		"seal":seal,
-		"tone":tone,
-		"today_kin":today_kin,
-		"today_seal":today_seal,
-		"today_tone":today_tone,
-		"attention":float(series[0]),
-		"state":state,
-		"entropy":entropy(series),
-		"chaos":chaos(series),
-		"lyapunov":lyapunov(series),
-		"predictability":predictability(series),
-		"attractors": attractors,
-		"tzolkin_attractors": attractor_map,
-		"phase_space": phase,
-	}
+    result = {
+        "name":name,
+        "kin":kin,
+        "seal":seal,
+        "tone":tone,
+        "today_kin":today_kin,
+        "today_seal":today_seal,
+        "today_tone":today_tone,
+        "attention":float(series[0]),
+        "state":state,
+        "entropy":entropy(series),
+        "chaos":chaos(series),
+        "lyapunov":lyapunov(series),
+        "predictability":predictability(series),
+        "attractors": attractors,
+        "tzolkin_attractors": attractor_map,
+        "phase_space": phase,
+    }
 
-	return json.dumps(result)
+    return json.dumps(result)
 
 def mtos_series(name,year,month,day,days=30):
 
-	birth=datetime.date(year,month,day)
+    birth=datetime.date(year,month,day)
 
-	kin,tone,seal,i=kin_from_date(birth)
+    kin,tone,seal,i=kin_from_date(birth)
 
-	today=datetime.date.today()
+    today=datetime.date.today()
 
-	series=simulate(i,tone,today,days)
+    series=simulate(i,tone,today,days)
 
-	return series.tolist()
+    return series.tolist()
 
 def mtos_260_weather(name,year,month,day):
 
-	birth=datetime.date(year,month,day)
+    birth=datetime.date(year,month,day)
 
-	kin,tone,seal,i=kin_from_date(birth)
+    kin,tone,seal,i=kin_from_date(birth)
 
-	today=datetime.date.today()
+    today=datetime.date.today()
 
-	series=simulate(i,tone,today,260)
+    series=simulate(i,tone,today,260)
 
-	return series.tolist()
+    return series.tolist()
 
 def mtos_user_climate(user_seal):
 
@@ -667,70 +667,70 @@ def mtos_user_climate(user_seal):
 
 def mtos_attractor_map():
 
-	matrix=np.zeros((20,20))
+    matrix=np.zeros((20,20))
 
-	for us in range(20):
-		
-		for ds in range(20):
+    for us in range(20):
+        
+        for ds in range(20):
 
-			total=0
+            total=0
 
-			for ut in range(13):
-		
-				for dt in range(13):
+            for ut in range(13):
+        
+                for dt in range(13):
 
-					a=0.55
-					f=0.2
+                    a=0.55
+                    f=0.2
 
-					for _ in range(40):
+                    for _ in range(40):
 
-						a,f=attention_step(
-						a,f,
-						us,ut+1,
-						ds,dt+1
-						)
+                        a,f=attention_step(
+                        a,f,
+                        us,ut+1,
+                        ds,dt+1
+                        )
 
-					total+=a
+                    total+=a
 
-				matrix[us][ds]=total/(13*13)
-				
-	min_v = np.min(matrix)
-	max_v = np.max(matrix)
-				
-	if max_v - min_v > 0:
-		matrix = (matrix - min_v) / (max_v - min_v)
+                matrix[us][ds]=total/(13*13)
+                
+    min_v = np.min(matrix)
+    max_v = np.max(matrix)
+                
+    if max_v - min_v > 0:
+        matrix = (matrix - min_v) / (max_v - min_v)
 
-	return matrix.flatten().tolist()
+    return matrix.flatten().tolist()
 
 def mtos_phase_matrix():
 
-	matrix = []
+    matrix = []
 
-	for tone in range(13):
-		
-		for seal in range(20):
-	
-			kin = tone*20 + seal
-			value = np.sin(kin/260 * 2*np.pi)
+    for tone in range(13):
+        
+        for seal in range(20):
+    
+            kin = tone*20 + seal
+            value = np.sin(kin/260 * 2*np.pi)
 
-			value = (value + 1) / 2
-			matrix.append(float(value))
+            value = (value + 1) / 2
+            matrix.append(float(value))
 
-	return matrix
+    return matrix
 
 def mtos_wave_structure():
 
-	matrix=[]
+    matrix=[]
 
-	for t in range(13):
+    for t in range(13):
 
-		for s in range(20):
+        for s in range(20):
 
-			value = np.sin(t/13) + np.cos(s/20)
-			value = (value + 2) / 4
-			matrix.append(float(value))
+            value = np.sin(t/13) + np.cos(s/20)
+            value = (value + 2) / 4
+            matrix.append(float(value))
 
-	return matrix
+    return matrix
 
 def mtos_collective():
 
@@ -824,7 +824,7 @@ def mtos_user_network():
             })
 
     return json.dumps(edges)
-	
+    
 # ==========================================================
 # GLOBAL KIN DISTRIBUTION
 # ==========================================================
@@ -856,7 +856,7 @@ def mtos_climate_atlas():
         for d in range(20):
             matrix[u][d] = seal_resonance(u,d,day_phase)
 
-	# НОРМАЛИЗАЦИЯ
+    # НОРМАЛИЗАЦИЯ
     min_v = np.min(matrix)
     max_v = np.max(matrix)
 
@@ -866,15 +866,15 @@ def mtos_climate_atlas():
     return matrix.flatten().tolist()
 
 def mtos_tzolkin_structure():
-	
-	matrix=[]
-	
-	for tone in range(13):
-		for seal in range(20):
-			
-			kin = (tone + seal*13) % 260
-			value = np.sin(tone/13) + np.cos(seal/20)
-			
-			matrix.append(float(value))
+    
+    matrix=[]
+    
+    for tone in range(13):
+        for seal in range(20):
+            
+            kin = (tone + seal*13) % 260
+            value = np.sin(tone/13) + np.cos(seal/20)
+            
+            matrix.append(float(value))
 
-	return matrix
+    return matrix
