@@ -697,7 +697,7 @@ def mtos_user_climate(user_seal):
 
             r = seal_resonance(user_seal, seal, day_tone)
 
-            matrix[u][d] = r
+            matrix[tone][seal] = r
 
     return matrix.flatten().tolist()
 
