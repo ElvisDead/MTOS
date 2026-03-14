@@ -114,7 +114,7 @@ def seal_resonance(a,b,day_phase=0):
     base = (1 - distance/20) * ARCHETYPE_WEIGHTS[b]
 
     wave = math.sin((a+b+day_phase)*0.5)*0.35
-	
+
     value = base + wave
 
     value = (value + 0.2) / 1.4
