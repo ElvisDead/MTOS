@@ -101,7 +101,7 @@ def occult(i): return (19-i)%20
 
 import math
 
-def seal_resonance(a,b,day_phase):
+def seal_resonance(a,b,day_phase=0):
 
     distance = abs(a-b)
 
@@ -498,24 +498,22 @@ def attention_attractors(series):
 
 def tzolkin_attractor_map(user_i,user_tone,start):
 
-	attractor_map = []
+    attractor_map = []
 
-	for k in range(260):
+    for k in range(260):
 
-		series = simulate(user_i,user_tone,start,260)
+        series = simulate(user_i,user_tone,start,40)
 
-	attractors = attention_attractors(series)
+        attractors = attention_attractors(series)
 
-	attractor_map.append({
+        attractor_map.append({
+            "kin": k+1,
+            "attractors": attractors
+        })
 
-	"kin": k+1,
-	"attractors": attractors
+        start = start + datetime.timedelta(days=1)
 
-	})
-
-	start = start + datetime.timedelta(days=1)
-
-	return attractor_map
+    return attractor_map
 
 # ==========================================================
 # WEB API
@@ -592,17 +590,19 @@ def mtos_260_weather(name,year,month,day):
 
 def mtos_user_climate(user_seal):
 
-	matrix=np.zeros((20,20))
+    today = datetime.date.today()
+    _, day_tone, _, day_i = kin_from_date(today)
 
-	for u in range(20):
-		
-		for d in range(20):
+    matrix = np.zeros((20,20))
 
-			r = seal_resonance(seal, day_i, day_tone)
+    for u in range(20):
+        for d in range(20):
 
-			matrix[u][d]=0.5+r
+            r = seal_resonance(u, d, day_tone)
 
-	return matrix.flatten().tolist()
+            matrix[u][d] = 0.5 + r
+
+    return matrix.flatten().tolist()
 
 def mtos_attractor_map():
 
