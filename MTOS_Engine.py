@@ -192,10 +192,10 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
     for ui, ut in GLOBAL_USERS:
         network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
-    noise = np.random.normal(0,0.03)
+    noise = np.random.normal(0,0.05)
 
     a = (
-        a*0.82 +
+        a*0.72 +
         r*0.18 +
         tone_effect +
         tone_sync +
@@ -216,7 +216,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
     f = f + df
 
     # nonlinear normalization
-    a = 1/(1+np.exp(-4*(a-0.5)))
+    a = 1/(1+np.exp(-2*(a-0.5)))
     f = max(0,min(f,1))
 
     return a,f
@@ -451,7 +451,7 @@ def simulate(user_i,user_tone,start,days):
         update_seal_memory(i,a)
         update_kin_memory(kin,a)
 
-        a = a + wave*0.07
+        a = a + wave*0.04
 
         a = a + np.sin(2*np.pi*t/13)*0.02
 
@@ -462,7 +462,7 @@ def simulate(user_i,user_tone,start,days):
 
         field = global_attention(date)
 
-        a = a + (field - 0.5) * 0.2
+        a = a + (field - 0.5) * 0.35
 
         learning = (field - 0.5) * 0.05
 
