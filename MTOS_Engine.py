@@ -487,6 +487,8 @@ def simulate(user_i,user_tone,start,days):
         a = a + learning
         
         a = max(0, min(a, 1))
+        if np.isnan(a):
+            a = 0.5
         series.append(a)
 
     return np.array(series)
@@ -692,7 +694,7 @@ def mtos_260_weather(name,year,month,day):
 
         matrix[t][s] = series[k]
 
-        return matrix.flatten().tolist()
+    return matrix.flatten().tolist()
 
 def mtos_user_climate(user_seal):
 
@@ -758,7 +760,7 @@ def mtos_phase_matrix():
         
         for seal in range(20):
     
-            kin = tone*20 + seal
+            kin = (tone*20 + seal) % 260 + 1
             value = np.sin(kin/260 * 2*np.pi)
 
             value = (value + 1) / 2
@@ -902,7 +904,7 @@ def mtos_climate_atlas():
 
     for tone in range(13):
         for seal in range(20):
-            matrix[u][d] = seal_resonance(u,d,day_phase)
+            matrix[tone][seal] = seal_resonance(seal,seal,day_phase)
 
     # НОРМАЛИЗАЦИЯ
     min_v = np.min(matrix)
@@ -920,7 +922,7 @@ def mtos_tzolkin_structure():
     for tone in range(13):
         for seal in range(20):
             
-            kin = (tone + seal*13) % 260
+            kin = (seal*13 + tone) % 260
             value = np.sin(tone/13) + np.cos(seal/20)
             
             matrix.append(float(value))
