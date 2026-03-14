@@ -459,8 +459,8 @@ let c=document.createElement("div")
 
 let kin = i + 1
 
-let tone = ((kin-1) % 13)
-let seal = ((kin-1) % 20)
+let tone = (kin-1) % 13
+let seal = Math.floor((kin-1) / 13)
 
 if(users[kin] && users[kin].length>0){
     c.title =
@@ -508,11 +508,9 @@ for(let t=0;t<13;t++){
         let k=t*20+s
         let v=weather[k]
 
-        let c=document.createElement("div")
-
 let c=document.createElement("div")
 
-let kin=i+1
+let kin = t*20 + s + 1
 let tone=(kin-1)%13
 let seal=(kin-1)%20
 
@@ -548,7 +546,9 @@ let empty=document.createElement("div")
 map.appendChild(empty)
 
 // верхняя строка — подписи печатей
-seals.forEach(s=>{
+let headers = cols==20 ? seals : tones
+
+headers.forEach(s=>{
 let h=document.createElement("div")
 h.style.fontSize="8px"
 h.style.color="#aaa"
