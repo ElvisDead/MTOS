@@ -695,6 +695,12 @@ def mtos_attractor_map():
 					total+=a
 
 				matrix[us][ds]=total/(13*13)
+				
+				min_v = np.min(matrix)
+				max_v = np.max(matrix)
+				
+				if max_v - min_v > 0:
+					matrix = (matrix - min_v) / (max_v - min_v)
 
 	return matrix.flatten().tolist()
 
@@ -709,6 +715,7 @@ def mtos_phase_matrix():
 			kin = tone*20 + seal
 			value = np.sin(kin/260 * 2*np.pi)
 
+			value = (value + 1) / 2
 			matrix.append(float(value))
 
 	return matrix
@@ -721,9 +728,9 @@ def mtos_wave_structure():
 
 		for s in range(20):
 
-			matrix.append(
-				float(np.sin(t/13)+np.cos(s/20))
-			)
+			value = np.sin(t/13) + np.cos(s/20)
+			value = (value + 2) / 4
+			matrix.append(float(value))
 
 	return matrix
 
@@ -784,24 +791,29 @@ def mtos_user_network():
             day_effect = (
                 seal_resonance(ia, today_i) +
                 seal_resonance(ib, today_i)
-            ) * 0.25
+            ) * 0.15
 
             tone_effect = (
                 tone_resonance(a["tone"], today_tone) +
                 tone_resonance(b["tone"], today_tone)
-            ) * 0.2
+            ) * 0.1
 
-            r = r + day_effect + tone_effect
+            import random
+			noise = random.gauss(0, 0.05)
 
-            if r >= 0.25:
+            r = n + day_effect + tone_effect + noise
+
+			r = r / 2
+
+            if r >= 0.6:
                 label = "STRONG SYNERGY"
-            elif r >= 0.15:
+            elif r >= 0.35:
                 label = "COLLABORATE"
-            elif r >= 0.10:
+            elif r >= 0.15:
                 label = "SUPPORT"
-            elif r > -0.10:
+            elif r > -0.15:
                 label = "NEUTRAL"
-            elif r > -0.25:
+            elif r > -0.35:
                 label = "TENSION"
             else:
                 label = "AVOID"
@@ -820,18 +832,18 @@ def mtos_user_network():
 # ==========================================================
 
 def mtos_global_kin_map():
-	
-	users = load_users()
-	
-	kin_counts = [0]*260
-	
-	for name,data in users.items():
-		
-		kin = data["kin"]
-		
-		kin_counts[kin-1] += 1
-		
-	return json.dumps(kin_counts)
+    
+    users = load_users()
+    
+    kin_counts = [0]*260
+    
+    for name,data in users.items():
+        
+        kin = data["kin"]
+        
+        kin_counts[kin-1] += 1
+        
+    return json.dumps(kin_counts)
 
 import datetime
 
@@ -845,6 +857,13 @@ def mtos_climate_atlas():
     for u in range(20):
         for d in range(20):
             matrix[u][d] = seal_resonance(u,d,day_phase)
+
+	# НОРМАЛИЗАЦИЯ
+    min_v = np.min(matrix)
+    max_v = np.max(matrix)
+
+    if max_v - min_v > 0:
+        matrix = (matrix - min_v) / (max_v - min_v)
 
     return matrix.flatten().tolist()
 
