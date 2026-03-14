@@ -791,17 +791,27 @@ def mtos_phase_matrix():
 
 def mtos_wave_structure():
 
-    matrix=[]
+    today = datetime.datetime.now(datetime.UTC).date()
 
-    for t in range(13):
+    _,_,_,today_i = kin_from_date(today)
 
-        for s in range(20):
+    matrix = np.zeros((13,20))
 
-            value = ((t + s) % 13 + 1) / 13
-            
-            matrix.append(float(value))
+    a = 0.55
+    f = 0.2
 
-    return matrix
+    for step in range(260):
+
+        kin = (today_i + step) % 260
+
+        tone = kin % 13
+        seal = kin % 20
+
+        a,f = attention_step(a,f,seal,tone)
+
+        matrix[tone][seal] = a
+
+    return matrix.flatten().tolist()
 
 def mtos_collective():
 
@@ -834,6 +844,26 @@ def mtos_collective():
     }
 
     return json.dumps(result)
+
+def mtos_phase_space(name,year,month,day):
+
+    series = simulate_user(name,year,month,day,260)
+
+    xs=[]
+    ys=[]
+
+    for i in range(len(series)-1):
+
+        x = series[i]
+        y = series[i+1]
+
+        xs.append(float(x))
+        ys.append(float(y))
+
+    return {
+        "x":xs,
+        "y":ys
+    }
 
 def mtos_user_network():
 
