@@ -52,7 +52,7 @@ def update_seal_memory(seal_index,attention):
 
     old = SEAL_MEMORY[seal_index]
 
-    SEAL_MEMORY[seal_index] = old*0.9 + attention*0.1
+    SEAL_MEMORY[seal_index] = old*0.96 + attention*0.04
 
     ARCHETYPE_WEIGHTS[seal_index] += (attention - 0.5)*0.02
     ARCHETYPE_WEIGHTS[seal_index] = max(0.5,min(1.5,ARCHETYPE_WEIGHTS[seal_index]))
@@ -63,7 +63,7 @@ def update_kin_memory(kin,attention):
 
     old = KIN_MEMORY[kin-1]
 
-    KIN_MEMORY[kin-1] = old*0.95 + attention*0.05
+    KIN_MEMORY[kin-1] = old*0.98 + attention*0.02
 
 def reset_memory():
 
@@ -118,16 +118,21 @@ import math
 def seal_resonance(a,b,day_phase=0):
 
     distance = abs(a-b)
+    distance = min(distance, 20-distance)
 
-    base = (1 - distance/20) * ARCHETYPE_WEIGHTS[b]
+    base = (1 - distance*0.05) * ARCHETYPE_WEIGHTS[b]
 
-    wave = math.sin((a+b+day_phase)*0.5)*0.35
+    angle = (a + b + day_phase) * 0.5
+    wave = math.sin(angle) * 0.35
 
     value = base + wave
 
     value = (value + 0.2) / 1.4
 
-    value = max(0, min(value, 1))
+    if value < 0:
+        value = 0
+    elif value > 1:
+        value = 1
 
     return value
 
@@ -187,12 +192,15 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
     global_field = GLOBAL_KIN_DISTRIBUTION[(day_i*13 + day_tone - 1) % 260] - 0.5
 
-    network_field = 0
     contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
-    for ui, ut in GLOBAL_USERS:
-        network_field += seal_resonance(user_i,ui,day_tone)*0.02
 
-    noise = np.random.normal(0,0.05)
+    if GLOBAL_USERS:
+        avg = np.mean([seal_resonance(user_i,ui,day_tone) for ui,_ in GLOBAL_USERS])
+        network_field = avg * 0.05
+    else:
+        network_field = 0
+
+    noise = np.random.normal(0,0.04)
 
     a = (
         a*0.72 +
@@ -431,11 +439,18 @@ def simulate(user_i,user_tone,start,days):
     if (user_i,user_tone) not in GLOBAL_USERS:
         GLOBAL_USERS.append((user_i,user_tone))
 
+    if np.random.rand() < 0.02:
+        reset_memory()
+
+# ограничение памяти сети
+    if len(GLOBAL_USERS) > 30:
+        GLOBAL_USERS.pop(0)
+
     learn = learning_adjust() + adaptive_learning()
 
     a = 0.45 + learn
     f = 0.2
-
+    
     series = []
 
     wave = collective_wave()
