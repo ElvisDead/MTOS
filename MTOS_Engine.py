@@ -88,6 +88,19 @@ seals=[
 BASE_DATE=datetime.date(1987,7,26)
 BASE_KIN=34
 
+# GMT correlation check
+
+def verify_correlation():
+
+    today = datetime.datetime.now(datetime.UTC).date()
+
+    kin,_,_,_ = kin_from_date(today)
+
+    if kin < 1 or kin > 260:
+        print("WARNING: Kin calculation error")
+
+    return kin
+
 # ==========================================================
 # KIN ENGINE
 # ==========================================================
@@ -235,7 +248,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
     f = f + df
 
     # nonlinear normalization
-    a = 1/(1+np.exp(-2*(a-0.5)))
+    a = 1/(1+np.exp(-1.2*(a-0.5)))
     f = max(0,min(f,1))
 
     return a,f
@@ -484,7 +497,7 @@ def simulate(user_i,user_tone,start,days):
         env_noise = np.random.normal(0,0.01)
         a = a + env_noise
 
-        a = 1/(1+np.exp(-4*(a-0.5)))
+        a = 1/(1+np.exp(-1.5*(a-0.5)))
 
         field = global_attention(date)
 
@@ -625,6 +638,8 @@ def tzolkin_attractor_map(user_i,user_tone,start):
 
 def run_mtos(name,year,month,day):
 
+    verify_correlation()
+
     import json
     import datetime
 
@@ -698,7 +713,7 @@ def mtos_260_weather(name,year,month,day):
     for k in range(260):
 
         t = k % 13
-        s = (k // 13) % 20
+        s = k % 20
 
         matrix[t][s] = series[k]
 
@@ -766,7 +781,7 @@ def mtos_phase_matrix():
         
         for seal in range(20):
     
-            kin = (tone*20 + seal) % 260 + 1
+            kin = (seal*13 + tone) % 260 + 1
             value = np.sin(kin/260 * 2*np.pi)
 
             value = (value + 1) / 2
@@ -782,8 +797,8 @@ def mtos_wave_structure():
 
         for s in range(20):
 
-            value = np.sin(t/13) + np.cos(s/20)
-            value = (value + 2) / 4
+            value = (t + 1) / 13
+            
             matrix.append(float(value))
 
     return matrix
@@ -928,7 +943,7 @@ def mtos_tzolkin_structure():
     for tone in range(13):
         for seal in range(20):
             
-            kin = (seal*13 + tone) % 260
+            kin = (seal*13 + tone) % 260 + 1
             value = np.sin(tone/13) + np.cos(seal/20)
             
             matrix.append(float(value))
