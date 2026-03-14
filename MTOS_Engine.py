@@ -99,21 +99,17 @@ def occult(i): return (19-i)%20
 # RESONANCE FIELD
 # ==========================================================
 
-def seal_resonance(a,b):
+import math
 
-	if b == a:
-		return 0.30
+def seal_resonance(a,b,day_phase):
 
-	if b == analog(a):
-		return 0.18
+    distance = abs(a-b)
 
-	if b == occult(a):
-		return 0.12
+    base = 1 - distance/20
 
-	if b == antipode(a):
-		return -0.28
+    wave = math.sin((a+b+day_phase)*0.5)*0.25
 
-	return 0
+    return base + wave
 
 # ==========================================================
 # TONE WAVE
@@ -774,15 +770,20 @@ def mtos_global_kin_map():
 		
 	return json.dumps(kin_counts)
 
+import datetime
+
 def mtos_climate_atlas():
 
-	matrix = np.zeros((20,20))
+    today = datetime.datetime.utcnow().timetuple().tm_yday
+    day_phase = today % 13
 
-	for u in range(20):
-		for d in range(20):
-			matrix[u][d] = 0.5 + seal_resonance(u,d)
+    matrix = np.zeros((20,20))
 
-	return matrix.flatten().tolist()
+    for u in range(20):
+        for d in range(20):
+            matrix[u][d] = seal_resonance(u,d,day_phase)
+
+    return matrix.flatten().tolist()
 
 def mtos_tzolkin_structure():
 	
