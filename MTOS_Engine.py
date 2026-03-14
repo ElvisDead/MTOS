@@ -20,6 +20,7 @@ Features:
 Author: MTOS Research
 Year: 2026
 """
+
 GLOBAL_USERS = []
 GLOBAL_KIN_DISTRIBUTION = [0.5]*260
 GLOBAL_ATTENTION_BUFFER = [0.5]*30
@@ -28,6 +29,8 @@ import datetime
 import numpy as np
 import json
 import os
+
+np.random.seed(42)
 
 # ==========================================================
 # FILES
@@ -482,7 +485,8 @@ def simulate(user_i,user_tone,start,days):
         learning = (field - 0.5) * 0.05
 
         a = a + learning
-
+        
+        a = max(0, min(a, 1))
         series.append(a)
 
     return np.array(series)
