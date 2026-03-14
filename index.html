@@ -510,15 +510,15 @@ for(let t=0;t<13;t++){
 
 let c=document.createElement("div")
 
-let kin = t*20 + s + 1
+let kin = s*13 + t + 1
 let tone=(kin-1)%13
 let seal=(kin-1)%20
 
-let color="green"
+let color="red"
 
-if(v>0.75) color="red"
-else if(v>0.6) color="orange"
-else if(v>0.45) color="yellow"
+if(v>0.75) color="green"
+else if(v>0.6) color="yellow"
+else if(v>0.45) color="orange"
 
 c.className="cell"
 c.style.background=color
@@ -528,6 +528,8 @@ c.title="Kin "+kin
 map.appendChild(c)
 
 })
+
+}
 
 }
 
