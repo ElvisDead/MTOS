@@ -340,13 +340,13 @@ if(!window.attractorCache){
 drawHeatmap("attractor",window.attractorCache,20)
 
 let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
-drawHeatmap("phase",phase,20)
+drawHeatmap("phase",phase,20,13)
 
 let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
-drawHeatmap("wave",wave,20)
+drawHeatmap("wave",wave,20,13)
 
 let tz = pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
-drawHeatmap("tzolkin",tz,20)
+drawHeatmap("tzolkin",tz,20,13)
 
 let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
@@ -468,7 +468,7 @@ map.appendChild(c)
 
 }
 
-function drawHeatmap(id,data,cols){
+function drawHeatmap(id,data,cols,rows=cols){
 
 let map=document.getElementById(id)
 
@@ -477,6 +477,11 @@ map.innerHTML=""
 let seals=[
 "IMIX","IK","AKBAL","KAN","CHICCHAN","CIMI","MANIK","LAMAT","MULUC","OC",
 "CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
+]
+
+const tones = [
+"T1","T2","T3","T4","T5","T6","T7",
+"T8","T9","T10","T11","T12","T13"
 ]
 
 map.style.display="grid"
@@ -496,13 +501,13 @@ h.innerText=s
 map.appendChild(h)
 })
 
-for(let y=0;y<cols;y++){
+for(let y=0;y<rows;y++){
 
 // левая колонка — подпись строки
 let label=document.createElement("div")
 label.style.fontSize="8px"
 label.style.color="#aaa"
-label.innerText=seals[y]
+label.innerText = rows==13 ? tones[y] : seals[y]
 map.appendChild(label)
 
 for(let x=0;x<cols;x++){
