@@ -688,7 +688,7 @@ def mtos_260_weather(name,year,month,day):
 def mtos_user_climate(user_seal):
 
     today = datetime.date.today()
-    _, day_tone, _, day_i = kin_from_date(today)
+    _, day_tone, _, _ = kin_from_date(today)
 
     matrix = np.zeros((13,20))
 
