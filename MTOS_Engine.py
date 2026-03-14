@@ -175,7 +175,7 @@ def fatigue_step(f,a):
 
 def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
-	r = seal_resonance(user_i, day_i, day_tone)
+	r = seal_resonance(user_i, day_i, (day_tone + day_i) % 13)
 
 	tone_effect = tone_wave(day_tone)
 
@@ -453,8 +453,6 @@ def simulate(user_i,user_tone,start,days):
 
         series.append(a)
 
-        update_global_field(date,a)
-
     return np.array(series)
 
 # ==========================================================
@@ -663,7 +661,7 @@ def mtos_user_climate(user_seal):
 
             r = seal_resonance(user_seal, d, day_tone)
 
-            matrix[u][d] = 0.5 + r
+            matrix[u][d] = r
 
     return matrix.flatten().tolist()
 
@@ -696,11 +694,11 @@ def mtos_attractor_map():
 
 				matrix[us][ds]=total/(13*13)
 				
-				min_v = np.min(matrix)
-				max_v = np.max(matrix)
+	min_v = np.min(matrix)
+	max_v = np.max(matrix)
 				
-				if max_v - min_v > 0:
-					matrix = (matrix - min_v) / (max_v - min_v)
+	if max_v - min_v > 0:
+		matrix = (matrix - min_v) / (max_v - min_v)
 
 	return matrix.flatten().tolist()
 
@@ -799,11 +797,11 @@ def mtos_user_network():
             ) * 0.1
 
             import random
-			noise = random.gauss(0, 0.05)
+            noise = random.gauss(0, 0.05)
 
-            r = n + day_effect + tone_effect + noise
+            r = r + day_effect + tone_effect + noise
 
-			r = r / 2
+            r = r / 2
 
             if r >= 0.6:
                 label = "STRONG SYNERGY"
