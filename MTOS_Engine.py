@@ -113,9 +113,15 @@ def seal_resonance(a,b,day_phase=0):
 
     base = (1 - distance/20) * ARCHETYPE_WEIGHTS[b]
 
-    wave = math.sin((a+b+day_phase)*0.5)*0.25
+    wave = math.sin((a+b+day_phase)*0.5)*0.35
 
-    return base + wave
+	value = base + wave
+
+    value = (value + 0.2) / 1.4
+
+    value = max(0, min(value, 1))
+
+    return value
 
 # ==========================================================
 # TONE WAVE
@@ -186,7 +192,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone):
 
 	a = a - f*0.07
 
-	a = a * 0.93
+	a = a * 0.98
 
 	return max(0,min(a,1)),f
 
@@ -420,7 +426,9 @@ def simulate(user_i,user_tone,start,days):
         update_seal_memory(i,a)
         update_kin_memory(kin,a)
 
-        a = a + wave*0.03
+        a = a + wave*0.07
+
+		a = a + np.sin(2*np.pi*t/13)*0.04
 
         env_noise = np.random.normal(0,0.01)
         a = a + env_noise
@@ -544,7 +552,11 @@ def tzolkin_attractor_map(user_i,user_tone,start):
 
     for k in range(260):
 
-        series = simulate(user_i,user_tone,start,40)
+		reset_memory()
+
+		date = start + datetime.timedelta(days=k)
+
+        series = simulate(user_i,user_tone,date,40)
 
         attractors = attention_attractors(series)
 
@@ -552,8 +564,6 @@ def tzolkin_attractor_map(user_i,user_tone,start):
             "kin": k+1,
             "attractors": attractors
         })
-
-        start = start + datetime.timedelta(days=1)
 
     return attractor_map
 
