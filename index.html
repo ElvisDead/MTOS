@@ -160,6 +160,19 @@ Red = recovery
 
 <section>
 
+<h2>Kin Pressure Map</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map shows where the 260-Kin cycle is most unstable.
+Bright regions indicate rapid changes in attention dynamics.
+</p>
+
+<div id="pressure" class="map"></div>
+
+</section>
+
+<section>
+
 <h2>Global Kin Distribution</h2>
 <p style="max-width:700px;margin:auto;color:#bbb">
 This map shows where users are located within the 260 Kin cycle.
@@ -312,9 +325,10 @@ pyodide.globals.set("day",day)
 
 let result=pyodide.runPython(`run_mtos(name,year,month,day)`)
 let data=JSON.parse(result)
+let currentKin = state.kin
 
 document.getElementById("state").innerHTML=
-`
+
 Kin: ${data.kin}<br>
 Seal: ${data.seal}<br>
 Tone: ${data.tone}<br>
@@ -340,6 +354,10 @@ drawChart("chart7",s7)
 drawChart("chart30",s30)
 drawChart("chart260",s260)
 
+let pressure = pyodide.runPython(`mtos_pressure_map()`).toJs()
+
+drawHeatmap("pressure",pressure,20,13)
+    
 let weather = pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
 drawKinMap(weather)
 
@@ -546,6 +564,8 @@ else if(v>0.45) color="orange"
 
 c.className="cell"
 c.style.background=color
+
+if(kin===currentKin) c.style.outline="2px solid white"
 
 c.title="Kin "+kin
     
