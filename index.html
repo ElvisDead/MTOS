@@ -554,7 +554,7 @@ value:Math.abs(e.value)
 
 let container = document.getElementById("network")
 
-let data = {
+let graphData = {
 nodes: new vis.DataSet(nodes),
 edges: new vis.DataSet(edges)
 }
@@ -573,9 +573,8 @@ enabled:true
 }
 }
 
-new vis.Network(container,data,options)
+new vis.Network(container,graphData,options)
 
-document.getElementById("network").innerHTML=netHTML
 }
 
 const seals=[
