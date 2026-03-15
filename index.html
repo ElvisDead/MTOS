@@ -415,34 +415,12 @@ drawChart("chart7",s7)
 drawChart("chart30",s30)
 drawChart("chart260",s260)
 
-let pressure = pyodide.runPython(`mtos_pressure_map()`).toJs()
-
-let gradient = pyodide.runPython(`mtos_pressure_gradient()`).toJs()
-
-drawHeatmap("gradient",gradient,20,13)
-
-drawHeatmap("pressure",pressure,20,13)
-    
-let weather = pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
-drawKinMap(weather)
-
-let atlas = pyodide.runPython(`mtos_climate_atlas()`).toJs()
-drawHeatmap("atlas",atlas,20)
-
-let attractor = pyodide.runPython(
-`mtos_attractor_map(name,year,month,day)`
-).toJs()
-
-drawHeatmap("attractor",attractor,20)
-
-let phase = pyodide.runPython(`mtos_phase_matrix()`).toJs()
-drawHeatmap("phase",phase,20,13)
-
-let wave = pyodide.runPython(`mtos_wave_structure()`).toJs()
-drawHeatmap("wave",wave,20,13)
-
-let tz = pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
-drawHeatmap("tzolkin",tz,20,13)
+renderMap("pressure")
+renderMap("gradient")
+renderMap("atlas",20,20)
+renderMap("phase")
+renderMap("wave")
+renderMap("tzolkin")
 
 let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
@@ -657,6 +635,30 @@ const tones=[
 "Rhythmic","Resonant","Galactic","Solar","Planetary",
 "Spectral","Crystal","Cosmic"
 ]
+
+const MTOS_MAPS = {
+
+pressure: () => pyodide.runPython(`mtos_pressure_map()`).toJs(),
+
+gradient: () => pyodide.runPython(`mtos_pressure_gradient()`).toJs(),
+
+atlas: () => pyodide.runPython(`mtos_climate_atlas()`).toJs(),
+
+phase: () => pyodide.runPython(`mtos_phase_matrix()`).toJs(),
+
+wave: () => pyodide.runPython(`mtos_wave_structure()`).toJs(),
+
+tzolkin: () => pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
+
+}
+
+function renderMap(id, cols=20, rows=13){
+
+let data = MTOS_MAPS[id]()
+
+drawHeatmap(id,data,cols,rows)
+
+}
 
 function drawMatrix(id,data,cols=20,rows=13,colorFunc=null,titleFunc=null){
 
