@@ -460,7 +460,7 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days):
 
-    np.random.seed(user_i*13 + user_tone)
+    np.random.seed(user_i*13 + user_tone + start.toordinal())
 
     global GLOBAL_USERS
 
@@ -773,7 +773,7 @@ def mtos_attractor_map(name,year,month,day):
 
     birth=datetime.date(year,month,day)
     _,tone,_,i=kin_from_date(birth)
-    today=datetime.date.today()
+    today=datetime.datetime.now(datetime.timezone.utc).date()
     series=simulate(i,tone,today,260)
 
     matrix = np.zeros((20,20))
@@ -910,7 +910,7 @@ def mtos_phase_space(name,year,month,day):
 
     birth=datetime.date(year,month,day)
     _,tone,_,i=kin_from_date(birth)
-    today=datetime.date.today()
+    today=datetime.datetime.now(datetime.timezone.utc).date()
     series=simulate(i,tone,today,260)
 
     xs=[]
