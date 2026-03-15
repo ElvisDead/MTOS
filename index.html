@@ -176,6 +176,37 @@ Red = recovery
 </p>
 <div id="kinmap"></div>
 
+<div style="
+width:300px;
+height:10px;
+margin:12px auto;
+background:linear-gradient(to right, red, orange, yellow, green);
+"></div>
+
+<div style="font-size:12px;color:#aaa">
+low attention → high attention
+</div>
+
+<div style="margin-top:12px;font-size:13px;color:#aaa">
+
+<span style="color:red">■</span> Recovery &nbsp;&nbsp;
+<span style="color:orange">■</span> Transition &nbsp;&nbsp;
+<span style="color:yellow">■</span> Activation &nbsp;&nbsp;
+<span style="color:green">■</span> Focus
+
+</div>
+
+<div style="margin-top:12px;font-size:13px;color:#aaa">
+
+<b>Kin geometry</b><br>
+
+<span style="color:white">■</span> Current Kin<br>
+<span style="color:yellow">■</span> Analog (seal +4)<br>
+<span style="color:red">■</span> Antipode (seal +10)<br>
+<span style="color:violet">■</span> Occult (19 − seal)
+
+</div>
+
 </section>
 
 <section>
@@ -557,8 +588,6 @@ let network = JSON.parse(
     pyodide.runPython(`mtos_user_network()`)
 )
 
-network = network.filter(e => e.value > 0.77)
-
 network.sort((a,b)=>b.value-a.value)
 
 network = network.slice(0,69)
@@ -698,6 +727,9 @@ c.style.background=colorFunc(v)
 let r=Math.floor(v*255)
 let b=255-r
 c.style.background=`rgb(${r},0,${b})`
+c.textContent = v.toFixed(2)
+c.style.fontSize = "9px"
+c.style.color = v > 0.55 ? "#000" : "#fff"
 }
 
 if(titleFunc){
@@ -835,7 +867,7 @@ for(let t=0;t<13;t++){
     c.dataset.col = s
     c.onmouseenter = () => {
 
-document.querySelectorAll(".cell").forEach(cell => {
+map.querySelectorAll(".cell").forEach(cell => {
 
 if(cell.dataset.row === undefined) return
 
@@ -913,7 +945,7 @@ cell.style.boxShadow="0 0 6px #ffffff"
 }
         c.onmouseleave = () => {
 
-    document.querySelectorAll(".cell").forEach(cell => {
+    map.querySelectorAll(".cell").forEach(cell => {
         cell.style.outline="none"
         cell.style.background = cell.dataset.original || ""
         cell.style.boxShadow=""
@@ -931,16 +963,57 @@ cell.style.boxShadow="0 0 6px #ffffff"
     let tone=(kin-1)%13
     let seal=(kin-1)%20
 
-let color="red"
+let val = Math.max(0, Math.min(1, v))
 
-if(v>0.60) color="green"
-else if(v>0.52) color="yellow"
-else if(v>0.45) color="orange"
+let r = Math.floor((1-val)*255)
+let g = Math.floor(val*255)
 
 c.className="cell"
-c.style.background=color
+c.style.background = `rgb(${r},${g},0)`
 
-if(kin===currentKin) c.style.outline="2px solid white"
+if(kin===currentKin){
+c.style.outline="2px solid white"
+c.style.boxShadow="0 0 8px white"
+}
+
+let currentSeal = (currentKin-1)%20
+
+let analogSeal = (currentSeal + 4) % 20
+let antipodeSeal = (currentSeal + 10) % 20
+let occultSeal = 19 - currentSeal
+
+if(seal === analogSeal){
+c.style.outline="2px solid yellow"
+c.style.boxShadow="0 0 6px yellow"
+}
+
+if(seal === antipodeSeal){
+c.style.outline="2px solid red"
+c.style.boxShadow="0 0 6px red"
+}
+
+if(seal === occultSeal){
+c.style.outline="2px solid violet"
+c.style.boxShadow="0 0 6px violet"
+}
+
+let currentSeal = (currentKin-1)%20
+
+let analogSeal = (currentSeal + 4) % 20
+let antipodeSeal = (currentSeal + 10) % 20
+let occultSeal = 19 - currentSeal
+
+if(seal === analogSeal){
+c.style.outline="2px solid yellow"
+}
+
+if(seal === antipodeSeal){
+c.style.outline="2px solid red"
+}
+
+if(seal === occultSeal){
+c.style.outline="2px solid violet"
+}
 
 c.title=
 "Kin "+kin+"\n"+
