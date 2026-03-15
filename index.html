@@ -285,6 +285,15 @@ Stable clusters indicate attractors of cognitive dynamics.
 
 <canvas id="phaseSpace" width="500" height="500"></canvas>
 
+<h2>Phase Density Map</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+This heatmap shows density of attention transitions.
+Bright regions indicate stable attractors of the system.
+</p>
+
+<div id="phaseDensity" class="heatmap"></div>
+
 </section>
 
 <section>
@@ -460,6 +469,12 @@ State: ${collective.state}
 let phaseSpace = pyodide.runPython(`mtos_phase_space(name,year,month,day)`).toJs()
 
 drawPhaseSpace(phaseSpace)
+
+let density = pyodide.runPython(
+`mtos_phase_density(name,year,month,day)`
+).toJs()
+
+drawHeatmap("phaseDensity",density,20)
 
 let network = JSON.parse(
     pyodide.runPython(`mtos_user_network()`)
