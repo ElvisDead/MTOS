@@ -340,18 +340,6 @@ Bright regions indicate stable attractors of the system.
 
 <section>
 
-<h2>Tzolkin Geometry Map</h2>
-
-<p style="max-width:700px;margin:auto;color:#bbb">
-This map highlights structural symmetries of the Tzolkin cycle.
-</p>
-
-<div id="geometry" class="heatmap"></div>
-
-</section>
-
-<section>
-
 <h2>User Interaction Network</h2>
 <p style="max-width:700px;margin:auto;color:#bbb">
 This network shows potential interactions between users based on their
@@ -440,9 +428,16 @@ drawChart("chart7",s7)
 drawChart("chart30",s30)
 drawChart("chart260",s260)
 
+let weather = pyodide.runPython(
+`mtos_260_weather(name,year,month,day)`
+).toJs()
+
+drawKinMap(weather)
+
 renderMap("pressure")
 renderMap("gradient")
 renderMap("atlas",20,20)
+renderMap("attractor",20,20)
 renderMap("phase")
 renderMap("wave")
 renderMap("tzolkin")
@@ -467,15 +462,28 @@ kinMap,
 13,
 v=>{
 
+v=>{
+
 let activity = v || 0
 
-if(activity > 5) return "red"
-if(activity > 2) return "orange"
-if(activity > 0) return "yellow"
+if(activity === 0) return "#111"
 
-return "#111"
+const colors = [
+"#ffff00", // 1
+"#ffd000", // 2
+"#ffa000", // 3
+"#ff7000", // 4
+"#ff4000", // 5
+"#ff0000", // 6
+"#cc0000"  // 7+
+]
+
+let index = Math.min(activity-1,6)
+
+return colors[index]
 
 },
+
 (kin,v)=>{
 
 let users = kinUsers[kin]
@@ -525,104 +533,17 @@ let network = JSON.parse(
     pyodide.runPython(`mtos_user_network()`)
 )
 
-let users = pyodide.runPython(`load_users()`).toJs()
-
-const sealColors = {
-Dragon:"#ff4444",
-Wind:"#44ccff",
-Night:"#6633ff",
-Seed:"#22aa22",
-Serpent:"#ff8800",
-Worldbridger:"#888888",
-Hand:"#00cccc",
-Star:"#ff66cc",
-Moon:"#66ccff",
-Dog:"#ffaa00",
-Monkey:"#ffcc00",
-Human:"#ffffff",
-Skywalker:"#66ffcc",
-Wizard:"#cc66ff",
-Eagle:"#3399ff",
-Warrior:"#ff3333",
-Earth:"#996633",
-Mirror:"#cccccc",
-Storm:"#00ffcc",
-Sun:"#ffff33"
-}
-    
-let nodes=[]
-let edges=[]
-
-let names = new Set()
-
-network.forEach(e=>{
-names.add(e.a)
-names.add(e.b)
-})
-
-let i=1
-let map={}
-
-names.forEach(n=>{
-map[n]=i
-let seal = users[n]?.seal || "Human"
-let color = sealColors[seal] || "#ffffff"
-
-nodes.push({
-id:i,
-label:n,
-color:color,
-size:18,
-font:{
-size:16,
-color:"#fff"
-}
-})
-i++
-})
+let text=""
 
 network.forEach(e=>{
 
-edges.push({
-from:map[e.a],
-to:map[e.b],
-value:Math.abs(e.value),
-title:e.label
-})
+text +=
+e.a + " ↔ " + e.b + " : " + e.label +
+" (" + e.value.toFixed(2) + ")" + "<br>"
 
 })
 
-let container = document.getElementById("network")
-
-let graphData = {
-nodes: new vis.DataSet(nodes),
-edges: new vis.DataSet(edges)
-}
-
-let options = {
-nodes:{
-color:"#00ffff",
-font:{color:"#ffffff"}
-},
-edges:{
-color:"#888",
-width:2,
-scaling:{
-min:1,
-max:8
-},
-font:{size:0}
-},
-physics:{
-enabled:true,
-barnesHut:{
-gravitationalConstant:-6000,
-centralGravity:0.3,
-springLength:200,
-springConstant:0.04
-}
-}
-}
+document.getElementById("network").innerHTML = text
 
 new vis.Network(container,graphData,options)
 
@@ -646,6 +567,8 @@ pressure: () => pyodide.runPython(`mtos_pressure_map()`).toJs(),
 gradient: () => pyodide.runPython(`mtos_pressure_gradient()`).toJs(),
 
 atlas: () => pyodide.runPython(`mtos_climate_atlas()`).toJs(),
+
+attractor: () => pyodide.runPython(`mtos_attractor_map(name,year,month,day)`).toJs(),
 
 phase: () => pyodide.runPython(`mtos_phase_matrix()`).toJs(),
 
@@ -810,6 +733,21 @@ for(let t=0;t<13;t++){
     let v = weather[index]
 
     let c=document.createElement("div")
+
+    if(v>0){
+
+        c.innerText=v
+        c.style.fontSize="8px"
+        c.style.textAlign="center"
+        c.style.lineHeight="10px"
+
+    if(v>=4){
+        c.style.color="#fff"
+    }else{
+        c.style.color="#000"
+}
+
+}
 
     let kin = index + 1
     let tone=(kin-1)%13
