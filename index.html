@@ -23,8 +23,8 @@ margin:auto;
 }
 
 #phase{
-max-width:100%;
-overflow-x:auto;
+display:grid;
+justify-content:center;
 }
 
 section{
@@ -503,6 +503,17 @@ seals.forEach(s=>{
     map.appendChild(h)
 })
 
+// левая колонка — тона
+for(let t=0;t<13;t++){
+
+    let label=document.createElement("div")
+    label.style.fontSize="8px"
+    label.style.color="#aaa"
+    label.innerText="T"+(t+1)
+
+    map.appendChild(label)
+}
+
 map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(20,12px)"
 map.style.gridTemplateRows="repeat(13,12px)"
@@ -514,7 +525,7 @@ let c=document.createElement("div")
 let kin = i + 1
 
 let tone = (kin-1) % 13
-let seal = Math.floor((kin-1) / 13)
+let seal = (kin-1) % 20
 
 if(users[kin] && users[kin].length>0){
     c.title =
@@ -570,8 +581,8 @@ for(let t=0;t<13;t++){
 
     for(let s=0;s<20;s++){
 
-        let k=t*20+s
-        let v=weather[k]
+        let kin = (s*13 + t) % 260
+        let v = weather[k]
 
 let c=document.createElement("div")
 
@@ -639,7 +650,7 @@ map.appendChild(label)
 
 for(let x=0;x<cols;x++){
 
-let v=data[y*cols+x] ?? 0
+let v=data[x*rows+y] ?? 0
 
 let val=v
 if(val<0) val=0
