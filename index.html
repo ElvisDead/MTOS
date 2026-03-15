@@ -178,12 +178,10 @@ Orange → active state<br>
 Yellow → peak attention
 </p>
 
-<p style="max-width:700px;margin:auto;color:#888;font-size:13px">
+<p style="max-width:700px;margin:auto;color:#666;font-size:12px">
 
-How to read the map:<br>
-Horizontal axis → 20 archetypal seals<br>
-Vertical axis → 13 tones<br>
-Each cell = one Kin (tone × seal) in the 260-cycle.
+Diagonal structures emerge from the interaction of the
+13 temporal tones and 20 archetypal seals (13 × 20 = 260).
 
 </p>
     
@@ -995,11 +993,31 @@ cell.style.boxShadow="0 0 4px #00ccff"
 }
         c.onmouseleave = () => {
 
-    map.querySelectorAll(".cell").forEach(cell => {
-        cell.style.outline="none"
-        cell.style.background = cell.dataset.original || ""
-        cell.style.boxShadow=""
-    })
+map.querySelectorAll(".cell").forEach(cell => {
+
+cell.style.outline="none"
+cell.style.background = cell.dataset.original || ""
+cell.style.boxShadow=""
+
+})
+
+/* вернуть выделение текущего Kin */
+
+map.querySelectorAll(".cell").forEach(cell => {
+
+let r = parseInt(cell.dataset.row)
+let col = parseInt(cell.dataset.col)
+
+if(isNaN(r) || isNaN(col)) return
+
+let kin = (col*13 + r) % 260 + 1
+
+if(kin === currentKin){
+cell.style.outline="2px solid white"
+cell.style.boxShadow="0 0 10px white"
+}
+
+})
 
 }
     c.style.cursor="pointer"
