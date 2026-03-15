@@ -729,6 +729,8 @@ def mtos_user_climate(user_seal):
     for a in range(20):
         for b in range(20):
 
+            r = seal_resonance(a,b,day_tone)
+
             matrix[a][b] = r
 
     return matrix.flatten().tolist()
@@ -778,7 +780,7 @@ def mtos_pressure_map():
         else:
             delta = 0
 
-        matrix[tone][seal] = delta
+        matrix[tone-1][seal] = delta
 
         prev=a
 
@@ -823,7 +825,12 @@ def mtos_wave_structure():
         tone = (kin-1) % 13
         seal = (kin-1) % 20
 
-        a,f = attention_step(a,f,seal,tone)
+        a,f = attention_step(
+            a,f,
+            seal,tone,
+            seal,tone,
+            kin+1
+        )
 
         matrix[tone][seal] = a
 
