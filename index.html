@@ -641,7 +641,9 @@ function drawPhaseSpace(data){
 
 let ctx=document.getElementById("phaseSpace")
 
-new Chart(ctx,{
+if(charts["phaseSpace"]) charts["phaseSpace"].destroy()
+
+charts["phaseSpace"]=new Chart(ctx,{
 type:"scatter",
 data:{
 datasets:[{
