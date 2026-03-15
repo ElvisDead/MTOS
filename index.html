@@ -414,9 +414,28 @@ if(v==2) return "orange"
 if(v>=3) return "red"
 return "#222"
 },
-(kin,v)=>"Kin "+kin+" users: "+v
-)
+(kin,v)=>{
 
+let users = kinUsers[kin]
+
+if(!users || users.length===0){
+return "Kin "+kin
+}
+
+let text=""
+
+users.forEach(u=>{
+text +=
+u.name+"\n"+
+"Kin "+u.kin+"\n"+
+u.seal+"\n"+
+"Tone "+u.tone+"\n\n"
+})
+
+return text
+
+}
+    
 let collective = JSON.parse(
     pyodide.runPython(`mtos_collective()`)
 )
@@ -496,6 +515,25 @@ let kin=(s*13+t)%260+1
 let v=data[kin-1] ?? 0
 
 let c=document.createElement("div")
+    c.onclick=()=>{
+
+let users = kinUsers[kin]
+
+if(!users || users.length===0) return
+
+let info=""
+
+users.forEach(u=>{
+info+=
+u.name+"\n"+
+"Kin "+u.kin+"\n"+
+u.seal+"\n"+
+"Tone "+u.tone+"\n\n"
+})
+
+alert(info)
+
+}
 c.className="cell"
 
 if(colorFunc){
