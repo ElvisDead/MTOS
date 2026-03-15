@@ -1141,3 +1141,17 @@ def mtos_users_by_kin():
         })
 
     return json.dumps(kin_map)
+
+def mtos_kin_activity():
+
+    db = load_attention()
+
+    kin_activity = [0]*260
+
+    for d in db[-500:]:
+
+        kin = d["kin"]
+
+        kin_activity[kin-1] += 1
+
+    return json.dumps(kin_activity)
