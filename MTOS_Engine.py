@@ -467,8 +467,7 @@ def simulate(user_i,user_tone,start,days):
         reset_memory()
 
 # ограничение памяти сети
-    if len(GLOBAL_USERS) > 30:
-        GLOBAL_USERS.pop(0)
+    GLOBAL_USERS = GLOBAL_USERS[-30:]
 
     learn = learning_adjust() + adaptive_learning()
 
@@ -531,6 +530,7 @@ def entropy(series):
     p=p[p>0]
 
     v = -np.sum(p*np.log(p))
+    p = np.clip(p,1e-9,1)
 
     if np.isnan(v):
 
@@ -540,7 +540,7 @@ def entropy(series):
 
 def chaos(series):
 
-    v = np.std(np.diff(series))
+    np.mean(np.abs(np.diff(series)))
 
     if np.isnan(v):
 
@@ -557,7 +557,7 @@ def lyapunov(series):
 
         return 0
 
-    v = np.mean(np.log(diffs))
+    v = np.mean(np.log(diffs / diffs[0]))
 
     if np.isnan(v):
 
@@ -603,7 +603,7 @@ def attention_attractors(series):
 
     for i,v in enumerate(hist):
 
-        if v > mean*1.3:
+        if v > mean + std:
 
             center = (i+0.5)/12
 
@@ -647,7 +647,7 @@ def run_mtos(name,year,month,day):
 
     kin,tone,seal,i = kin_from_date(birth)
 
-    today = datetime.datetime.now(datetime.UTC).date()
+    today = datetime.datetime.utcnow().date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
@@ -712,8 +712,9 @@ def mtos_260_weather(name,year,month,day):
 
     for k in range(260):
 
-        t = k % 13
-        s = k % 20
+        kin = k + 1
+        t = (kin-1) % 13
+        s = (kin-1) % 20
 
         matrix[t][s] = series[k]
 
@@ -721,7 +722,7 @@ def mtos_260_weather(name,year,month,day):
 
 def mtos_user_climate(user_seal):
 
-    today = datetime.datetime.now(datetime.UTC).date()
+    today = datetime.datetime.utcnow().date()
     _, day_tone, _, _ = kin_from_date(today)
 
     matrix = np.zeros((20,20))
@@ -820,9 +821,10 @@ def mtos_wave_structure():
 
     for step in range(260):
 
-        kin = (today_i + step) % 260
+        today_kin,_,_,_ = kin_from_date(today)
+        kin = (today_kin + step -1) % 260 +1
 
-        tone = (kin-1) % 13
+        tone = (kin-1) % 13 + 1
         seal = (kin-1) % 20
 
         a,f = attention_step(
@@ -895,7 +897,7 @@ def mtos_user_network():
 
     users = load_users()
 
-    today = datetime.datetime.now(datetime.UTC).date()
+    today = datetime.datetime.utcnow().date()
     today_kin, today_tone, today_seal, today_i = kin_from_date(today)
 
     names = list(users.keys())
@@ -974,7 +976,7 @@ import datetime
 
 def mtos_climate_atlas():
 
-    today = datetime.datetime.now(datetime.UTC).timetuple().tm_yday
+    today = datetime.datetime.utcnow().timetuple().tm_yday
     day_phase = today % 13
 
     matrix = np.zeros((20,20))
