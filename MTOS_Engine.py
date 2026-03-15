@@ -1186,6 +1186,34 @@ def mtos_tzolkin_structure():
 
     return matrix
 
+def mtos_tzolkin_geometry():
+
+    data = [0]*260
+
+    for kin in range(260):
+
+        tone = kin % 13
+        seal = kin % 20
+
+        analog = (seal + 4) % 20
+        antipode = (seal + 10) % 20
+        occult = 19 - seal
+
+        score = 0
+
+        if analog == seal:
+            score += 1
+
+        if antipode == seal:
+            score += 1
+
+        if occult == seal:
+            score += 1
+
+        data[kin] = score / 3
+
+    return data
+
 def mtos_users_by_kin():
 
     users = load_users()
