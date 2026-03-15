@@ -403,7 +403,19 @@ let kinUsers = JSON.parse(
     pyodide.runPython(`mtos_users_by_kin()`)
 )
 
-drawKinDistribution(kinMap,kinUsers)
+drawMatrix(
+"kinDistribution",
+kinMap,
+20,
+13,
+v=>{
+if(v==1) return "yellow"
+if(v==2) return "orange"
+if(v>=3) return "red"
+return "#222"
+},
+(kin,v)=>"Kin "+kin+" users: "+v
+)
 
 let collective = JSON.parse(
     pyodide.runPython(`mtos_collective()`)
@@ -449,6 +461,64 @@ const tones=[
 "Rhythmic","Resonant","Galactic","Solar","Planetary",
 "Spectral","Crystal","Cosmic"
 ]
+
+function drawMatrix(id,data,cols=20,rows=13,colorFunc=null,titleFunc=null){
+
+let map=document.getElementById(id)
+
+map.innerHTML=""
+
+map.style.display="grid"
+map.style.gridTemplateColumns=`60px repeat(${cols},12px)`
+map.style.gridAutoRows="12px"
+
+map.appendChild(document.createElement("div"))
+
+seals.forEach(s=>{
+let h=document.createElement("div")
+h.style.fontSize="8px"
+h.style.color="#aaa"
+h.innerText=s
+map.appendChild(h)
+})
+
+for(let t=0;t<rows;t++){
+
+let label=document.createElement("div")
+label.style.fontSize="8px"
+label.style.color="#aaa"
+label.innerText="T"+(t+1)
+map.appendChild(label)
+
+for(let s=0;s<cols;s++){
+
+let kin=(s*13+t)%260+1
+let v=data[kin-1] ?? 0
+
+let c=document.createElement("div")
+c.className="cell"
+
+if(colorFunc){
+c.style.background=colorFunc(v)
+}else{
+let r=Math.floor(v*255)
+let b=255-r
+c.style.background=`rgb(${r},0,${b})`
+}
+
+if(titleFunc){
+c.title=titleFunc(kin,v)
+}else{
+c.title="Kin "+kin
+}
+
+map.appendChild(c)
+
+}
+
+}
+
+}
     
 function drawChart(id,data){
 
@@ -480,73 +550,6 @@ max:1
 }
 }
 }
-})
-
-}
-
-function drawKinDistribution(data,users){
-
-let map=document.getElementById("kinDistribution")
-
-map.innerHTML=""
-
-// пустой угол
-let empty=document.createElement("div")
-map.appendChild(empty)
-
-// верхняя строка — печати
-seals.forEach(s=>{
-    let h=document.createElement("div")
-    h.style.fontSize="8px"
-    h.style.color="#aaa"
-    h.innerText=s
-    map.appendChild(h)
-})
-
-// левая колонка — тона
-for(let t=0;t<13;t++){
-
-    let label=document.createElement("div")
-    label.style.fontSize="8px"
-    label.style.color="#aaa"
-    label.innerText="T"+(t+1)
-
-    map.appendChild(label)
-}
-
-map.style.display="grid"
-map.style.gridTemplateColumns="60px repeat(20,12px)"
-map.style.gridTemplateRows="repeat(13,12px)"
-
-data.forEach((v,i)=>{
-
-let c=document.createElement("div")
-
-let kin = i + 1
-
-let tone = (kin-1) % 13
-let seal = (kin-1) % 20
-
-if(users[kin] && users[kin].length>0){
-    c.title =
-"Kin "+kin+"\n"+
-seals[seal]+" — "+tones[tone]+"\n"+
-users[kin].join("\n")
-}else{
-    c.title = "Kin "+kin
-}
-
-let color="#222"
-
-if(v==1) color="yellow"
-if(v==2) color="orange"
-if(v>=3) color="red"
-
-c.className="cell"
-c.style.background=color
-
-map.appendChild(c)
-
 })
 
 }
