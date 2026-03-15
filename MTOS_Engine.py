@@ -217,7 +217,7 @@ def fatigue_step(f,a):
 # ATTENTION DYNAMICS
 # ==========================================================
 
-def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
+def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
 
     r = seal_resonance(user_i, day_i, day_tone)
 
@@ -229,7 +229,10 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
 
     kin_memory = KIN_MEMORY[kin-1] - 0.5
 
-    user_memory = USER_MEMORY.get(user_name,0.5) - 0.5
+    if user_name is None:
+        user_memory = 0
+    else:
+        user_memory = USER_MEMORY.get(user_name,0.5) - 0.5
 
     global_field = GLOBAL_KIN_DISTRIBUTION[kin-1] - 0.5
 
@@ -417,12 +420,14 @@ def global_attention(date):
 
 def update_global_field(date,value):
 
-    kin,_,_,_ = kin_from_date(date)
+    kin,_,_,seal_index = kin_from_date(date)
 
     data = load_global_field()
     field = data["field"]
 
-    field[(kin-1)%260] = field[(kin-1)%260]*0.8 + value*0.2
+    archetype = SEAL_MEMORY[seal_index]
+
+    field[(kin-1)%260] = field[(kin-1)%260]*0.75 + value*0.20 + (archetype-0.5)*0.05
 
     GLOBAL_ATTENTION_BUFFER.append(value)
 
@@ -527,7 +532,7 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
         kin,tone,seal,i = kin_from_date(date)
 
-        a,f = attention_step(a,f,user_i,user_tone,i,tone,kin)
+        a,f = attention_step(a,f,user_i,user_tone,i,tone,kin,user_name)
 
         update_seal_memory(i,a)
         update_kin_memory(kin,a)
@@ -876,7 +881,7 @@ def mtos_phase_matrix():
         
         for seal in range(20):
     
-            kin = (seal*13 + tone) % 260 + 1
+            kin = (tone*20 + seal) % 260 + 1
             value = np.sin(kin/260 * 2*np.pi)
 
             value = (value + 1) / 2
