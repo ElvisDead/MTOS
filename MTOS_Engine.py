@@ -728,13 +728,12 @@ def mtos_260_weather(name,year,month,day):
 
     matrix = np.zeros((13,20))
 
-    for k in range(260):
+    for kin in range(1,261):
 
-        kin = k + 1
-        t = (kin-1) % 13
-        s = (kin-1) % 20
+        tone = (kin-1) % 13
+        seal = (kin-1) % 20
 
-        matrix[t][s] = series[k]
+        matrix[tone][seal] = series[kin-1]
 
     return matrix.flatten().tolist()
 
