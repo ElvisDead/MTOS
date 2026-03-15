@@ -304,6 +304,7 @@ while others may produce tension.
 
 let charts={}
 let currentKin = null
+let kinUsers = {}
 
 async function run(){
 
@@ -399,7 +400,7 @@ let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
 )
 
-let kinUsers = JSON.parse(
+kinUsers = JSON.parse(
     pyodide.runPython(`mtos_users_by_kin()`)
 )
 
