@@ -119,7 +119,7 @@ def kin_from_date(date):
 # TZOLKIN GEOMETRY
 # ==========================================================
 
-def analog(i): return (i+7)%20
+def analog(i): return (i+4)%20
 def antipode(i): return (i+10)%20
 def occult(i): return (19-i)%20
 
