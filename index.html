@@ -488,9 +488,7 @@ let network = JSON.parse(
     pyodide.runPython(`mtos_user_network()`)
 )
 
-let users = JSON.parse(
-    pyodide.runPython(`load_users()`)
-)
+let users = pyodide.runPython(`load_users()`).toJs()
 
 const sealColors = {
 Dragon:"#ff4444",
