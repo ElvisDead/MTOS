@@ -134,7 +134,15 @@ def kin_from_date(date):
 # TZOLKIN GEOMETRY
 # ==========================================================
 
-def analog(i): return (i+4)%20
+ANALOG_MAP = [
+    12,13,14,15,16,
+    17,18,19,0,1,
+    2,6,7,8,9,
+    10,11,3,4,5
+]
+
+def analog(i):
+    return ANALOG_MAP[i]
 def antipode(i): return (i+10)%20
 def occult(i): return (19-i)%20
 
