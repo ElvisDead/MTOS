@@ -10,6 +10,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
 <style>
 
 body{
@@ -305,7 +307,13 @@ Tzolkin archetypal positions. Some combinations enhance cooperation,
 while others may produce tension.
 </p>
     
-<div id="network"></div>
+<div id="network" style="
+width:700px;
+height:400px;
+border:1px solid #333;
+margin:auto;
+background:#000;
+"></div>
 
 </section>
 
@@ -480,18 +488,92 @@ let network = JSON.parse(
     pyodide.runPython(`mtos_user_network()`)
 )
 
-let netHTML=""
+let users = JSON.parse(
+    pyodide.runPython(`load_users()`)
+)
+
+const sealColors = {
+Dragon:"#ff4444",
+Wind:"#44ccff",
+Night:"#6633ff",
+Seed:"#22aa22",
+Serpent:"#ff8800",
+Worldbridger:"#888888",
+Hand:"#00cccc",
+Star:"#ff66cc",
+Moon:"#66ccff",
+Dog:"#ffaa00",
+Monkey:"#ffcc00",
+Human:"#ffffff",
+Skywalker:"#66ffcc",
+Wizard:"#cc66ff",
+Eagle:"#3399ff",
+Warrior:"#ff3333",
+Earth:"#996633",
+Mirror:"#cccccc",
+Storm:"#00ffcc",
+Sun:"#ffff33"
+}
+    
+let nodes=[]
+let edges=[]
+
+let names = new Set()
+
+network.forEach(e=>{
+names.add(e.a)
+names.add(e.b)
+})
+
+let i=1
+let map={}
+
+names.forEach(n=>{
+map[n]=i
+let seal = users[n]?.seal || "Human"
+let color = sealColors[seal] || "#ffffff"
+
+nodes.push({
+id:i,
+label:n,
+color:color
+})
+i++
+})
 
 network.forEach(e=>{
 
-netHTML+=`
-${e.a} ↔ ${e.b}
-: <b>${e.label}</b>
-(${e.value.toFixed(2)})
-<br>
-`
+edges.push({
+from:map[e.a],
+to:map[e.b],
+label:e.label,
+value:Math.abs(e.value)
+})
 
 })
+
+let container = document.getElementById("network")
+
+let data = {
+nodes: new vis.DataSet(nodes),
+edges: new vis.DataSet(edges)
+}
+
+let options = {
+nodes:{
+color:"#00ffff",
+font:{color:"#ffffff"}
+},
+edges:{
+color:"#888",
+font:{color:"#aaa",size:10}
+},
+physics:{
+enabled:true
+}
+}
+
+new vis.Network(container,data,options)
 
 document.getElementById("network").innerHTML=netHTML
 }
