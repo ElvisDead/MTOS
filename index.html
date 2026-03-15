@@ -78,6 +78,8 @@ padding:5px;
 .cell{
 width:10px;
 height:10px;
+border:1px solid #222;
+box-sizing:border-box;
 }
 
 </style>
@@ -170,6 +172,19 @@ Bright regions indicate rapid changes in attention dynamics.
 </p>
 
 <div id="pressure" class="heatmap"></div>
+
+</section>
+
+<section>
+
+<h2>Pressure Gradient</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map shows acceleration of attention dynamics across the 260-Kin cycle.
+Bright zones indicate rapid shifts of cognitive state.
+</p>
+
+<div id="gradient" class="heatmap"></div>
 
 </section>
 
@@ -390,6 +405,10 @@ drawChart("chart260",s260)
 
 let pressure = pyodide.runPython(`mtos_pressure_map()`).toJs()
 
+let gradient = pyodide.runPython(`mtos_pressure_gradient()`).toJs()
+
+drawHeatmap("gradient",gradient,20,13)
+
 drawHeatmap("pressure",pressure,20,13)
     
 let weather = pyodide.runPython(`mtos_260_weather(name,year,month,day)`).toJs()
@@ -431,7 +450,16 @@ kinMap,
 20,
 13,
 v=>{
-let activity = kinActivity[currentKin-1] || 0
+
+let activity = v || 0
+
+if(activity > 5) return "red"
+if(activity > 2) return "orange"
+if(activity > 0) return "yellow"
+
+return "#111"
+
+},
 
 if(activity > 30) return "red"
 if(activity > 10) return "orange"
@@ -534,7 +562,12 @@ let color = sealColors[seal] || "#ffffff"
 nodes.push({
 id:i,
 label:n,
-color:color
+color:color,
+size:18,
+font:{
+size:16,
+color:"#fff"
+}
 })
 i++
 })
@@ -544,8 +577,8 @@ network.forEach(e=>{
 edges.push({
 from:map[e.a],
 to:map[e.b],
-label:e.label,
-value:Math.abs(e.value)
+value:Math.abs(e.value),
+title:e.label
 })
 
 })
@@ -564,10 +597,21 @@ font:{color:"#ffffff"}
 },
 edges:{
 color:"#888",
-font:{color:"#aaa",size:10}
+width:2,
+scaling:{
+min:1,
+max:8
+},
+font:{size:0}
 },
 physics:{
-enabled:true
+enabled:true,
+barnesHut:{
+gravitationalConstant:-6000,
+centralGravity:0.3,
+springLength:200,
+springConstant:0.04
+}
 }
 }
 
@@ -766,7 +810,7 @@ let map=document.getElementById(id)
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns=`60px repeat(${cols},14px)`
+map.style.gridTemplateColumns=`60px repeat(${cols},12px)`
 map.style.gridTemplateRows=`repeat(${rows+1},14px)`
 map.style.gridAutoRows="14px"
 
