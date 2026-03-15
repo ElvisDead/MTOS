@@ -409,7 +409,7 @@ let phaseSpace = JSON.parse(
 drawPhaseSpace(phaseSpace)
 
 let network = JSON.parse(
-    pyodide.runPython(`json.dumps(mtos_user_network())`)
+    pyodide.runPython(`mtos_user_network()`)
 )
 
 let netHTML=""
