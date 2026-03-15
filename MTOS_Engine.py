@@ -92,7 +92,7 @@ BASE_KIN=34
 
 def verify_correlation():
 
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(datetime.timezone.utc).date()
 
     kin,_,_,_ = kin_from_date(today)
 
@@ -655,7 +655,7 @@ def run_mtos(name,year,month,day):
     guide_index = (i + (tone-1)) % 20
     guide_seal = seals[guide_index]
 
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(datetime.timezone.utc).date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
@@ -740,7 +740,7 @@ def mtos_260_weather(name,year,month,day):
 
 def mtos_user_climate(user_seal):
 
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(datetime.timezone.utc).date()
     _, day_tone, _, _ = kin_from_date(today)
 
     matrix = np.zeros((20,20))
@@ -828,7 +828,7 @@ def mtos_phase_matrix():
 
 def mtos_wave_structure():
 
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(datetime.timezone.utc).date()
 
     _,_,_,today_i = kin_from_date(today)
 
@@ -918,7 +918,7 @@ def mtos_user_network():
 
     users = load_users()
 
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(datetime.timezone.utc).date()
     today_kin, today_tone, today_seal, today_i = kin_from_date(today)
 
     names = list(users.keys())
