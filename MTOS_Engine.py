@@ -21,7 +21,30 @@ Author: MTOS Research
 Year: 2026
 """
 
-GLOBAL_USERS = []
+def load_global_users():
+
+    from js import localStorage
+
+    data = localStorage.getItem("mtos_global_users")
+
+    if data is None:
+        return []
+
+    try:
+        return json.loads(data)
+    except:
+        return []
+
+def save_global_users(users):
+
+    from js import localStorage
+
+    localStorage.setItem(
+        "mtos_global_users",
+        json.dumps(users)
+    )
+
+GLOBAL_USERS = load_global_users()
 GLOBAL_KIN_DISTRIBUTION = [0.5]*260
 GLOBAL_ATTENTION_BUFFER = [0.5]*30
 
@@ -509,18 +532,23 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days,user_name=None):
 
-    np.random.seed(user_i*13 + user_tone + start.toordinal())
+    np.random.seed(user_i*13 + start.toordinal())
 
     global GLOBAL_USERS
 
     if (user_i,user_tone) not in GLOBAL_USERS:
         GLOBAL_USERS.append((user_i,user_tone))
 
+    if (user_i,user_tone) not in GLOBAL_USERS:
+    GLOBAL_USERS.append((user_i,user_tone))
+    save_global_users(GLOBAL_USERS)
+
     if np.random.rand() < 0.02:
         reset_memory()
 
 # ограничение памяти сети
     GLOBAL_USERS = GLOBAL_USERS[-30:]
+    save_global_users(GLOBAL_USERS)
 
     learn = learning_adjust() + adaptive_learning()
 
