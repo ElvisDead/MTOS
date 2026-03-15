@@ -992,18 +992,14 @@ let g = Math.floor(val*255)
 
 c.className="cell"
 
+c.style.background = `rgb(${r},${g},0)`
+        
 c.dataset.original = c.style.background
 
 if(kin===currentKin){
 c.style.outline="2px solid white"
 c.style.boxShadow="0 0 8px white"
 }
-
-let currentSeal = (currentKin-1)%20
-
-let analogSeal = (currentSeal + 4) % 20
-let antipodeSeal = (currentSeal + 10) % 20
-let occultSeal = 19 - currentSeal
 
 if(seal === analogSeal){
 c.style.border="2px dashed cyan"
