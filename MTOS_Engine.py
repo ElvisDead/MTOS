@@ -573,7 +573,7 @@ def predictability(series):
 
         if d>0.12:
 
-            return i
+            return i+1
 
     return len(series)
 
@@ -981,7 +981,7 @@ def mtos_climate_atlas():
 
     for tone in range(20):
         for seal in range(20):
-            matrix[tone][seal] = seal_resonance(seal,seal,day_phase)
+            matrix[tone][seal] = seal_resonance(tone,seal,day_phase)
 
     # НОРМАЛИЗАЦИЯ
     min_v = np.min(matrix)
