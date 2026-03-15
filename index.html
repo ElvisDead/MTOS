@@ -324,7 +324,9 @@ pyodide.globals.set("year",year)
 pyodide.globals.set("month",month)
 pyodide.globals.set("day",day)
 
-let data = pyodide.runPython(`run_mtos(name,year,month,day)`).toJs()
+let data = JSON.parse(
+pyodide.runPython(`run_mtos(name,year,month,day)`)
+)
 
 currentKin = data.kin
 
