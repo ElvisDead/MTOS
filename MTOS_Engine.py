@@ -460,6 +460,8 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days):
 
+    np.random.seed(user_i*13 + user_tone)
+
     global GLOBAL_USERS
 
     if (user_i,user_tone) not in GLOBAL_USERS:
@@ -493,7 +495,13 @@ def simulate(user_i,user_tone,start,days):
 
         a = a + wave*0.04
 
-        a = a + np.sin(2*np.pi*t/13)*0.02
+        wave_phase = (t + user_tone) % 13
+        wave = np.sin(2*np.pi*wave_phase/13)
+        
+        a = a + wave*0.04
+
+        tone_boost = (user_tone/13)*0.03
+        a = a + tone_boost
 
         env_noise = np.random.normal(0,0.01)
         a = a + env_noise
@@ -710,7 +718,7 @@ def mtos_series(name,year,month,day,days=30):
 
     kin,tone,seal,i=kin_from_date(birth)
 
-    today=datetime.date.today()
+    today=datetime.datetime.now(datetime.timezone.utc).date()
 
     series=simulate(i,tone,today,days)
 
@@ -722,7 +730,7 @@ def mtos_260_weather(name,year,month,day):
 
     kin,tone,seal,i=kin_from_date(birth)
 
-    today=datetime.date.today()
+    today=datetime.datetime.now(datetime.timezone.utc).date()
 
     matrix = np.zeros((13,20))
 
