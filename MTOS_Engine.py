@@ -743,6 +743,12 @@ def mtos_260_weather(name,year,month,day):
 
         value = float(series[0])
 
+        spiral = np.sin(2*np.pi*kin/260) * 0.05
+
+        value = value + spiral
+
+        value = max(0,min(value,1))
+
         matrix[tone][seal] = value
 
     return matrix.flatten().tolist()
