@@ -76,10 +76,14 @@ padding:5px;
 }
 
 .cell{
-width:10px;
-height:10px;
+width:18px;
+height:18px;
 border:1px solid #222;
 box-sizing:border-box;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:9px;
 }
 
 </style>
@@ -210,6 +214,18 @@ Brighter cells indicate that more users belong to that Kin.
 </p>
 
 <div id="kinDistribution" class="heatmap"></div>
+
+</section>
+
+<section>
+
+<h2>Linear Kin Distribution (1..260)</h2>
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map shows the same user distribution but arranged as a linear
+260-Kin calendar instead of the structural Tzolkin geometry.
+</p>
+
+<div id="kinLinear" class="heatmap"></div>
 
 </section>
 
@@ -467,6 +483,7 @@ drawMatrix(
 kinMap,
 20,
 13,
+    
 v=>{
 
 let activity = v || 0
@@ -513,6 +530,8 @@ return text + "Activity: "+activity
 
 }
 )
+
+drawLinearKinMap("kinLinear", kinMap)
     
 let collective = JSON.parse(
     pyodide.runPython(`mtos_collective()`)
@@ -694,6 +713,52 @@ map.appendChild(c)
 }
 
 }
+
+function drawLinearKinMap(id,data){
+
+let map=document.getElementById(id)
+
+map.innerHTML=""
+
+map.style.display="grid"
+map.style.gridTemplateColumns="repeat(20,12px)"
+map.style.gridAutoRows="12px"
+
+for(let kin=1; kin<=260; kin++){
+
+let v=data[kin-1] ?? 0
+
+let c=document.createElement("div")
+c.className="cell"
+
+if(v>0){
+
+const colors=[
+"#ffff00",
+"#ffd000",
+"#ffa000",
+"#ff7000",
+"#ff4000",
+"#ff0000",
+"#cc0000"
+]
+
+let index=Math.min(v-1,6)
+c.style.background=colors[index]
+
+c.title="Kin "+kin+" ("+v+" users)"
+
+}else{
+
+c.style.background="#111"
+
+}
+
+map.appendChild(c)
+
+}
+
+}
     
 function drawChart(id,data){
 
@@ -735,8 +800,8 @@ let map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns="60px repeat(20,12px)"
-map.style.gridAutoRows="12px"
+map.style.gridTemplateColumns="60px repeat(20,18px)"
+map.style.gridAutoRows="18px"
 
 let empty=document.createElement("div")
 map.appendChild(empty)
