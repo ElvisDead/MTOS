@@ -460,6 +460,8 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days):
 
+    global GLOBAL_USERS
+
     if (user_i,user_tone) not in GLOBAL_USERS:
         GLOBAL_USERS.append((user_i,user_tone))
 
@@ -540,10 +542,9 @@ def entropy(series):
 
 def chaos(series):
 
-    np.mean(np.abs(np.diff(series)))
+    v = np.mean(np.abs(np.diff(series)))
 
     if np.isnan(v):
-
         return 0
 
     return float(v)
@@ -598,6 +599,7 @@ def attention_attractors(series):
     hist,_ = np.histogram(series,bins=12,range=(0,1))
 
     mean = np.mean(hist)
+    std = np.std(hist)
 
     attractors = []
 
@@ -606,7 +608,6 @@ def attention_attractors(series):
         if v > mean + std:
 
             center = (i+0.5)/12
-
             attractors.append(float(center))
 
     return attractors
@@ -810,7 +811,7 @@ def mtos_phase_matrix():
 
 def mtos_wave_structure():
 
-    today = datetime.datetime.now(datetime.UTC).date()
+    today = datetime.datetime.utcnow().date()
 
     _,_,_,today_i = kin_from_date(today)
 
@@ -819,9 +820,10 @@ def mtos_wave_structure():
     a = 0.55
     f = 0.2
 
+    today_kin,_,_,_ = kin_from_date(today)
+    
     for step in range(260):
 
-        today_kin,_,_,_ = kin_from_date(today)
         kin = (today_kin + step -1) % 260 +1
 
         tone = (kin-1) % 13 + 1
@@ -829,12 +831,14 @@ def mtos_wave_structure():
 
         a,f = attention_step(
             a,f,
-            seal,tone,
-            seal,tone,
-            kin+1
+            seal,
+            tone,
+            seal,
+            tone,
+            kin
         )
 
-        matrix[tone][seal] = a
+        matrix[tone-1][seal] = a
 
     return matrix.flatten().tolist()
 
