@@ -915,6 +915,38 @@ def mtos_pressure_map():
 
     return matrix.flatten().tolist()
 
+def mtos_pressure_gradient():
+
+    base = mtos_pressure_map()
+
+    gradient = [0]*260
+
+    prev = base[0]
+
+    for i in range(260):
+
+        cur = base[i]
+
+        gradient[i] = abs(cur - prev)
+
+        prev = cur
+
+    matrix = np.zeros((13,20))
+
+    for kin in range(260):
+
+        tone = kin % 13
+        seal = kin % 20
+
+        matrix[tone][seal] = gradient[kin]
+
+    maxv = np.max(matrix)
+
+    if maxv > 0:
+        matrix = matrix / maxv
+
+    return matrix.flatten().tolist()
+
 def mtos_phase_matrix():
 
     matrix = []
