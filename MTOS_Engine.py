@@ -267,7 +267,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
     contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
 
     if GLOBAL_USERS:
-        avg = np.mean([seal_resonance(user_i,ui,day_tone) for ui,_ in GLOBAL_USERS])
+        avg = np.mean([seal_resonance(user_i,ui,day_tone) for _,ui,_ in GLOBAL_USERS])
         network_field = avg * 0.05
     else:
         network_field = 0
@@ -519,7 +519,7 @@ def collective_wave():
 
     wave = 0
 
-    for ui,ut in GLOBAL_USERS:
+    for _,ui,ut in GLOBAL_USERS:
         wave += np.sin((ui + ut)*0.3)
 
     wave = wave / len(GLOBAL_USERS)
@@ -536,12 +536,9 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
     global GLOBAL_USERS
 
-    if (user_i,user_tone) not in GLOBAL_USERS:
-        GLOBAL_USERS.append((user_i,user_tone))
-
-    if (user_i,user_tone) not in GLOBAL_USERS:
-    GLOBAL_USERS.append((user_i,user_tone))
-    save_global_users(GLOBAL_USERS)
+    if user_name not in [u[0] for u in GLOBAL_USERS]:
+        GLOBAL_USERS.append((user_name,user_i,user_tone))
+        save_global_users(GLOBAL_USERS)
 
     if np.random.rand() < 0.02:
         reset_memory()
