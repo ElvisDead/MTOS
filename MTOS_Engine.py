@@ -681,6 +681,22 @@ def phase_space(series):
 
     return points
 
+def phase_density(series):
+
+    grid = np.zeros((20,20))
+
+    for i in range(len(series)-1):
+
+        x = int(series[i]*19)
+        y = int(series[i+1]*19)
+
+        grid[y][x] += 1
+
+    if np.max(grid) > 0:
+        grid = grid / np.max(grid)
+
+    return grid.flatten().tolist()
+
 def attention_attractors(series):
 
     hist,_ = np.histogram(series,bins=12,range=(0,1))
@@ -1005,6 +1021,17 @@ def mtos_phase_space(name,year,month,day):
         "x":xs,
         "y":ys
     }
+
+def mtos_phase_density(name,year,month,day):
+
+    birth = datetime.date(year,month,day)
+    _,tone,_,i = kin_from_date(birth)
+
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+
+    series = simulate(i,tone,today,260)
+
+    return phase_density(series)
 
 def mtos_user_network():
 
