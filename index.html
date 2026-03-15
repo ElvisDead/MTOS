@@ -167,7 +167,7 @@ This map shows where the 260-Kin cycle is most unstable.
 Bright regions indicate rapid changes in attention dynamics.
 </p>
 
-<div id="pressure" class="map"></div>
+<div id="pressure" class="heatmap"></div>
 
 </section>
 
@@ -611,6 +611,7 @@ map.innerHTML=""
 
 map.style.display="grid"
 map.style.gridTemplateColumns=`60px repeat(${cols},14px)`
+map.style.gridTemplateRows=`repeat(${rows+1},14px)`
 map.style.gridAutoRows="14px"
 
 // верхний левый пустой угол
