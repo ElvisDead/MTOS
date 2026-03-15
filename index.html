@@ -288,6 +288,19 @@ Together they form the 260-day cycle that underlies the MTOS system.
 <div id="tzolkin" class="heatmap"></div>
 
 </section>
+
+<section>
+
+<h2>Tzolkin Geometry Map</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map highlights structural symmetries of the 20-seal cycle.
+It visualizes analog, antipode and occult relations between archetypes.
+</p>
+
+<div id="geometry" class="heatmap"></div>
+
+</section>
     
 <section>
 
@@ -322,6 +335,18 @@ Bright regions indicate stable attractors of the system.
 </p>
 
 <div id="phaseDensity" class="heatmap"></div>
+
+</section>
+
+<section>
+
+<h2>Tzolkin Geometry Map</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+This map highlights structural symmetries of the Tzolkin cycle.
+</p>
+
+<div id="geometry" class="heatmap"></div>
 
 </section>
 
@@ -421,6 +446,7 @@ renderMap("atlas",20,20)
 renderMap("phase")
 renderMap("wave")
 renderMap("tzolkin")
+renderMap("geometry")
 
 let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
@@ -625,7 +651,9 @@ phase: () => pyodide.runPython(`mtos_phase_matrix()`).toJs(),
 
 wave: () => pyodide.runPython(`mtos_wave_structure()`).toJs(),
 
-tzolkin: () => pyodide.runPython(`mtos_tzolkin_structure()`).toJs()
+tzolkin: () => pyodide.runPython(`mtos_tzolkin_structure()`).toJs(),
+
+geometry: () => pyodide.runPython(`mtos_tzolkin_geometry()`).toJs()
 
 }
 
