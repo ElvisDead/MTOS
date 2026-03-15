@@ -229,10 +229,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
 
     kin_memory = KIN_MEMORY[kin-1] - 0.5
 
-    if user_name is None:
-        user_memory = 0
-    else:
-        user_memory = USER_MEMORY.get(user_name,0.5) - 0.5
+    user_memory = USER_MEMORY.get(user_name,0.5) - 0.5 if user_name else 0
 
     global_field = GLOBAL_KIN_DISTRIBUTION[kin-1] - 0.5
 
@@ -1085,7 +1082,7 @@ def mtos_tzolkin_structure():
     for tone in range(13):
         for seal in range(20):
             
-            kin = (seal*13 + tone) % 260 + 1
+            kin = (tone*20 + seal) % 260 + 1
             value = np.sin(tone/13) + np.cos(seal/20)
             
             matrix.append(float(value))
