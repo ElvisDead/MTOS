@@ -324,7 +324,7 @@ pyodide.globals.set("year",year)
 pyodide.globals.set("month",month)
 pyodide.globals.set("day",day)
 
-let data=pyodide.runPython(`run_mtos(name,year,month,day)`)
+let data = pyodide.runPython(`run_mtos(name,year,month,day)`).toJs()
 
 currentKin = data.kin
 
@@ -547,7 +547,7 @@ for(let t=0;t<13;t++){
 
 let c=document.createElement("div")
 
-let kin = s*13 + t + 1
+let kin = s*13 + t + t
 let tone=(kin-1)%13
 let seal=(kin-1)%20
 
