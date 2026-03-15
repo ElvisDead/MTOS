@@ -46,7 +46,7 @@ USER_MEMORY_FILE="mtos_user_memory"
 SEAL_MEMORY = [0.5]*20
 KIN_MEMORY = [0.5]*260
 ARCHETYPE_WEIGHTS = [1.0]*20
-USER_MEMORY = load_user_memory()
+USER_MEMORY = {}
 
 def update_seal_memory(seal_index,attention):
 
@@ -229,7 +229,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
 
     kin_memory = KIN_MEMORY[kin-1] - 0.5
 
-    user_memory = USER_MEMORY.get(user_i,0.5) - 0.5
+    user_memory = USER_MEMORY.get(user_name,0.5) - 0.5
 
     global_field = GLOBAL_KIN_DISTRIBUTION[kin-1] - 0.5
 
@@ -339,6 +339,8 @@ def save_user_memory(mem):
         "mtos_user_memory",
         json.dumps(mem)
     )
+
+USER_MEMORY = load_user_memory()
 
 # ==========================================================
 # ATTENTION DATABASE
@@ -517,7 +519,7 @@ def simulate(user_i,user_tone,start,days,user_name=None):
     
     series = []
 
-    wave = collective_wave()
+    collective = collective_wave()
 
     for t in range(days):
 
@@ -532,7 +534,7 @@ def simulate(user_i,user_tone,start,days,user_name=None):
         if user_name:
             update_user_memory(user_name,a)
 
-        a = a + wave*0.04
+        a = a + collective*0.04
 
         wave_phase = (t + user_tone) % 13
         wave = np.sin(2*np.pi*wave_phase/13)
@@ -778,11 +780,13 @@ def mtos_260_weather(name,year,month,day):
         tone = (kin-1) % 13
         seal = (kin-1) % 20
 
-        series = simulate(seal,tone,today,30)
+        kin_date = today + datetime.timedelta(days=kin-1)
+
+        series = simulate(seal,tone,kin_date,30)
 
         value = float(series[0])
 
-        spiral = np.sin(2*np.pi*kin/260) * 0.05
+        spiral = np.sin(2*np.pi*(kin-1)/260) * 0.05
 
         value = value + spiral
 
