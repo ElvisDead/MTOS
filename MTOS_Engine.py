@@ -724,8 +724,6 @@ def mtos_260_weather(name,year,month,day):
 
     today=datetime.date.today()
 
-    series = simulate(i,tone,today,260)
-
     matrix = np.zeros((13,20))
 
     for kin in range(1,261):
@@ -733,7 +731,11 @@ def mtos_260_weather(name,year,month,day):
         tone = (kin-1) % 13
         seal = (kin-1) % 20
 
-        matrix[tone][seal] = series[kin-1]
+        series = simulate(seal,tone,today,30)
+
+        value = float(series[0])
+
+        matrix[tone][seal] = value
 
     return matrix.flatten().tolist()
 
