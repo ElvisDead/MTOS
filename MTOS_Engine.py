@@ -38,6 +38,7 @@ USERS_FILE="mtos_users.json"
 ATTENTION_FILE="mtos_attention_db.json"
 FIELD_FILE="mtos_global_field.json"
 METRICS_FILE="mtos_metrics.json"
+USER_MEMORY_FILE="mtos_user_memory"
 
 # ==========================================================
 # ARCHETYPE MEMORY
@@ -45,6 +46,7 @@ METRICS_FILE="mtos_metrics.json"
 SEAL_MEMORY = [0.5]*20
 KIN_MEMORY = [0.5]*260
 ARCHETYPE_WEIGHTS = [1.0]*20
+USER_MEMORY = load_user_memory()
 
 def update_seal_memory(seal_index,attention):
 
@@ -73,6 +75,19 @@ def reset_memory():
 
     SEAL_MEMORY = [0.5]*20
     KIN_MEMORY = [0.5]*260
+
+def update_user_memory(user_name,attention):
+
+    global USER_MEMORY
+
+    if user_name not in USER_MEMORY:
+        USER_MEMORY[user_name] = 0.5
+
+    old = USER_MEMORY[user_name]
+
+    USER_MEMORY[user_name] = old*0.92 + attention*0.08
+
+    save_user_memory(USER_MEMORY)
 
 # ==========================================================
 # TZOLKIN STRUCTURE
@@ -214,6 +229,8 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
 
     kin_memory = KIN_MEMORY[kin-1] - 0.5
 
+    user_memory = USER_MEMORY.get(user_i,0.5) - 0.5
+
     global_field = GLOBAL_KIN_DISTRIBUTION[kin-1] - 0.5
 
     contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
@@ -233,6 +250,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin):
         tone_sync +
         memory*0.06 +
         kin_memory*0.04 +
+        user_memory*0.08 +
         global_field*0.05 +
         network_field +
         contagion*0.06 +
@@ -302,6 +320,25 @@ def register_user(name,birth,kin,tone,seal):
     }
 
     save_users(users)
+
+def load_user_memory():
+
+    data = localStorage.getItem("mtos_user_memory")
+
+    if data is None:
+        return {}
+
+    try:
+        return json.loads(data)
+    except:
+        return {}
+
+def save_user_memory(mem):
+
+    localStorage.setItem(
+        "mtos_user_memory",
+        json.dumps(mem)
+    )
 
 # ==========================================================
 # ATTENTION DATABASE
@@ -400,7 +437,7 @@ def learning_adjust():
 
     db=load_attention()
 
-    if len(db)<30:
+    if len(db)<10:
     
         return 0
 
@@ -458,7 +495,7 @@ def collective_wave():
 # SIMULATION
 # ==========================================================
 
-def simulate(user_i,user_tone,start,days):
+def simulate(user_i,user_tone,start,days,user_name=None):
 
     np.random.seed(user_i*13 + user_tone + start.toordinal())
 
@@ -492,6 +529,8 @@ def simulate(user_i,user_tone,start,days):
 
         update_seal_memory(i,a)
         update_kin_memory(kin,a)
+        if user_name:
+            update_user_memory(user_name,a)
 
         a = a + wave*0.04
 
@@ -660,14 +699,14 @@ def run_mtos(name,year,month,day):
     antipode_seal = seals[antipode(i)]
     occult_seal = seals[occult(i)]
 
-    guide_index = (i + (tone-1)) % 20
+    guide_index = (i + 4*(tone-1)) % 20
     guide_seal = seals[guide_index]
 
     today = datetime.datetime.now(datetime.timezone.utc).date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
-    series = simulate(i,tone,today,260)
+    series = simulate(i,tone,today,260,name)
 
     baseline = SEAL_MEMORY[i] + (tone/13)*0.1
     series[0] = max(0,min(1, series[0] + (baseline-0.5)*0.3))
