@@ -400,6 +400,10 @@ let kinMap = JSON.parse(
     pyodide.runPython(`mtos_global_kin_map()`)
 )
 
+let kinActivity = JSON.parse(
+    pyodide.runPython(`mtos_kin_activity()`)
+)
+    
 kinUsers = JSON.parse(
     pyodide.runPython(`mtos_users_by_kin()`)
 )
@@ -410,9 +414,12 @@ kinMap,
 20,
 13,
 v=>{
-if(v==1) return "yellow"
-if(v==2) return "orange"
-if(v>=3) return "red"
+let activity = kinActivity[currentKin-1] || 0
+
+if(activity > 30) return "red"
+if(activity > 10) return "orange"
+if(activity > 3) return "yellow"
+
 return "#222"
 },
 (kin,v)=>{
@@ -433,7 +440,9 @@ u.seal+"\n"+
 "Tone "+u.tone+"\n\n"
 })
 
-return text
+let activity = kinActivity[kin-1] || 0
+
+return text + "Activity: "+activity
 
 }
 )
