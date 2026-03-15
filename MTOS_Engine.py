@@ -1105,6 +1105,11 @@ def mtos_users_by_kin():
         tone = data["tone"]
         seal = data["seal"]
 
-        kin_map[kin].append(f"{name} (Kin {kin}, {seal} T{tone})")
+        kin_map[kin].append({
+            "name": name,
+            "kin": kin,
+            "seal": seal,
+            "tone": tone
+        })
 
     return json.dumps(kin_map)
