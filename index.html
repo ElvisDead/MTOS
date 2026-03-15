@@ -84,6 +84,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 font-size:9px;
+transition: all 0.15s ease;
 }
 
 </style>
@@ -639,9 +640,8 @@ const seals=[
 ]
 
 const tones=[
-"Magnetic","Lunar","Electric","Self-Existing","Overtone",
-"Rhythmic","Resonant","Galactic","Solar","Planetary",
-"Spectral","Crystal","Cosmic"
+"T1","T2","T3","T4","T5","T6","T7",
+"T8","T9","T10","T11","T12","T13"
 ]
 
 const MTOS_MAPS = {
@@ -937,13 +937,6 @@ cell.style.outline="1px solid #00ccff"
 cell.style.boxShadow="0 0 4px #00ccff"
 }
 
-if(matches >= 2){
-
-cell.style.background="#ffffff"
-cell.style.boxShadow="0 0 6px #ffffff"
-
-}
-
 })
 
 }
@@ -991,7 +984,6 @@ let r = Math.floor((1-val)*255)
 let g = Math.floor(val*255)
 
 c.className="cell"
-c.style.background = `rgb(${r},${g},0)`
 
 c.dataset.original = c.style.background
 
@@ -1007,24 +999,27 @@ let antipodeSeal = (currentSeal + 10) % 20
 let occultSeal = 19 - currentSeal
 
 if(seal === analogSeal){
-c.style.outline="2px solid yellow"
-c.style.boxShadow="0 0 6px yellow"
+c.style.border="2px dashed cyan"
 }
 
 if(seal === antipodeSeal){
-c.style.outline="2px solid red"
-c.style.boxShadow="0 0 6px red"
+c.style.border="3px double red"
 }
 
 if(seal === occultSeal){
-c.style.outline="2px solid violet"
 c.style.boxShadow="0 0 6px violet"
 }
 
 c.title=
 "Kin "+kin+"\n"+
 seals[seal]+" — "+tones[tone]
-    
+
+let distance = Math.abs(kin - currentKin)
+
+if(distance > 20){
+c.style.opacity = 0.35
+}
+        
 map.appendChild(c)
 
 }
