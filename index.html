@@ -474,29 +474,6 @@ return text + "Activity: "+activity
 
 }
 )
-
-let users = kinUsers[kin]
-
-if(!users || users.length===0){
-return "Kin "+kin
-}
-
-let text=""
-
-users.forEach(u=>{
-text +=
-u.name+"\n"+
-"Kin "+u.kin+"\n"+
-u.seal+"\n"+
-"Tone "+u.tone+"\n\n"
-})
-
-let activity = kinActivity[kin-1] || 0
-
-return text + "Activity: "+activity
-
-}
-)
     
 let collective = JSON.parse(
     pyodide.runPython(`mtos_collective()`)
