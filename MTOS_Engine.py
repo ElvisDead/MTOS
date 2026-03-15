@@ -874,7 +874,7 @@ def mtos_phase_matrix():
         
         for seal in range(20):
     
-            kin = (tone*20 + seal) % 260 + 1
+            kin = (seal*13 + tone) % 260 + 1
             value = np.sin(kin/260 * 2*np.pi)
 
             value = (value + 1) / 2
@@ -1078,7 +1078,7 @@ def mtos_tzolkin_structure():
     for tone in range(13):
         for seal in range(20):
             
-            kin = (tone*20 + seal) % 260 + 1
+            kin = (seal*13 + tone) % 260 + 1
             value = np.sin(tone/13) + np.cos(seal/20)
             
             matrix.append(float(value))
