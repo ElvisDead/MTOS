@@ -324,8 +324,8 @@ pyodide.globals.set("year",year)
 pyodide.globals.set("month",month)
 pyodide.globals.set("day",day)
 
-let result=pyodide.runPython(`run_mtos(name,year,month,day)`)
-let data=result.toJs()
+let data=pyodide.runPython(`run_mtos(name,year,month,day)`)
+
 currentKin = data.kin
 
 document.getElementById("state").innerHTML=
