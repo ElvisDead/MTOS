@@ -887,6 +887,9 @@ function drawKinMap(weather){
 let map=document.getElementById("kinmap")
 map.innerHTML=""
 
+let min = Math.min(...weather)
+let max = Math.max(...weather)
+
 map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(20,18px)"
 map.style.gridAutoRows="18px"
@@ -1035,8 +1038,8 @@ c.style.outline="2px solid violet"
 c.style.boxShadow="0 0 6px violet"
 }
 
-let val = (v - min) / (max - min)
-let val = Math.max(0, Math.min(1, v))
+let val = (v - min) / (max - min || 1)
+val = Math.max(0, Math.min(1, val))
 
 c.style.background = getColor(val)
 
