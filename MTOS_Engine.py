@@ -92,7 +92,7 @@ BASE_KIN=34
 
 def verify_correlation():
 
-    today = datetime.datetime.now(datetime.UTC).date()
+    today = datetime.datetime.utcnow().date()
 
     kin,_,_,_ = kin_from_date(today)
 
