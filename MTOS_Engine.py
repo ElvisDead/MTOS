@@ -997,7 +997,7 @@ import datetime
 
 def mtos_climate_atlas():
 
-    today = datetime.datetime.utcnow().timetuple().tm_yday
+    today = datetime.datetime.now(datetime.timezone.utc).timetuple().tm_yday
     day_phase = today % 13
 
     matrix = np.zeros((20,20))
