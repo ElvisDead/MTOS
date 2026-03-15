@@ -959,9 +959,16 @@ cell.style.boxShadow="0 0 4px #00ccff"
 
     let tone=(kin-1)%13
     let seal=(kin-1)%20
-let analogKin = ((currentKin + 4*13 -1) % 260) + 1
-let antipodeKin = ((currentKin + 10*13 -1) % 260) + 1
-let occultKin = 261 - currentKin
+let tone0 = (currentKin - 1) % 13
+let seal0 = (currentKin - 1) % 20
+
+let analogSeal = (seal0 + 4) % 20
+let antipodeSeal = (seal0 + 10) % 20
+let occultSeal = 19 - seal0
+
+let analogKin = analogSeal * 13 + tone0 + 1
+let antipodeKin = antipodeSeal * 13 + tone0 + 1
+let occultKin = occultSeal * 13 + tone0 + 1
 
 if(kin === analogKin){
 c.style.outline="2px solid yellow"
