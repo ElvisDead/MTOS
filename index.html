@@ -146,6 +146,18 @@ They measure how stable, chaotic or predictable the attention flow is.
 
 <section>
 
+<h2>Export Experiment</h2>
+
+<p style="max-width:700px;margin:auto;color:#bbb">
+Export the MTOS attention database for external analysis.
+</p>
+
+<button onclick="exportExperiment()">Export Data</button>
+
+</section>
+
+<section>
+
 <h2>260 Kin Cognitive Weather</h2>
 <p style="max-width:700px;margin:auto;color:#bbb">
 This map represents the 260-day Tzolkin cycle — a kind of "cognitive weather".
@@ -887,6 +899,24 @@ y:{suggestedMin:0,suggestedMax:1}
 }
 }
 })
+
+}
+
+async function exportExperiment(){
+
+const pyodide = window.pyodide
+
+let data = pyodide.runPython(`export_experiment()`)
+
+let blob = new Blob([data], {type:"application/json"})
+
+let a = document.createElement("a")
+
+a.href = URL.createObjectURL(blob)
+
+a.download = "mtos_experiment.json"
+
+a.click()
 
 }
 
