@@ -648,11 +648,21 @@ def run_mtos(name,year,month,day):
 
     kin,tone,seal,i = kin_from_date(birth)
 
+    analog_seal = seals[analog(i)]
+    antipode_seal = seals[antipode(i)]
+    occult_seal = seals[occult(i)]
+
+    guide_index = (i + (tone-1)) % 20
+    guide_seal = seals[guide_index]
+
     today = datetime.datetime.utcnow().date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
 
     series = simulate(i,tone,today,260)
+
+    baseline = SEAL_MEMORY[i] + (tone/13)*0.1
+    series[0] = max(0,min(1, series[0] + (baseline-0.5)*0.3))
 
     phase = phase_space(series)
 
@@ -683,6 +693,13 @@ def run_mtos(name,year,month,day):
         "attractors": attractors,
         "tzolkin_attractors": attractor_map,
         "phase_space": phase,
+        "analog": analog_seal,
+        "antipode": antipode_seal,
+        "occult": occult_seal,
+        "guide": guide_seal,
+        "today_kin": today_kin,
+        "today_seal": today_seal,
+        "today_tone": today_tone,
     }
 
     return json.dumps(result)
