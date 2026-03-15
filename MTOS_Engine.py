@@ -407,6 +407,15 @@ def store_attention(user,date,kin,attention):
 
     save_attention(db)
 
+def export_experiment():
+
+    db = load_attention()
+
+    return json.dumps({
+        "records": db,
+        "count": len(db)
+    })
+
 # ==========================================================
 # GLOBAL ATTENTION FIELD (Browser Storage)
 # ==========================================================
