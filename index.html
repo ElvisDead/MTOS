@@ -997,24 +997,6 @@ c.style.outline="2px solid violet"
 c.style.boxShadow="0 0 6px violet"
 }
 
-let currentSeal = (currentKin-1)%20
-
-let analogSeal = (currentSeal + 4) % 20
-let antipodeSeal = (currentSeal + 10) % 20
-let occultSeal = 19 - currentSeal
-
-if(seal === analogSeal){
-c.style.outline="2px solid yellow"
-}
-
-if(seal === antipodeSeal){
-c.style.outline="2px solid red"
-}
-
-if(seal === occultSeal){
-c.style.outline="2px solid violet"
-}
-
 c.title=
 "Kin "+kin+"\n"+
 seals[seal]+" — "+tones[tone]
