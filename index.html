@@ -576,14 +576,14 @@ for(let t=0;t<13;t++){
 
 let c=document.createElement("div")
 
-let kin = (s + t*20) % 260 + 1
+let kin = (s*13 + t) % 260 + 1
 let tone=(kin-1)%13
 let seal=(kin-1)%20
 
 let color="red"
 
-if(v>0.65) color="green"
-else if(v>0.55) color="yellow"
+if(v>0.60) color="green"
+else if(v>0.52) color="yellow"
 else if(v>0.45) color="orange"
 
 c.className="cell"
