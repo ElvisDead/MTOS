@@ -153,7 +153,7 @@ def seal_resonance(a,b,day_phase=0):
 
     # tzolkin structural resonance
     if b == analog(a):
-        base += 0.18
+        base += 0.10
 
     if b == antipode(a):
         base -= 0.12
@@ -703,9 +703,6 @@ def run_mtos(name,year,month,day):
     antipode_seal = seals[antipode(i)]
     occult_seal = seals[occult(i)]
 
-    guide_index = (i + 4*(tone-1)) % 20
-    guide_seal = seals[guide_index]
-
     today = datetime.datetime.now(datetime.timezone.utc).date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
@@ -747,7 +744,6 @@ def run_mtos(name,year,month,day):
         "analog": analog_seal,
         "antipode": antipode_seal,
         "occult": occult_seal,
-        "guide": guide_seal,
         "today_kin": today_kin,
         "today_seal": today_seal,
         "today_tone": today_tone,
