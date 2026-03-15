@@ -550,6 +550,17 @@ map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(20,12px)"
 map.style.gridAutoRows="12px"
 
+let empty=document.createElement("div")
+map.appendChild(empty)
+
+seals.forEach(s=>{
+    let h=document.createElement("div")
+    h.style.fontSize="8px"
+    h.style.color="#aaa"
+    h.innerText=s
+    map.appendChild(h)
+})
+
 for(let t=0;t<13;t++){
 
     let label=document.createElement("div")
@@ -571,8 +582,8 @@ let seal=(kin-1)%20
 
 let color="red"
 
-if(v>0.75) color="green"
-else if(v>0.6) color="yellow"
+if(v>0.65) color="green"
+else if(v>0.55) color="yellow"
 else if(v>0.45) color="orange"
 
 c.className="cell"
@@ -580,7 +591,9 @@ c.style.background=color
 
 if(kin===currentKin) c.style.outline="2px solid white"
 
-c.title="Kin "+kin
+c.title=
+"Kin "+kin+"\n"+
+seals[seal]+" — "+tones[tone]
     
 map.appendChild(c)
 
