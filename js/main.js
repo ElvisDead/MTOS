@@ -46,3 +46,6 @@ import { MTOS_MAPS } from "./mapsConfig.js"
 
 window.MTOS_MAPS = MTOS_MAPS
 
+import { run } from "./run.js"
+
+window.run = run
