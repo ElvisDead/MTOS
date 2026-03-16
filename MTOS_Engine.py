@@ -264,6 +264,8 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
     else:
         avg = 0
 
+    network_field = avg * 0.05
+
     noise = np.random.normal(0,0.015)
 
     a = (
