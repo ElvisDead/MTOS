@@ -58,7 +58,7 @@ map.appendChild(label)
 
 for(let tone=0;tone<13;tone++){
 
-let kin = ((tone + seal*13) % 260) + 1
+let kin = ((seal + tone*20) % 260) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
