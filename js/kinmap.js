@@ -103,7 +103,7 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = currentKin + (analogSeal - seal0) * 13
+let analogKin = window.currentKin - 52
 if(analogKin < 1) analogKin += 260
 if(analogKin > 260) analogKin -= 260
 let antipodeKin = ((tone0 + antipodeSeal*13) % 260) + 1
