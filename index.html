@@ -851,7 +851,7 @@ map.innerHTML=""
 map.style.display="grid"
 map.style.gridTemplateColumns="repeat(20,12px)"
 map.style.gridAutoRows="12px"
-
+  
 for(let kin=1; kin<=260; kin++){
 
 let v=data[kin-1] ?? 0
@@ -972,6 +972,15 @@ let max=Math.max(...weather)
 
 let cells=[]
 
+// tone labels
+for(let t=0;t<13;t++){
+let label=document.createElement("div")
+label.innerText="T"+(t+1)
+label.style.fontSize="8px"
+label.style.color="#aaa"
+map.appendChild(label)
+}
+    
 for(let kin=1; kin<=260; kin++){
 
 let ts = tsFromKin(kin)
@@ -1010,8 +1019,6 @@ col:col
 }
 
 highlightCurrentKin(cells)
-
-}
 
 }
     
