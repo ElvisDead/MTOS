@@ -516,7 +516,7 @@ pyodide.globals.set("month",month)
 pyodide.globals.set("day",day)
 
 let data = JSON.parse(
-pyodide.runPython(`run_mtos(name,year,month,day)`)
+pyodide.runPython(`run_mtos(name,year,month,day)`) || "{}"
 )
 
 currentKin = data.kin
@@ -876,7 +876,10 @@ map.appendChild(c)
     
 function drawChart(id,data){
 
-if(charts[id]) charts[id].destroy()
+if(charts[id]){
+charts[id].destroy()
+delete charts[id]
+}
 
 let ctx=document.getElementById(id).getContext("2d")
 
