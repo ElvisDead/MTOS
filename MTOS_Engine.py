@@ -825,7 +825,7 @@ def mtos_260_weather(name,year,month,day):
 
     today=datetime.datetime.now(datetime.timezone.utc).date()
 
-    matrix = np.zeros((20,13))
+    weather = [0]*260
 
     for kin in range(1,261):
 
@@ -853,9 +853,9 @@ def mtos_260_weather(name,year,month,day):
             value = 0.5
         value = max(0,min(value,1))
 
-        matrix[tone][seal] = value
+        weather[kin-1] = value
 
-    return matrix.flatten().tolist()
+    return weather
 
 def mtos_user_climate(user_seal):
 
