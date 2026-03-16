@@ -542,9 +542,10 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
     if user_name and user_name not in [u[0] for u in GLOBAL_USERS]:
         GLOBAL_USERS.append((user_name,user_i,user_tone))
+        GLOBAL_USERS = GLOBAL_USERS[-30:]
         save_global_users(GLOBAL_USERS)
 
-    if np.random.rand() < 0.02:
+    if user_name and np.random.rand() < 0.02:
         reset_memory()
 
 # ограничение памяти сети
@@ -600,6 +601,8 @@ def simulate(user_i,user_tone,start,days,user_name=None):
         if np.isnan(a):
             a = 0.5
         a = max(0, min(a, 1))
+        if np.isnan(a):
+            a = 0.5
         series.append(a)
 
     return np.array(series)
@@ -620,8 +623,8 @@ def entropy(series):
     p = hist.astype(float) / s
     p=p[p>0]
 
-    v = -np.sum(p*np.log(p))
     p = np.clip(p,1e-9,1)
+    v = -np.sum(p*np.log(p))
 
     if np.isnan(v):
 
@@ -908,7 +911,7 @@ def mtos_pressure_map():
         tone = ((k) % 13) + 1
         seal = (k) % 20
 
-        np.random.seed(k+1)
+        np.random.seed(int(k+1))
         a,f = attention_step(a,f,seal,tone,seal,tone,k+1)
 
         if prev is not None:
@@ -947,10 +950,10 @@ def mtos_pressure_gradient():
 
     for kin in range(260):
 
-        tone = ((kin-1) % 13)
-        seal = ((kin-1) % 20)
+        tone = (kin % 13)
+        seal = (kin % 20)
 
-        matrix[seal][tone] = gradient[kin-1]
+        matrix[seal][tone] = gradient[kin]
 
     maxv = np.max(matrix)
 
