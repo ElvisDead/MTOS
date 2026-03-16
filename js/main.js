@@ -31,3 +31,7 @@ import { exportExperiment } from "./exportExperiment.js"
 
 window.exportExperiment = exportExperiment
 
+import { drawKinMap } from "./kinmap.js"
+
+window.drawKinMap = drawKinMap
+
