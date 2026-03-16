@@ -894,7 +894,7 @@ def mtos_attractor_map(name,year,month,day):
 
 def mtos_pressure_map():
 
-    matrix = np.zeros((13,20))
+    matrix = np.zeros((20,13))
 
     a=0.55
     f=0.2
@@ -940,7 +940,7 @@ def mtos_pressure_gradient():
 
         prev = cur
 
-    matrix = np.zeros((13,20))
+    matrix = np.zeros((20,13))
 
     for kin in range(260):
 
@@ -978,7 +978,7 @@ def mtos_wave_structure():
 
     _,_,_,today_i = kin_from_date(today)
 
-    matrix = np.zeros((13,20))
+    matrix = np.zeros((20,13))
 
     a = 0.55
     f = 0.2
