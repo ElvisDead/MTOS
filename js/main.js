@@ -27,3 +27,7 @@ import { drawPhaseSpace } from "./phaseSpace.js"
 
 window.drawPhaseSpace = drawPhaseSpace
 
+import { exportExperiment } from "./exportExperiment.js"
+
+window.exportExperiment = exportExperiment
+
