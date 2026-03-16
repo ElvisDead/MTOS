@@ -1,3 +1,7 @@
+window.charts = {}
+window.currentKin = null
+window.kinUsers = {}
+
 import { drawChart } from "./charts.js"
 
 window.drawChart = drawChart
