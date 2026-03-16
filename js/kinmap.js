@@ -29,8 +29,8 @@ const map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns="60px repeat(13,18px)"
-map.style.gridAutoRows="18px"
+map.style.gridTemplateColumns="60px repeat(13,24px)"
+map.style.gridAutoRows="24px"
 
 let min=Math.min(...weather)
 let max=Math.max(...weather)
@@ -59,7 +59,7 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let kin = col + row*13 + 1
+let kin = row*13 + col + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -76,11 +76,14 @@ c.dataset.seal = sealReal
 
 c.style.background=getColor(val)
 
+let users = kinUsers[kin] || []
+let userList = users.length ? users.join(", ") : "none"
+
 c.title =
-"Kin "+kin+"\n"+
+"Kin: "+kin+"\n"+
 "Seal: "+seals[sealReal]+"\n"+
 "Tone: "+(toneReal+1)+"\n"+
-"Attention: "+v.toFixed(3)
+let userList = users.length ? users.join("\n") : "none"
 
 map.appendChild(c)
 cells.push(c)
