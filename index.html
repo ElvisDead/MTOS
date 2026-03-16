@@ -716,12 +716,9 @@ const seals=[
 "CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
 ]
 
-const ANALOG_MAP = [
-12,13,14,15,16,
-17,18,19,0,1,
-2,6,7,8,9,
-10,11,3,4,5
-]
+function analog(i){
+return (i + 4) % 20
+}
 
 const tones=[
 "T1","T2","T3","T4","T5","T6","T7",
@@ -963,8 +960,8 @@ for(let t=0;t<13;t++){
 
     for(let s=0;s<20;s++){
 
-    let index = (s*13 + t) % 260
-    let kin = index + 1
+    let kin = s*13 + t + 1
+    let index = kin - 1
     let v = weather[index]
     
     let sealIndex = (kin-1)%20
@@ -998,15 +995,15 @@ if(cell.dataset.row === undefined || cell.dataset.col === undefined) return
 let r = parseInt(cell.dataset.row)
 let col = parseInt(cell.dataset.col)
 
-let analog = ANALOG_MAP[s]
+let analog = (s + 4) % 20
 let antipode = (s + 10) % 20
 let occult = 19 - s
 let matches = 0
 
-let hoverKin = (s*13 + t) % 260 + 1
+let hoverKin = s*13 + t + 1
 let harmonic = Math.floor((hoverKin-1)/4)
 
-let cellKin = (col*13 + r) % 260 + 1
+let cellKin = col*13 + r + 1
 
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
@@ -1075,7 +1072,7 @@ cell.style.boxShadow=""
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
-let analogSeal = ANALOG_MAP[seal0]
+let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
@@ -1092,7 +1089,7 @@ let col = parseInt(cell.dataset.col)
 
 if(isNaN(r) || isNaN(col)) return
 
-let kin = (col*13 + r) % 260 + 1
+let kin = col*13 + r + 1
 
 if(kin === currentKin){
 cell.style.outline="2px solid white"
