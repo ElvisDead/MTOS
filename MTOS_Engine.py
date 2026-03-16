@@ -947,7 +947,7 @@ def mtos_pressure_gradient():
         tone = kin % 13
         seal = kin % 20
 
-        matrix[seal][tone] = gradient[kin]
+        matrix[seal][tone-1] = gradient[kin]
 
     maxv = np.max(matrix)
 
@@ -1001,7 +1001,7 @@ def mtos_wave_structure():
             kin
         )
 
-        matrix[tone-1][seal] = a
+        matrix[seal][tone-1] = a
 
     return matrix.flatten().tolist()
 
