@@ -59,7 +59,7 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
+let kin = ((row*13 + col) % 260) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -108,7 +108,20 @@ cells.forEach(c=>{
 c.style.outline=""
 c.style.boxShadow=""
 
+// subtle structural grid
+
+if((kin-1)%13===0){
+c.style.borderTop="1px solid #444"
+}
+
+if((kin-1)%4===0){
+c.style.borderLeft="1px solid #333"
+}
+
 let kin=parseInt(c.dataset.kin)
+
+let waveIndex = Math.floor((kin-1)/13)
+let currentWave = Math.floor((currentKin-1)/13)
 
 let tone=(kin-1)%13
 let seal=(kin-1)%20
@@ -130,9 +143,14 @@ if(Math.floor((kin-1)/4)===harmonic){
 shadows.push("0 0 4px #00ccff")
 }
 
-// wave
-if(Math.floor((kin-1)/13)===wave){
+// wave highlight
+if(waveIndex === currentWave){
+
 shadows.push("0 0 4px orange")
+
+// wave line
+c.style.border="1px solid rgba(255,140,0,0.35)"
+
 }
 
 if(shadows.length>0){
