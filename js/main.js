@@ -28,7 +28,6 @@ window.renderMap = renderMap
 window.drawPhaseSpace = drawPhaseSpace
 window.exportExperiment = exportExperiment
 window.drawKinMap = drawKinMap
-window.analog = analog
 window.kinFromTS = kinFromTS
 window.tsFromKin = tsFromKin
 window.kinToTS = kinToTS
