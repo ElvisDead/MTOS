@@ -974,11 +974,13 @@ let cells=[]
 
 for(let kin=1; kin<=260; kin++){
 
-let tone=(kin-1)%13
-let seal=(kin-1)%20
+let ts = tsFromKin(kin)
+let tone = ts.tone
+let seal = ts.seal
 
 let row=seal
 let col=tone
+// IMPORTANT: Python matrix uses matrix[seal][tone]
 
 let v=weather[kin-1] ?? 0
 
