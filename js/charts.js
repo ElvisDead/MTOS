@@ -1,13 +1,13 @@
 export function drawChart(id,data){
 
-if(charts[id]){
-charts[id].destroy()
-delete charts[id]
+if(window.charts[id]){
+window.charts[id].destroy()
+delete window.charts[id]
 }
 
 let ctx=document.getElementById(id).getContext("2d")
 
-charts[id]=new Chart(ctx,{
+window.charts[id]=new Chart(ctx,{
 type:"line",
 data:{
 labels:data.map((_,i)=>{
@@ -32,7 +32,5 @@ max:1
 }
 }
 })
-
-<script type="module" src="js/charts.js"></script>
 
 }
