@@ -903,8 +903,8 @@ def mtos_pressure_map():
 
     for k in range(260):
 
-        tone = (k % 13) + 1
-        seal = k % 20
+        tone = ((k) % 13) + 1
+        seal = (k) % 20
 
         a,f = attention_step(a,f,seal,tone,seal,tone,k+1)
 
