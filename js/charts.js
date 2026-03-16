@@ -1,4 +1,4 @@
-function drawChart(id,data){
+export function drawChart(id,data){
 
 if(charts[id]){
 charts[id].destroy()
