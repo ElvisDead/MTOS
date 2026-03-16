@@ -1011,16 +1011,15 @@ let occult = 19 - s
 let matches = 0
 
 let hoverKin = s*TONES + t + 1
-let harmonic = Math.floor((hoverKin-1)/4)
+let harmonic = Math.floor(s / 4)
 
 let cellKin = col*TONES + r + 1
+let cellHarmonic = Math.floor(col / 4)
 
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
 if(wave < 0) wave = 0
 if(currentWave < 0) currentWave = 0
-
-let cellHarmonic = Math.floor((cellKin-1)/4)
 
 /* tone */
 if(r === t){
@@ -1080,8 +1079,6 @@ cell.style.background = cell.dataset.original
 cell.style.boxShadow=""
 
 })
-
-if(currentKin === null) return
             
 if(currentKin === null) return
 
@@ -1107,11 +1104,6 @@ if(isNaN(r) || isNaN(col)) return
 
 let kin = col*13 + r + 1
 
-if(kin === currentKin){
-cell.style.outline="2px solid white"
-cell.style.boxShadow="0 0 10px white"
-}
-
 if(kin === analogKin){
 cell.style.outline="2px solid yellow"
 cell.style.boxShadow="0 0 6px yellow"
@@ -1127,6 +1119,11 @@ cell.style.outline="2px solid violet"
 cell.style.boxShadow="0 0 6px violet"
 }
 
+if(kin === currentKin){
+cell.style.outline="2px solid white"
+cell.style.boxShadow="0 0 10px white"
+}
+
 })
 
 }
@@ -1139,9 +1136,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = (analogSeal*13 + tone0) % 260 + 1
-let antipodeKin = (antipodeSeal * 13 + tone0) % 260 + 1
-let occultKin = (occultSeal * 13 + tone0) % 260 + 1
+let analogKin = analogSeal*13 + tone0 + 1
+let antipodeKin = antipodeSeal*13 + tone0 + 1
+let occultKin = occultSeal*13 + tone0 + 1
 
 if(kin === analogKin){
 c.style.outline="2px solid yellow"
