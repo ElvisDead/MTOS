@@ -969,7 +969,8 @@ for(let t=0;t<13;t++){
 
     for(let s=0;s<20;s++){
 
-    let kin = s*rows + t + 1
+    const TONES = 13
+    let kin = s*TONES + t + 1
     let index = kin - 1
     let v = weather[index] ?? 0
     
@@ -1009,10 +1010,10 @@ let antipode = (s + 10) % 20
 let occult = 19 - s
 let matches = 0
 
-let hoverKin = s*13 + t + 1
+let hoverKin = s*TONES + t + 1
 let harmonic = Math.floor((hoverKin-1)/4)
 
-let cellKin = col*13 + r + 1
+let cellKin = col*TONES + r + 1
 
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
@@ -1091,9 +1092,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = analogSeal*13 + tone0 + 1
-let antipodeKin = antipodeSeal*13 + tone0 + 1
-let occultKin = occultSeal*13 + tone0 + 1
+let analogKin = analogSeal*TONES + tone0 + 1
+let antipodeKin = antipodeSeal*TONES + tone0 + 1
+let occultKin = occultSeal*TONES + tone0 + 1
 
 /* вернуть выделение текущего Kin */
 
