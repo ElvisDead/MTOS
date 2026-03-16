@@ -265,8 +265,13 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
 
     # Lotka–Volterra style dynamics
 
-    da = 0.12*a - 0.18*a*f
-    df = -0.05*f + 0.12*a*f
+    alpha = 0.18
+    beta = 0.28
+    gamma = 0.08
+    delta = 0.22
+
+    da = alpha*a - beta*a*f
+    df = -gamma*f + delta*a*f
 
     a = a + da
     f = f + df
@@ -748,7 +753,7 @@ def run_mtos(name,year,month,day):
 
     phase = phase_space(series)
 
-    attractor_map = tzolkin_attractor_map(i,tone,today)
+    # attractor_map = tzolkin_attractor_map(i,tone,today)
 
     attractors = attention_attractors(series)
 
@@ -773,7 +778,7 @@ def run_mtos(name,year,month,day):
         "lyapunov":lyapunov(series),
         "predictability":predictability(series),
         "attractors": attractors,
-        "tzolkin_attractors": attractor_map,
+        "tzolkin_attractors": [],
         "phase_space": phase,
     }
 
@@ -803,7 +808,7 @@ def mtos_260_weather(name,year,month,day):
 
     for kin in range(1,261):
 
-        tone = (kin-1) % 13
+        tone = (kin-1) % 13 + 1
         seal = (kin-1) % 20
 
         kin_date = today + datetime.timedelta(days=kin-1)
@@ -944,7 +949,7 @@ def mtos_phase_matrix():
         
         for seal in range(20):
     
-            kin = ((seal + tone*20) % 260) + 1
+            kin = ((seal * 13) + tone) % 260 + 1
             value = np.sin(kin/260 * 2*np.pi)
 
             value = (value + 1) / 2
@@ -1026,13 +1031,15 @@ def mtos_phase_space(name,year,month,day):
     today=datetime.datetime.now(datetime.timezone.utc).date()
     series=simulate(i,tone,today,260)
 
+    delay = 3
+    
     xs=[]
     ys=[]
 
-    for i in range(len(series)-1):
+    for i in range(len(series)-delay):
 
         x = series[i]
-        y = series[i+1]
+        y = series[i+delay]
 
         xs.append(float(x))
         ys.append(float(y))
