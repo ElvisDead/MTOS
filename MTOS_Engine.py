@@ -533,7 +533,8 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days,user_name=None):
 
-    np.random.seed(int((user_i*13 + start.toordinal()) % 2**32))
+    seed = (user_i * 13 + user_tone * 17 + start.toordinal()) % 2**32
+    np.random.seed(int(seed))
 
     global GLOBAL_USERS
 
@@ -831,6 +832,7 @@ def mtos_260_weather(name,year,month,day):
         memory_backup_seal = SEAL_MEMORY.copy()
         memory_backup_kin = KIN_MEMORY.copy()
 
+        np.random.seed(kin)
         series = simulate(seal,tone,kin_date,30,None)
 
         SEAL_MEMORY[:] = memory_backup_seal
@@ -904,6 +906,7 @@ def mtos_pressure_map():
         tone = ((k) % 13) + 1
         seal = (k) % 20
 
+        np.random.seed(k+1)
         a,f = attention_step(a,f,seal,tone,seal,tone,k+1)
 
         if prev is not None:
@@ -990,6 +993,8 @@ def mtos_wave_structure():
         tone = (kin-1) % 13 + 1
         seal = (kin-1) % 20
 
+        np.random.seed(kin)
+
         a,f = attention_step(
             a,f,
             seal,
@@ -1065,8 +1070,8 @@ def mtos_phase_density(name,year,month,day):
 
     today = datetime.datetime.now(datetime.timezone.utc).date()
 
+    np.random.seed(i*13 + tone)
     series = simulate(i,tone,today,260)
-
     return phase_density(series)
 
 def mtos_user_network():
