@@ -1,5 +1,28 @@
 import { getColor } from "./colors.js"
 
+const seals = [
+"Dragon",
+"Wind",
+"Night",
+"Seed",
+"Serpent",
+"WorldBridger",
+"Hand",
+"Star",
+"Moon",
+"Dog",
+"Monkey",
+"Human",
+"Skywalker",
+"Wizard",
+"Eagle",
+"Warrior",
+"Earth",
+"Mirror",
+"Storm",
+"Sun"
+]
+
 export function drawKinMap(weather){
 
 const map=document.getElementById("kinmap")
