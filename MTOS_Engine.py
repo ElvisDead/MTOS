@@ -913,7 +913,7 @@ def mtos_pressure_map():
         else:
             delta = 0
 
-        matrix[tone-1][seal] = delta
+        matrix[seal][tone-1] = delta
 
         prev=a
 
@@ -1161,7 +1161,7 @@ def mtos_climate_atlas():
 
     for tone in range(20):
         for seal in range(20):
-            matrix[tone][seal] = seal_resonance(tone,seal,day_phase)
+            matrix[a][b] = seal_resonance(a,b,day_phase)
 
     # НОРМАЛИЗАЦИЯ
     min_v = np.min(matrix)
