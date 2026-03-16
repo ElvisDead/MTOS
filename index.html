@@ -1136,9 +1136,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = analogSeal*13 + tone0 + 1
-let antipodeKin = antipodeSeal*13 + tone0 + 1
-let occultKin = occultSeal*13 + tone0 + 1
+let analogKin = ((tone0)*20 + analogSeal) + 1
+let antipodeKin = ((tone0)*20 + antipodeSeal) + 1
+let occultKin = ((tone0)*20 + occultSeal) + 1
 
 if(kin === analogKin){
 c.style.outline="2px solid yellow"
