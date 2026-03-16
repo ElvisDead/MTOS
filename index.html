@@ -999,7 +999,7 @@ let cellKin = (col*13 + r) % 260 + 1
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
 
-let diagonal = (col*13 + r) % 260
+let diagonal = (col*13 + r) % 260 + 1
 if(diagonal === index){
     cell.style.boxShadow = "0 0 4px #ffffff40"
 }
@@ -1016,8 +1016,10 @@ if(col === s){
     matches++
 }
 
-/* wave */
-if(wave == currentWave){
+let pos = (cellKin-1) % 13
+let hoverPos = (hoverKin-1) % 13
+
+if(wave === currentWave && pos === hoverPos){
     matches++
 }
 
@@ -1128,11 +1130,11 @@ c.style.boxShadow="0 0 8px white"
 }
 
 if(sealIndex === analogSeal){
-c.style.border="2px dashed cyan"
+c.style.boxShadow="0 0 6px cyan"
 }
 
 if(sealIndex === antipodeSeal){
-c.style.border="3px double red"
+c.style.boxShadow="0 0 6px red"
 }
 
 if(sealIndex === occultSeal){
