@@ -1104,7 +1104,7 @@ let col = parseInt(cell.dataset.col)
 
 if(isNaN(r) || isNaN(col)) return
 
-let kin = ((col + r*20) % 260) + 1
+let kin = col*13 + r + 1
 
 if(kin === currentKin){
 cell.style.outline="2px solid white"
