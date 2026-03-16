@@ -1121,7 +1121,7 @@ let sealIndex2 = (kin-1)%20
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
-let analogSeal = ANALOG_MAP[seal0]
+let analog = (s + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
