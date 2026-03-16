@@ -565,6 +565,11 @@ let weather = pyodide.runPython(
 `mtos_260_weather(name,year,month,day)`
 ).toJs()
 
+if(!weather || weather.length !== 260){
+console.error("Weather map corrupted")
+return
+}
+
 drawKinMap(weather)
 
 renderMap("pressure")
