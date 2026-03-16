@@ -1014,7 +1014,7 @@ function highlightCurrentKin(cells){
 
 if(currentKin===null) return
 
-let tone0=(currentKin-1)%13
+let tone0=Math.floor((currentKin-1)/20)
 let seal0=(currentKin-1)%20
 
 let analog=(seal0+4)%20
@@ -1025,7 +1025,7 @@ cells.forEach(c=>{
 
 let kin=parseInt(c.dataset.kin)
 
-let tone=(kin-1)%13
+let tone=Math.floor((kin-1)/20)
 let seal=(kin-1)%20
 
 if(seal===analog && tone===tone0){
