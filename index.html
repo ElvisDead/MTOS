@@ -729,7 +729,7 @@ const tones=[
 ]
 
 function kinFromTS(tone,seal){
-return ((seal*13)+tone)%260 + 1
+return seal*13 + tone + 1
 }
 
 function tsFromKin(kin){
@@ -1048,10 +1048,13 @@ let analog = (seal0 + 4) % 20
 let antipode = (seal0 + 10) % 20
 let occult = 19 - seal0
 
-let harmonic = Math.floor((currentKin-1)/4)
+let harmonic = Math.floor((currentKin-1)/4)+1
 let wave = Math.floor((currentKin-1)/13)
 
 cells.forEach(c=>{
+
+c.style.outline=""
+c.style.boxShadow=""
 
 let kin = parseInt(c.dataset.kin)
 
@@ -1084,7 +1087,7 @@ c.style.outline="2px solid violet"
 }
 
 // harmonic
-if(Math.floor((kin-1)/4) === harmonic){
+if(Math.floor((kin-1)/4)+1 === harmonic){
 c.style.boxShadow="0 0 4px #00ccff"
 }
 
