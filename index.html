@@ -1114,7 +1114,8 @@ c.style.outline="2px solid violet"
 c.style.boxShadow="0 0 6px violet"
 }
 
-let val = (v - min) / (max - min || 1)
+let range = max - min
+let val = range === 0 ? 0.5 : (v - min)/range
 val = Math.max(0, Math.min(1, val))
 
 c.style.background = getColor(val)
