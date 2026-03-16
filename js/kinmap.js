@@ -59,7 +59,7 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let kin = ((row*13 + col) % 260) + 1
+let kin = ((col*20 + row) % 260) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -107,6 +107,10 @@ cells.forEach(c=>{
 
 c.style.outline=""
 c.style.boxShadow=""
+
+c.style.border=""
+c.style.borderTop=""
+c.style.borderLeft=""
 
 let kin=parseInt(c.dataset.kin)
 
