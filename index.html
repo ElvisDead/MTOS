@@ -1044,9 +1044,9 @@ if(currentKin===null) return
 let tone0 = (currentKin-1) % 13
 let seal0 = (currentKin-1) % 20
 
-let analog = (seal0 + 4) % 20
-let antipode = (seal0 + 10) % 20
-let occult = 19 - seal0
+let analogKin = ((currentKin + 52 - 1) % 260) + 1
+let antipodeKin = ((currentKin + 130 - 1) % 260) + 1
+let occultKin = 261 - currentKin
 
 let harmonic = Math.floor((currentKin-1)/4)+1
 let wave = Math.floor((currentKin-1)/13)
@@ -1072,17 +1072,17 @@ c.style.boxShadow="0 0 3px #00ff88"
 }
 
 // analog
-if(seal === analog && tone === tone0){
+if(kin === analogKin){
 c.style.outline="2px solid yellow"
 }
 
 // antipode
-if(seal === antipode && tone === tone0){
+if(kin === antipodeKin){
 c.style.outline="2px solid red"
 }
 
 // occult
-if(seal === occult && tone === tone0){
+if(kin === occultKin){
 c.style.outline="2px solid violet"
 }
 
