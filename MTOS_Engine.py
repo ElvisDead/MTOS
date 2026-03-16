@@ -44,14 +44,14 @@ def save_global_users(users):
         json.dumps(users)
     )
 
-GLOBAL_USERS = load_global_users()
-GLOBAL_KIN_DISTRIBUTION = [0.5]*260
-GLOBAL_ATTENTION_BUFFER = [0.5]*30
-
 import datetime
 import numpy as np
 import json
 import os
+
+GLOBAL_USERS = load_global_users()
+GLOBAL_KIN_DISTRIBUTION = [0.5]*260
+GLOBAL_ATTENTION_BUFFER = [0.5]*30
 
 # ==========================================================
 # FILES
@@ -795,9 +795,6 @@ def run_mtos(name,year,month,day):
         "analog": analog_seal,
         "antipode": antipode_seal,
         "occult": occult_seal,
-        "today_kin": today_kin,
-        "today_seal": today_seal,
-        "today_tone": today_tone,
     }
 
     return json.dumps(result)
@@ -940,7 +937,7 @@ def mtos_pressure_gradient():
         tone = ((kin-1) % 13)
         seal = ((kin-1) % 20)
 
-        matrix[seal][tone] = gradient[kin]
+        matrix[seal][tone] = gradient[kin-1]
 
     maxv = np.max(matrix)
 
