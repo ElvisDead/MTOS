@@ -756,10 +756,6 @@ def run_mtos(name,year,month,day):
 
     kin,tone,seal,i = kin_from_date(birth)
 
-    analog_seal = seals[analog(i)]
-    antipode_seal = seals[antipode(i)]
-    occult_seal = seals[occult(i)]
-
     today = datetime.datetime.now(datetime.timezone.utc).date()
 
     today_kin,today_tone,today_seal,today_i = kin_from_date(today)
@@ -798,9 +794,6 @@ def run_mtos(name,year,month,day):
         "attractors": attractors,
         "tzolkin_attractors": attractor_map,
         "phase_space": phase,
-        "analog": analog_seal,
-        "antipode": antipode_seal,
-        "occult": occult_seal,
     }
 
     return json.dumps(result)
