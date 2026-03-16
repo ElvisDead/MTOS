@@ -48,8 +48,6 @@ map.appendChild(h)
 }
 
 // grid
-
-let kin = 1
   
 for(let row=0;row<20;row++){
 
@@ -61,7 +59,7 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let kin = col + row*13 + 1
+let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -72,10 +70,6 @@ c.className="cell"
 c.dataset.kin=kin
 let toneReal = (kin-1)%13
 let sealReal = (kin-1)%20
-
-if(toneReal !== col || sealReal !== row){
-continue
-}
 
 c.dataset.tone = toneReal
 c.dataset.seal = sealReal
