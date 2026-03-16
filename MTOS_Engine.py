@@ -166,16 +166,6 @@ def seal_resonance(a,b,day_phase=0):
 
     base = (1 - distance*0.05) * ARCHETYPE_WEIGHTS[b]
 
-    # tzolkin structural resonance
-    if b == analog(a):
-        base += 0.10
-
-    if b == antipode(a):
-        base -= 0.12
-
-    if b == occult(a):
-        base += 0.25
-
     angle = (a + b + day_phase) * 0.5
     wave = math.sin(angle) * 0.18
 
