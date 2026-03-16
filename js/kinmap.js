@@ -48,7 +48,42 @@ map.appendChild(h)
 }
 
 // grid
-for(let kin=1;kin<=260;kin++){
+for(let seal=0;seal<20;seal++){
+
+let label=document.createElement("div")
+label.innerText=seals[seal]
+label.style.fontSize="8px"
+label.style.color="#777"
+map.appendChild(label)
+
+for(let tone=0;tone<13;tone++){
+
+let kin = seal*13 + tone + 1
+
+let v=weather[kin-1] ?? 0
+let val=(max===min)?0:(v-min)/(max-min)
+
+let c=document.createElement("div")
+c.className="cell"
+
+c.dataset.kin=kin
+c.dataset.tone=tone
+c.dataset.seal=seal
+
+c.style.background=getColor(val)
+
+c.title=
+"Kin "+kin+"\n"+
+"Seal: "+seals[seal]+"\n"+
+"Tone: "+(tone+1)+"\n"+
+"Attention: "+v.toFixed(3)
+
+map.appendChild(c)
+cells.push(c)
+
+}
+
+}
 
 let tone=(kin-1)%13
 let seal=(kin-1)%20
@@ -97,9 +132,13 @@ if(window.currentKin===null) return
 let tone0 = (currentKin-1)%13
 let seal0 = (currentKin-1)%20
 
-let analogKin = ((currentKin+52-1)%260)+1
-let antipodeKin = ((currentKin+130-1)%260)+1
-let occultKin = 261-currentKin
+let analogSeal = (seal0 + 4) % 20
+let antipodeSeal = (seal0 + 10) % 20
+let occultSeal = 19 - seal0
+
+let analogKin = analogSeal*13 + tone0 + 1
+let antipodeKin = antipodeSeal*13 + tone0 + 1
+let occultKin = occultSeal*13 + tone0 + 1
 
 let harmonic = Math.floor((currentKin-1)/4)
 let wave = Math.floor((currentKin-1)/13)
