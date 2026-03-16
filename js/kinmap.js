@@ -59,7 +59,7 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let kin = row + 20*col + 1
+let kin = col + row*13 + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
