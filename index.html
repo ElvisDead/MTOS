@@ -729,13 +729,24 @@ const tones=[
 ]
 
 function kinFromTS(tone,seal){
-return ((seal*13 + tone) % 260) + 1
+
+return ((seal*13)+tone)%260 +1
+
 }
 
 function tsFromKin(kin){
 
-let tone = (kin-1) % 13
-let seal = (kin-1) % 20
+let tone=(kin-1)%13
+let seal=(kin-1)%20
+
+return {tone,seal}
+
+}
+
+function kinToTS(kin){
+
+let tone=(kin-1)%13
+let seal=(kin-1)%20
 
 return {tone,seal}
 
@@ -770,7 +781,7 @@ drawHeatmap(id,data,cols,rows)
 
 }
 
-function drawMatrix(id,data,cols=20,rows=13,colorFunc=null,titleFunc=null){
+function drawMatrix(id,data,cols=13,rows=20,colorFunc=null,titleFunc=null){
 
 let map=document.getElementById(id)
 map.innerHTML=""
@@ -779,16 +790,15 @@ map.style.display="grid"
 map.style.gridTemplateColumns=`40px repeat(${cols},12px)`
 map.style.gridAutoRows="12px"
 
-// пустой угол
 map.appendChild(document.createElement("div"))
 
-// верхняя строка — подписи тонов
 for(let t=0;t<cols;t++){
 
 let label=document.createElement("div")
 label.innerText="T"+(t+1)
 label.style.fontSize="8px"
 label.style.color="#aaa"
+
 map.appendChild(label)
 
 }
@@ -796,14 +806,15 @@ map.appendChild(label)
 for(let s=0;s<rows;s++){
 
 let rowLabel=document.createElement("div")
-rowLabel.innerText=seals[s] || s
+rowLabel.innerText=seals[s]
 rowLabel.style.fontSize="8px"
 rowLabel.style.color="#777"
+
 map.appendChild(rowLabel)
 
 for(let t=0;t<cols;t++){
 
-let kin=(s + t*20) % 260 + 1
+let kin = t + s*13 + 1
 
 let v=data[kin-1] ?? 0
 
@@ -813,9 +824,11 @@ c.className="cell"
 if(colorFunc){
 c.style.background=colorFunc(v)
 }else{
+
 let r=Math.floor(v*255)
 let b=255-r
 c.style.background=`rgb(${r},0,${b})`
+
 }
 
 if(titleFunc){
@@ -962,29 +975,31 @@ let max=Math.max(...weather)
 
 let cells=[]
 
-// верхняя строка — подписи тонов
 map.appendChild(document.createElement("div"))
 
 for(let t=0;t<13;t++){
+
 let label=document.createElement("div")
 label.innerText="T"+(t+1)
 label.style.fontSize="8px"
 label.style.color="#aaa"
+
 map.appendChild(label)
+
 }
 
-// основная сетка
 for(let s=0;s<20;s++){
 
 let rowLabel=document.createElement("div")
 rowLabel.innerText=seals[s]
 rowLabel.style.fontSize="8px"
 rowLabel.style.color="#777"
+
 map.appendChild(rowLabel)
 
 for(let t=0;t<13;t++){
 
-let kin=(s + t*20) % 260 + 1
+let kin = t + s*13 + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -1005,6 +1020,7 @@ c.title=
 "Attention: "+v.toFixed(3)
 
 map.appendChild(c)
+
 cells.push(c)
 
 }
@@ -1093,53 +1109,51 @@ c.style.boxShadow="0 0 10px white"
 function drawHeatmap(id,data,cols,rows=cols){
 
 let map=document.getElementById(id)
-
 map.innerHTML=""
 
 map.style.display="grid"
 map.style.gridTemplateColumns=`40px repeat(${cols},12px)`
 map.style.gridTemplateRows=`repeat(${rows+1},14px)`
-map.style.gridAutoRows="14px"
 
-// верхний левый пустой угол
-let empty=document.createElement("div")
-map.appendChild(empty)
+map.appendChild(document.createElement("div"))
 
-// верхняя строка — подписи печатей
 let headers = cols==20 ? seals : tones
 
 headers.forEach(s=>{
+
 let h=document.createElement("div")
 h.style.fontSize="8px"
 h.style.color="#aaa"
 h.innerText=s
+
 map.appendChild(h)
+
 })
 
 for(let y=0;y<rows;y++){
 
-// левая колонка — подпись строки
 let label=document.createElement("div")
 label.style.fontSize="8px"
 label.style.color="#aaa"
 label.innerText = rows==13 ? tones[y] : seals[y]
+
 map.appendChild(label)
 
 for(let x=0;x<cols;x++){
 
-let v=data[x*rows+y] ?? 0
+let kin = x + y*13 + 1
+
+let v=data[kin-1] ?? 0
 
 let val=v
 if(val<0) val=0
 if(val>1) val=1
 
-
 let c=document.createElement("div")
 c.className="cell"
 
-c.style.background = getColor(val)
+c.style.background=getColor(val)
 
-// всплывающая подсказка
 c.title=`${Number(v).toFixed(2)}`
 
 map.appendChild(c)
