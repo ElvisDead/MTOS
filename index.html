@@ -716,6 +716,13 @@ const seals=[
 "CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
 ]
 
+const ANALOG_MAP = [
+12,13,14,15,16,
+17,18,19,0,1,
+2,6,7,8,9,
+10,11,3,4,5
+]
+
 const tones=[
 "T1","T2","T3","T4","T5","T6","T7",
 "T8","T9","T10","T11","T12","T13"
@@ -1040,6 +1047,8 @@ if(cellHarmonic == harmonic){
 matches++
 }
 
+if(cell.style.outline) return
+
 if(matches >= 3){
     cell.style.outline = "2px solid white"
 }
@@ -1066,7 +1075,7 @@ cell.style.boxShadow=""
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
-let analogSeal = (seal0 + 4) % 20
+let analogSeal = ANALOG_MAP[seal0]
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
