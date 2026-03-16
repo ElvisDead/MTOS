@@ -779,7 +779,7 @@ map.appendChild(label)
 for(let s=0;s<cols;s++){
 
 let v = data[(s*rows) + t] ?? 0
-let kin = ((s + t*20) % 260) + 1
+let kin = s*13 + t + 1
 
 let c=document.createElement("div")
     c.onclick=()=>{
@@ -815,7 +815,7 @@ c.style.color = v > 0.55 ? "#000" : "#fff"
 }
 
 if(titleFunc){
-c.title=titleFunc(kin,v)
+c.title = titleFunc ? titleFunc(kin,v) : ""
 }else{
 c.title="Kin "+kin
 }
@@ -925,7 +925,10 @@ const inferno = [
 [252,255,164]
 ]
 
-let i = Math.floor(v*(inferno.length-1))
+let i = Math.min(
+inferno.length-1,
+Math.floor(v*(inferno.length-1))
+)
 
 let c = inferno[i]
 
@@ -966,7 +969,7 @@ for(let t=0;t<13;t++){
 
     for(let s=0;s<20;s++){
 
-    let kin = s*13 + t + 1
+    let kin = s*rows + t + 1
     let index = kin - 1
     let v = weather[index] ?? 0
     
@@ -1079,6 +1082,8 @@ cell.style.boxShadow=""
 
 if(currentKin === null) return
             
+if(currentKin === null) return
+
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
@@ -1173,7 +1178,9 @@ c.title =
 "Predicted attention: " + attention + "\n" +
 "State: " + state
 
-let distance = Math.min(
+let distance = currentKin === null
+? 0
+: Math.min(
 Math.abs(kin-currentKin),
 260-Math.abs(kin-currentKin)
 )
