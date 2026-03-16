@@ -1009,31 +1009,7 @@ col:col
 
 }
 
-renderKinGrid(map,cells)
-
-highlightCurrentKin(cells.map(x=>x.cell))
-
-}
-
-function renderKinGrid(map,cells){
-
-let grid = Array.from({length:20},()=>Array(13).fill(null))
-
-cells.forEach(c=>{
-grid[c.row][c.col]=c.cell
-})
-
-for(let t=0;t<13;t++){
-
-let label=document.createElement("div")
-label.innerText="T"+(t+1)
-label.style.fontSize="8px"
-label.style.color="#aaa"
-map.appendChild(label)
-
-for(let s=0;s<20;s++){
-map.appendChild(grid[t][s])
-}
+highlightCurrentKin(cells)
 
 }
 
