@@ -48,6 +48,9 @@ map.appendChild(h)
 }
 
 // grid
+
+let kin = 1
+  
 for(let seal=0;seal<20;seal++){
 
 let label=document.createElement("div")
@@ -57,8 +60,6 @@ label.style.color="#777"
 map.appendChild(label)
 
 for(let tone=0;tone<13;tone++){
-
-let kin = ((seal + tone*20) % 260) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -80,6 +81,8 @@ c.title=
 
 map.appendChild(c)
 cells.push(c)
+
+kin++
 
 }
 
