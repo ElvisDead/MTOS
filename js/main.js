@@ -6,3 +6,7 @@ import { getColor, getColorInferno } from "./colors.js"
 
 window.getColor = getColor
 window.getColorInferno = getColorInferno
+
+import { drawHeatmap } from "./heatmap.js"
+
+window.drawHeatmap = drawHeatmap
