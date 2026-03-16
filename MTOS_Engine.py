@@ -1159,8 +1159,8 @@ def mtos_climate_atlas():
 
     matrix = np.zeros((20,20))
 
-    for tone in range(20):
-        for seal in range(20):
+    for a in range(20):
+        for b in range(20):
             matrix[a][b] = seal_resonance(a,b,day_phase)
 
     # НОРМАЛИЗАЦИЯ
