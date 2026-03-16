@@ -14,3 +14,8 @@ window.drawHeatmap = drawHeatmap
 import { drawMatrix } from "./matrix.js"
 
 window.drawMatrix = drawMatrix
+
+import { drawLinearKinMap } from "./linearKinMap.js"
+
+window.drawLinearKinMap = drawLinearKinMap
+
