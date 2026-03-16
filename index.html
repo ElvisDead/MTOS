@@ -964,7 +964,7 @@ let map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns="60px repeat(20,18px)"
+map.style.gridTemplateColumns="60px repeat(13,18px)"
 map.style.gridAutoRows="18px"
 
 let min=Math.min(...weather)
@@ -977,8 +977,8 @@ for(let kin=1; kin<=260; kin++){
 let tone=(kin-1)%13
 let seal=(kin-1)%20
 
-let row=tone
-let col = (seal + tone) % 20
+let row=seal
+let col=tone
 
 let v=weather[kin-1] ?? 0
 
@@ -1015,7 +1015,7 @@ highlightCurrentKin(cells.map(x=>x.cell))
 
 function renderKinGrid(map,cells){
 
-let grid = Array.from({length:13},()=>Array(20).fill(null))
+let grid = Array.from({length:20},()=>Array(13).fill(null))
 
 cells.forEach(c=>{
 grid[c.row][c.col]=c.cell
