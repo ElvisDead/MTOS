@@ -61,6 +61,8 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
+let kin = row + col*20 + 1
+
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
 
@@ -70,11 +72,6 @@ c.className="cell"
 c.dataset.kin=kin
 let toneReal = (kin-1)%13
 let sealReal = (kin-1)%20
-
-if(sealReal !== row || toneReal !== col){
-kin++
-continue
-}
 
 c.dataset.tone = toneReal
 c.dataset.seal = sealReal
