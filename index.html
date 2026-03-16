@@ -947,256 +947,114 @@ return getColorInferno(v)
 function drawKinMap(weather){
 
 let map=document.getElementById("kinmap")
-let cells = []
-
 map.innerHTML=""
-
-let min = Math.min(...weather)
-let max = Math.max(...weather)
 
 map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(20,18px)"
-map.style.gridAutoFlow="row"
 map.style.gridAutoRows="18px"
+
+let min=Math.min(...weather)
+let max=Math.max(...weather)
+
+let cells=[]
 
 for(let t=0;t<13;t++){
 
-    let label=document.createElement("div")
-    label.style.fontSize="8px"
-    label.style.color="#aaa"
-    label.innerText="T"+(t+1)
-    map.appendChild(label)
+let label=document.createElement("div")
+label.innerText="T"+(t+1)
+label.style.fontSize="8px"
+label.style.color="#aaa"
+map.appendChild(label)
 
-    for(let s=0;s<20;s++){
+for(let s=0;s<20;s++){
 
-    const TONES = 13
-    let kin = ((t)*20 + s) % 260 + 1
-    let index = kin - 1
-    let v = weather[index] ?? 0
-    
-    let sealIndex = (kin-1)%20
-    let sealName = seals[sealIndex]
-    let tone = t + 1
-    const attention = v
+let kin=null
 
-    let state = "LOW"
+for(let k=1;k<=260;k++){
 
-    if(attention > 0.75) state = "FOCUS"
-    else if(attention > 0.6) state = "ACTIVE"
-    else if(attention > 0.45) state = "TRANSITION"
-    else state = "RECOVERY"
+let tone=(k-1)%13
+let seal=(k-1)%20
 
-    let c=document.createElement("div")
-
-    c.className="cell"
-    c.dataset.row = t
-    c.dataset.col = s
-    c.onmouseenter = () => {
-
-cells.forEach(cell=>{
-cell.style.outline="none"
-cell.style.boxShadow=""
-})
-
-cells.forEach(cell => {
-
-if(cell.dataset.row === undefined || cell.dataset.col === undefined) return
-
-let r = parseInt(cell.dataset.row)
-let col = parseInt(cell.dataset.col)
-
-let analog = (s + 4) % 20
-let antipode = (s + 10) % 20
-let occult = 19 - s
-let matches = 0
-
-let hoverKin = ((t)*20 + s) + 1
-let harmonic = Math.floor(s / 4)
-
-let cellKin = ((r)*20 + col) + 1
-let cellHarmonic = Math.floor(col / 4)
-
-let wave = Math.floor((cellKin-1)/13)
-let currentWave = Math.floor((hoverKin-1)/13)
-if(wave < 0) wave = 0
-if(currentWave < 0) currentWave = 0
-
-/* tone */
-if(r === t){
-    matches++
+if(tone===t && seal===s){
+kin=k
+break
 }
 
-/* seal */
-if(col === s){
-    matches++
 }
 
-if(wave === currentWave){
-    matches++
-}
+if(kin===null) continue
 
-/* occult */
-if(col == occult){
-    matches++
-}
+let v=weather[kin-1] ?? 0
 
-/* analog */
-if(col == analog){
-    matches++
-}
+let val=(v-min)/(max-min)
+val=Math.max(0,Math.min(1,val))
 
-/* antipode */
-if(col == antipode){
-    matches++
-}
-
-/* harmonic */
-if(cellHarmonic == harmonic){
-matches++
-}
-
-if(cell.style.outline !== "") return
-
-if(matches >= 3){
-    cell.style.outline = "2px solid white"
-}
-else if(matches >= 2){
-    cell.style.outline = "2px solid #ffaa00"
-}
-else if(matches == 1){
-    cell.style.outline = "1px solid #666"
-}
-
-})
-
-}
-        c.onmouseleave = () => {
-
-map.querySelectorAll(".cell").forEach(cell => {
-
-cell.style.outline="none"
-cell.style.background = cell.dataset.original
-cell.style.boxShadow=""
-
-})
-            
-if(currentKin === null) return
-
-let tone0 = (currentKin - 1) % 13
-let seal0 = (currentKin - 1) % 20
-
-let analogSeal = (seal0 + 4) % 20
-let antipodeSeal = (seal0 + 10) % 20
-let occultSeal = 19 - seal0
-
-let analogKin = ((tone0)*20 + analogSeal) + 1
-let antipodeKin = ((tone0)*20 + antipodeSeal) + 1
-let occultKin = ((tone0)*20 + occultSeal) + 1
-
-/* вернуть выделение текущего Kin */
-
-map.querySelectorAll(".cell").forEach(cell => {
-
-let r = parseInt(cell.dataset.row)
-let col = parseInt(cell.dataset.col)
-
-if(isNaN(r) || isNaN(col)) return
-
-let kin = ((r)*20 + col) + 1
-
-if(kin === analogKin){
-cell.style.outline="2px solid yellow"
-cell.style.boxShadow="0 0 6px yellow"
-}
-
-if(kin === antipodeKin){
-cell.style.outline="2px solid red"
-cell.style.boxShadow="0 0 6px red"
-}
-
-if(kin === occultKin){
-cell.style.outline="2px solid violet"
-cell.style.boxShadow="0 0 6px violet"
-}
-
-if(kin === currentKin){
-cell.style.outline="2px solid white"
-cell.style.boxShadow="0 0 10px white"
-}
-
-})
-
-}
-    c.style.cursor="pointer"
-
-let tone0 = (currentKin - 1) % 13
-let seal0 = (currentKin - 1) % 20
-
-let analogSeal = (seal0 + 4) % 20
-let antipodeSeal = (seal0 + 10) % 20
-let occultSeal = 19 - seal0
-
-let analogKin = ((tone0)*20 + analogSeal) + 1
-let antipodeKin = ((tone0)*20 + antipodeSeal) + 1
-let occultKin = ((tone0)*20 + occultSeal) + 1
-
-if(kin === analogKin){
-c.style.outline="2px solid yellow"
-c.style.boxShadow="0 0 6px yellow"
-}
-
-if(kin === antipodeKin){
-c.style.outline="2px solid red"
-c.style.boxShadow="0 0 6px red"
-}
-
-if(kin === occultKin){
-c.style.outline="2px solid violet"
-c.style.boxShadow="0 0 6px violet"
-}
-
-let range = max - min
-let val = range === 0 ? 0.5 : (v - min)/range
-val = Math.max(0, Math.min(1, val))
-
-c.style.background = getColor(val)
-
+let c=document.createElement("div")
 c.className="cell"
-        
-c.dataset.original = c.style.background
+
+c.dataset.kin=kin
+c.dataset.row=t
+c.dataset.col=s
+
+c.style.background=getColor(val)
+
+let sealName=seals[(kin-1)%20]
+let tone=t+1
+
+c.title=
+"Kin "+kin+"\n"+
+"Seal: "+sealName+"\n"+
+"Tone: "+tone+"\n"+
+"Attention: "+v
+
+map.appendChild(c)
+
+cells.push(c)
+
+}
+
+}
+
+highlightCurrentKin(cells)
+
+}
+
+function highlightCurrentKin(cells){
+
+if(currentKin===null) return
+
+let tone0=(currentKin-1)%13
+let seal0=(currentKin-1)%20
+
+let analog=(seal0+4)%20
+let antipode=(seal0+10)%20
+let occult=19-seal0
+
+cells.forEach(c=>{
+
+let kin=parseInt(c.dataset.kin)
+
+let tone=(kin-1)%13
+let seal=(kin-1)%20
+
+if(seal===analog && tone===tone0){
+c.style.outline="2px solid yellow"
+}
+
+if(seal===antipode && tone===tone0){
+c.style.outline="2px solid red"
+}
+
+if(seal===occult && tone===tone0){
+c.style.outline="2px solid violet"
+}
 
 if(kin===currentKin){
 c.style.outline="2px solid white"
-c.style.boxShadow="0 0 8px white"
+c.style.boxShadow="0 0 10px white"
 }
 
-c.title =
-"Kin " + kin + "\n" +
-"Seal: " + sealName + "\n" +
-"Tone: " + tone + "\n\n" +
-"Predicted attention: " + attention + "\n" +
-"State: " + state
-
-let distance = currentKin === null
-? 0
-: Math.min(
-Math.abs(kin-currentKin),
-260-Math.abs(kin-currentKin)
-)
-
-if(distance > 40){
-c.style.opacity = 0.65
-}else{
-c.style.opacity = 1
-}
-        
-map.appendChild(c)
-
-}
-
-}
-
-cells = map.querySelectorAll(".cell")
+})
 
 }
 
