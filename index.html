@@ -1000,7 +1000,7 @@ let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
 
 let diagonal = (col*13 + r) % 260 + 1
-if(diagonal === index){
+if(diagonal === index + 1){
     cell.style.boxShadow = "0 0 4px #ffffff40"
 }
 
@@ -1016,10 +1016,7 @@ if(col === s){
     matches++
 }
 
-let pos = (cellKin-1) % 13
-let hoverPos = (hoverKin-1) % 13
-
-if(wave === currentWave && pos === hoverPos){
+if(wave === currentWave){
     matches++
 }
 
@@ -1043,7 +1040,7 @@ if(cellHarmonic == harmonic){
 matches++
 }
 
-if(matches >= 4){
+if(matches >= 3){
     cell.style.outline = "2px solid white"
 }
 else if(matches >= 2){
