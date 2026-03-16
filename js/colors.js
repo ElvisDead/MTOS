@@ -23,4 +23,10 @@ return `rgb(${c[0]},${c[1]},${c[2]})`
 
 }
 
+function getColor(v){
 
+v = Math.max(0, Math.min(1, v))
+
+return getColorInferno(v)
+
+}
