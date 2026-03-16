@@ -935,6 +935,7 @@ function drawKinMap(weather){
 
 let map=document.getElementById("kinmap")
 let cells = []
+
 map.innerHTML=""
 
 let min = Math.min(...weather)
@@ -944,9 +945,6 @@ map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(20,18px)"
 map.style.gridAutoFlow="row"
 map.style.gridAutoRows="18px"
-
-let empty=document.createElement("div")
-map.appendChild(empty)
 
 for(let t=0;t<13;t++){
 
