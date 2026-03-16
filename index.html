@@ -958,7 +958,8 @@ for(let t=0;t<13;t++){
     let sealIndex = s
     let sealName = seals[s]
     let tone = t + 1
-    let attention = v.toFixed(2)
+    let attention = v
+    let attentionText = v.toFixed(2)
 
     let state = "LOW"
 
@@ -1124,18 +1125,6 @@ c.dataset.original = c.style.background
 if(kin===currentKin){
 c.style.outline="2px solid white"
 c.style.boxShadow="0 0 8px white"
-}
-
-if(sealIndex === analogSeal){
-c.style.boxShadow="0 0 6px cyan"
-}
-
-if(sealIndex === antipodeSeal){
-c.style.boxShadow="0 0 6px red"
-}
-
-if(sealIndex === occultSeal){
-c.style.boxShadow="0 0 6px violet"
 }
 
 c.title =
