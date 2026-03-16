@@ -98,6 +98,35 @@ const collective = JSON.parse(
 pyodide.runPython(`mtos_collective()`)
 )
 
+let networkData = JSON.parse(
+pyodide.runPython(`mtos_user_network()`)
+)
+
+let net = document.getElementById("network")
+
+if(networkData.length===0){
+net.innerHTML="No user interactions yet."
+}else{
+
+net.innerHTML=""
+
+networkData.forEach(e=>{
+
+let line=document.createElement("div")
+
+line.innerHTML =
+"<b>"+e.a+"</b> ↔ <b>"+e.b+"</b> : "+
+e.label+
+" ("+e.value.toFixed(2)+")"
+
+line.style.margin="3px"
+
+net.appendChild(line)
+
+})
+
+}
+
 document.getElementById("collective").innerHTML = `
 Mean attention: ${collective.mean ?? "N/A"}<br>
 Volatility: ${collective.volatility ?? "N/A"}<br>
