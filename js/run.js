@@ -54,9 +54,11 @@ document.getElementById("metrics").innerHTML = `
 `
 
 // FORECAST SERIES
-const s7 = Array.from(pyodide.runPython(`mtos_series(name,year,month,day,7)`))
-const s30 = Array.from(pyodide.runPython(`mtos_series(name,year,month,day,30)`))
+
 const s260 = Array.from(pyodide.runPython(`mtos_series(name,year,month,day,260)`))
+
+const s7 = s260.slice(0,7)
+const s30 = s260.slice(0,30)
 
 drawChart("chart7",s7)
 drawChart("chart30",s30)
