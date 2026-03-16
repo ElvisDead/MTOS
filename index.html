@@ -716,6 +716,8 @@ const seals=[
 "CHUEN","EB","BEN","IX","MEN","CIB","CABAN","ETZNAB","CAUAC","AHAU"
 ]
 
+const ANALOG_MAP = Array.from({length:20}, (_,i)=> (i+4)%20)
+
 function analog(i){
 return (i + 4) % 20
 }
@@ -746,6 +748,7 @@ geometry: () => pyodide.runPython(`mtos_tzolkin_geometry()`).toJs()
 }
 
 function renderMap(id, cols=20, rows=13){
+if(!MTOS_MAPS[id]) return
 
 let data = MTOS_MAPS[id]()
 
@@ -760,7 +763,7 @@ let map=document.getElementById(id)
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns=`60px repeat(${cols},12px)`
+map.style.gridTemplateColumns=`40px repeat(${cols},12px)`
 map.style.gridAutoRows="12px"
 
 map.appendChild(document.createElement("div"))
@@ -775,8 +778,8 @@ map.appendChild(label)
 
 for(let s=0;s<cols;s++){
 
-let v = data[s*rows + t] ?? 0
-let kin = s*13 + t + 1
+let v = data[(s*rows) + t] ?? 0
+let kin = s*rows + t + 1
 
 let c=document.createElement("div")
     c.onclick=()=>{
@@ -875,7 +878,7 @@ function drawChart(id,data){
 
 if(charts[id]) charts[id].destroy()
 
-let ctx=document.getElementById(id)
+let ctx=document.getElementById(id).getContext("2d")
 
 charts[id]=new Chart(ctx,{
 type:"line",
@@ -962,7 +965,7 @@ for(let t=0;t<13;t++){
 
     let kin = s*13 + t + 1
     let index = kin - 1
-    let v = weather[index]
+    let v = weather[index] ?? 0
     
     let sealIndex = (kin-1)%20
     let sealName = seals[sealIndex]
@@ -1044,7 +1047,7 @@ if(cellHarmonic == harmonic){
 matches++
 }
 
-if(cell.style.outline) return
+if(cell.style.outline !== "") return
 
 if(matches >= 3){
     cell.style.outline = "2px solid white"
@@ -1064,7 +1067,7 @@ else if(matches == 1){
 map.querySelectorAll(".cell").forEach(cell => {
 
 cell.style.outline="none"
-cell.style.background = cell.dataset.original || ""
+cell.style.background = cell.dataset.original
 cell.style.boxShadow=""
 
 })
@@ -1116,8 +1119,6 @@ cell.style.boxShadow="0 0 6px violet"
 }
     c.style.cursor="pointer"
 
-let toneIndex = (kin-1)%13
-let sealIndex2 = (kin-1)%20
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
@@ -1169,7 +1170,9 @@ c.title =
 let distance = Math.abs(kin - currentKin)
 
 if(distance > 40){
-c.style.opacity = 0.6
+c.style.opacity = 0.65
+}else{
+c.style.opacity = 1
 }
         
 map.appendChild(c)
@@ -1189,7 +1192,7 @@ let map=document.getElementById(id)
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns=`60px repeat(${cols},12px)`
+map.style.gridTemplateColumns=`40px repeat(${cols},12px)`
 map.style.gridTemplateRows=`repeat(${rows+1},14px)`
 map.style.gridAutoRows="14px"
 
