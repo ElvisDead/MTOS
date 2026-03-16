@@ -781,70 +781,54 @@ drawHeatmap(id,data,cols,rows)
 
 }
 
-function drawMatrix(id,data,cols=13,rows=20,colorFunc=null,titleFunc=null){
+function drawMatrix(id,data){
 
-let map=document.getElementById(id)
+const map=document.getElementById(id)
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns=`40px repeat(${cols},12px)`
+map.style.gridTemplateColumns="40px repeat(13,12px)"
 map.style.gridAutoRows="12px"
 
 map.appendChild(document.createElement("div"))
 
-for(let t=0;t<cols;t++){
+for(let t=0;t<13;t++){
+let h=document.createElement("div")
+h.innerText="T"+(t+1)
+h.style.fontSize="8px"
+h.style.color="#aaa"
+map.appendChild(h)
+}
+
+for(let kin=1;kin<=260;kin++){
+
+let tone=(kin-1)%13
+let seal=(kin-1)%20
+
+if(tone===0){
 
 let label=document.createElement("div")
-label.innerText="T"+(t+1)
+label.innerText=seals[seal]
 label.style.fontSize="8px"
-label.style.color="#aaa"
-
+label.style.color="#777"
 map.appendChild(label)
 
 }
-
-for(let s=0;s<rows;s++){
-
-let rowLabel=document.createElement("div")
-rowLabel.innerText=seals[s]
-rowLabel.style.fontSize="8px"
-rowLabel.style.color="#777"
-
-map.appendChild(rowLabel)
-
-for(let t=0;t<cols;t++){
-
-let kin = t + s*13 + 1
 
 let v=data[kin-1] ?? 0
 
 let c=document.createElement("div")
 c.className="cell"
 
-if(colorFunc){
-c.style.background=colorFunc(v)
-}else{
-
-let r=Math.floor(v*255)
-let b=255-r
-c.style.background=`rgb(${r},0,${b})`
-
-}
-
-if(titleFunc){
-c.title=titleFunc(kin,v)
-}else{
-c.title="Kin "+kin
-}
+c.style.background=v? "#ffaa00":"#111"
+c.title="Kin "+kin+" ("+v+")"
 
 map.appendChild(c)
 
 }
 
 }
-
-}
-
+    
 function drawLinearKinMap(id,data){
 
 let map=document.getElementById(id)
@@ -963,7 +947,7 @@ return getColorInferno(v)
 
 function drawKinMap(weather){
 
-let map=document.getElementById("kinmap")
+const map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
@@ -973,33 +957,33 @@ map.style.gridAutoRows="18px"
 let min=Math.min(...weather)
 let max=Math.max(...weather)
 
-let cells=[]
+const cells=[]
 
+// header
 map.appendChild(document.createElement("div"))
-
 for(let t=0;t<13;t++){
+let h=document.createElement("div")
+h.innerText="T"+(t+1)
+h.style.fontSize="8px"
+h.style.color="#aaa"
+map.appendChild(h)
+}
+
+// grid
+for(let kin=1;kin<=260;kin++){
+
+let tone=(kin-1)%13
+let seal=(kin-1)%20
+
+if(tone===0){
 
 let label=document.createElement("div")
-label.innerText="T"+(t+1)
+label.innerText=seals[seal]
 label.style.fontSize="8px"
-label.style.color="#aaa"
-
+label.style.color="#777"
 map.appendChild(label)
 
 }
-
-for(let s=0;s<20;s++){
-
-let rowLabel=document.createElement("div")
-rowLabel.innerText=seals[s]
-rowLabel.style.fontSize="8px"
-rowLabel.style.color="#777"
-
-map.appendChild(rowLabel)
-
-for(let t=0;t<13;t++){
-
-let kin = t + s*13 + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -1008,22 +992,19 @@ let c=document.createElement("div")
 c.className="cell"
 
 c.dataset.kin=kin
-c.dataset.tone=t
-c.dataset.seal=s
+c.dataset.tone=tone
+c.dataset.seal=seal
 
 c.style.background=getColor(val)
 
 c.title=
 "Kin "+kin+"\n"+
-"Seal: "+seals[s]+"\n"+
-"Tone: "+(t+1)+"\n"+
+"Seal: "+seals[seal]+"\n"+
+"Tone: "+(tone+1)+"\n"+
 "Attention: "+v.toFixed(3)
 
 map.appendChild(c)
-
 cells.push(c)
-
-}
 
 }
 
