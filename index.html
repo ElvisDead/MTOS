@@ -58,7 +58,7 @@ font-size:18px;
 
 #kinmap{
 display:grid;
-grid-template-columns:repeat(20,12px);
+grid-template-columns:60px repeat(20,18px);
 grid-gap:2px;
 justify-content:center;
 margin:auto;
@@ -934,6 +934,7 @@ return getColorInferno(v)
 function drawKinMap(weather){
 
 let map=document.getElementById("kinmap")
+let cells = []
 map.innerHTML=""
 
 let min = Math.min(...weather)
@@ -941,6 +942,7 @@ let max = Math.max(...weather)
 
 map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(20,18px)"
+map.style.gridAutoFlow="row"
 map.style.gridAutoRows="18px"
 
 let empty=document.createElement("div")
@@ -979,12 +981,12 @@ for(let t=0;t<13;t++){
     c.dataset.col = s
     c.onmouseenter = () => {
 
-map.querySelectorAll(".cell").forEach(cell=>{
+cells.forEach(cell=>{
 cell.style.outline="none"
 cell.style.boxShadow=""
 })
 
-map.querySelectorAll(".cell").forEach(cell => {
+cells.forEach(cell => {
 
 if(cell.dataset.row === undefined) return
 
@@ -1144,6 +1146,8 @@ map.appendChild(c)
 }
 
 }
+
+cells = map.querySelectorAll(".cell")
 
 }
 
