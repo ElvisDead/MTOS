@@ -853,7 +853,7 @@ def mtos_260_weather(name,year,month,day):
             value = 0.5
         value = max(0,min(value,1))
 
-        matrix[tone][seal] = value
+        matrix[seal][tone] = value
 
     return matrix.flatten().tolist()
 
