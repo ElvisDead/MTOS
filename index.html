@@ -778,8 +778,8 @@ map.appendChild(label)
 
 for(let s=0;s<cols;s++){
 
-let kin=(s*13+t)%260+1
-let v=data[kin-1] ?? 0
+let v = data[s*rows + t] ?? 0
+let kin = s*13 + t + 1
 
 let c=document.createElement("div")
     c.onclick=()=>{
