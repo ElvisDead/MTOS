@@ -25,10 +25,6 @@ export const seals = [
 "Sun"
 ]
 
-export function analog(i){
-return (i + 4) % 20
-}
-
 export function kinFromTS(tone,seal){
 
 return ((seal*13)+tone)%260 +1
