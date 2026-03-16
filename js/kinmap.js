@@ -76,14 +76,18 @@ c.dataset.seal = sealReal
 
 c.style.background=getColor(val)
 
+let spiral = Math.sin((kin-1)/260 * Math.PI*2) * 6
+c.style.transform = "rotate("+spiral+"deg)"
+
 let users = kinUsers[kin] || []
-let userList = users.length ? users.join(", ") : "none"
+let userList = users.length ? users.join("\n") : "none"
 
 c.title =
 "Kin: "+kin+"\n"+
 "Seal: "+seals[sealReal]+"\n"+
 "Tone: "+(toneReal+1)+"\n"+
-let userList = users.length ? users.join("\n") : "none"
+"Users:\n"+userList
+
 
 map.appendChild(c)
 cells.push(c)
