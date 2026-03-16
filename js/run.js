@@ -33,10 +33,6 @@ Kin: ${data.kin}<br>
 Seal: ${data.seal}<br>
 Tone: ${data.tone}<br>
 
-Analog: ${data.analog}<br>
-Antipode: ${data.antipode}<br>
-Occult: ${data.occult}<br>
-
 <br>
 
 Today Kin: ${data.today_kin}<br>
