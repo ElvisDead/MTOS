@@ -68,15 +68,18 @@ let c=document.createElement("div")
 c.className="cell"
 
 c.dataset.kin=kin
-c.dataset.tone=tone
-c.dataset.seal=seal
+let toneReal = (kin-1)%13
+let sealReal = (kin-1)%20
+
+c.dataset.tone = toneReal
+c.dataset.seal = sealReal
 
 c.style.background=getColor(val)
 
 c.title=
 "Kin "+kin+"\n"+
-"Seal: "+seals[seal]+"\n"+
-"Tone: "+(tone+1)+"\n"+
+"Seal: "+seals[sealReal]+"\n"+
+"Tone: "+(toneReal+1)+"\n"+
 "Attention: "+v.toFixed(3)
 
 map.appendChild(c)
@@ -96,8 +99,8 @@ export function highlightCurrentKin(cells){
 
 if(window.currentKin===null) return
 
-let tone0 = (currentKin-1)%13
-let seal0 = (currentKin-1)%20
+let tone0 = (window.currentKin-1)%13
+let seal0 = (window.currentKin-1)%20
 
 let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
@@ -160,7 +163,8 @@ c.style.outline="2px solid red"
 
 // occult
 if(kin===occultKin){
-c.style.outline="2px solid #00e5ff"
+c.style.outline: 2px solid #00ffff
+box-shadow: 0 0 6px #00ffff
 }
 
 // current
