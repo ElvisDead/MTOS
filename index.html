@@ -955,7 +955,7 @@ for(let t=0;t<13;t++){
     let kin = index + 1
     let v = weather[index]
     
-    let sealIndex = s
+    let sealIndex = (kin-1)%20
     let sealName = seals[s]
     let tone = t + 1
     let attention = v
@@ -999,11 +999,6 @@ let cellKin = (col*13 + r) % 260 + 1
 
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
-
-let diagonal = (col*13 + r) % 260 + 1
-if(diagonal === index + 1){
-    cell.style.boxShadow = "0 0 4px #ffffff40"
-}
 
 let cellHarmonic = Math.floor((cellKin-1)/4)
 
@@ -1136,8 +1131,8 @@ c.title =
 
 let distance = Math.abs(kin - currentKin)
 
-if(distance > 20){
-c.style.opacity = 0.35
+if(distance > 40){
+c.style.opacity = 0.6
 }
         
 map.appendChild(c)
