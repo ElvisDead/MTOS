@@ -597,8 +597,8 @@ kinUsers = JSON.parse(
 drawMatrix(
 "kinDistribution",
 kinMap,
-20,
 13,
+20,
     
 v=>{
 
@@ -792,8 +792,8 @@ map.appendChild(label)
 
 for(let s=0;s<cols;s++){
 
-let v = data[(s*rows) + t] ?? 0
-let kin = kinFromTS(t,s)
+let v = data[(t*cols) + s] ?? 0
+let kin = kinFromTS(s,t)
 
 let c=document.createElement("div")
     c.onclick=()=>{
