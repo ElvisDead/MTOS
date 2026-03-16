@@ -731,6 +731,15 @@ const tones=[
 function kinFromTS(tone,seal){
 return tone*20 + seal + 1
 }
+
+function tsFromKin(kin){
+
+let tone = (kin-1) % 13
+let seal = (kin-1) % 20
+
+return {tone,seal}
+
+}
     
 const MTOS_MAPS = {
 
@@ -1014,8 +1023,10 @@ function highlightCurrentKin(cells){
 
 if(currentKin===null) return
 
-let tone0=Math.floor((currentKin-1)/20)
-let seal0=(currentKin-1)%20
+let ts0 = tsFromKin(currentKin)
+
+let tone0 = ts0.tone
+let seal0 = ts0.seal
 
 let analog=(seal0+4)%20
 let antipode=(seal0+10)%20
@@ -1025,8 +1036,10 @@ cells.forEach(c=>{
 
 let kin=parseInt(c.dataset.kin)
 
-let tone=Math.floor((kin-1)/20)
-let seal=(kin-1)%20
+let ts = tsFromKin(kin)
+
+let tone = ts.tone
+let seal = ts.seal
 
 if(seal===analog && tone===tone0){
 c.style.outline="2px solid yellow"
