@@ -829,11 +829,11 @@ def mtos_260_weather(name,year,month,day):
 
     today=datetime.datetime.now(datetime.timezone.utc).date()
 
-    matrix = np.zeros((13,20))
+    matrix = np.zeros((20,13))
 
     for kin in range(1,261):
 
-        tone = (kin-1) % 13
+        tone = ((kin-1) % 13) + 1
         seal = (kin-1) % 20
 
         kin_date = today + datetime.timedelta(days=kin-1)
@@ -848,8 +848,8 @@ def mtos_260_weather(name,year,month,day):
 
         value = max(0,min(value,1))
 
-        matrix[tone][seal] = value
-
+        matrix[seal][tone-1] = value
+        
     return matrix.flatten().tolist()
 
 def mtos_user_climate(user_seal):
@@ -1188,29 +1188,25 @@ def mtos_tzolkin_structure():
 
 def mtos_tzolkin_geometry():
 
-    data = [0]*260
+    data = []
 
     for kin in range(260):
 
-        tone = kin % 13
         seal = kin % 20
 
         analog = (seal + 4) % 20
         antipode = (seal + 10) % 20
         occult = 19 - seal
 
-        score = 0
+        symmetry = (
+            abs(analog - seal) +
+            abs(antipode - seal) +
+            abs(occult - seal)
+        )
 
-        if analog == seal:
-            score += 1
+        value = symmetry / 40
 
-        if antipode == seal:
-            score += 1
-
-        if occult == seal:
-            score += 1
-
-        data[kin] = score / 3
+        data.append(value)
 
     return data
 
