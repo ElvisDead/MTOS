@@ -824,7 +824,7 @@ def mtos_260_weather(name,year,month,day):
 
     for kin in range(1,261):
 
-        tone = ((kin-1) % 13) + 1
+        tone = (kin-1) % 13
         seal = (kin-1) % 20
 
         kin_date = today + datetime.timedelta(days=kin-1)
@@ -848,7 +848,7 @@ def mtos_260_weather(name,year,month,day):
             value = 0.5
         value = max(0,min(value,1))
 
-        matrix[seal][tone-1] = value
+        matrix[seal][tone] = value
 
     return matrix.flatten().tolist()
 
@@ -965,7 +965,7 @@ def mtos_phase_matrix():
         
         for seal in range(20):
     
-            kin = (seal*13 + tone) % 260 + 1
+            kin = ((seal + tone*20) % 260) + 1
             value = np.sin(kin/260 * 2*np.pi)
 
             value = (value + 1) / 2
@@ -1182,7 +1182,7 @@ def mtos_tzolkin_structure():
     for tone in range(13):
         for seal in range(20):
             
-            kin = (seal*13 + tone) % 260 + 1
+            kin = ((seal + tone*20) % 260) + 1
             value = np.sin(tone/13) + np.cos(seal/20)
             
             matrix.append(float(value))
