@@ -988,7 +988,7 @@ cell.style.boxShadow=""
 
 cells.forEach(cell => {
 
-if(cell.dataset.row === undefined) return
+if(cell.dataset.row === undefined || cell.dataset.col === undefined) return
 
 let r = parseInt(cell.dataset.row)
 let col = parseInt(cell.dataset.col)
@@ -1095,9 +1095,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = analogSeal * 13 + tone0 + 1
-let antipodeKin = antipodeSeal * 13 + tone0 + 1
-let occultKin = occultSeal * 13 + tone0 + 1
+let analogKin = (analogSeal*13 + tone0) % 260 + 1
+let antipodeKin = (antipodeSeal * 13 + tone0) % 260 + 1
+let occultKin = (occultSeal * 13 + tone0) % 260 + 1
 
 if(kin === analogKin){
 c.style.outline="2px solid yellow"
