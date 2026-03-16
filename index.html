@@ -255,7 +255,7 @@ low attention → high attention
 
 <span style="color:white">■</span> Current Kin (your position in the cycle)<br>
 
-<span style="color:yellow">■</span> Analog — supportive archetype (seal +4)<br>
+<span style="color:yellow">■</span> Analog — structural resonance pair<br>
 
 <span style="color:red">■</span> Antipode — balancing / opposing archetype (seal +10)<br>
 
@@ -998,7 +998,7 @@ if(cell.dataset.row === undefined || cell.dataset.col === undefined) return
 let r = parseInt(cell.dataset.row)
 let col = parseInt(cell.dataset.col)
 
-let analog = (s + 4) % 20
+let analog = ANALOG_MAP[s]
 let antipode = (s + 10) % 20
 let occult = 19 - s
 let matches = 0
@@ -1124,7 +1124,7 @@ let sealIndex2 = (kin-1)%20
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
-let analogSeal = (seal0 + 4) % 20
+let analogSeal = ANALOG_MAP[seal0]
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
