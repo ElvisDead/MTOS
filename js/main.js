@@ -35,3 +35,9 @@ import { drawKinMap } from "./kinmap.js"
 
 window.drawKinMap = drawKinMap
 
+import { analog, kinFromTS, tsFromKin, kinToTS } from "./tzolkin.js"
+
+window.analog = analog
+window.kinFromTS = kinFromTS
+window.tsFromKin = tsFromKin
+window.kinToTS = kinToTS
