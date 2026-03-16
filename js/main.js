@@ -41,3 +41,8 @@ window.analog = analog
 window.kinFromTS = kinFromTS
 window.tsFromKin = tsFromKin
 window.kinToTS = kinToTS
+
+import { MTOS_MAPS } from "./mapsConfig.js"
+
+window.MTOS_MAPS = MTOS_MAPS
+
