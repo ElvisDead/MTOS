@@ -51,15 +51,15 @@ map.appendChild(h)
 
 let kin = 1
   
-for(let seal=0;seal<20;seal++){
+for(let row=0;row<20;row++){
 
 let label=document.createElement("div")
-label.innerText=seals[seal]
+label.innerText=seals[row]
 label.style.fontSize="8px"
 label.style.color="#777"
 map.appendChild(label)
 
-for(let tone=0;tone<13;tone++){
+for(let col=0;col<13;col++){
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -70,6 +70,11 @@ c.className="cell"
 c.dataset.kin=kin
 let toneReal = (kin-1)%13
 let sealReal = (kin-1)%20
+
+if(sealReal !== row || toneReal !== col){
+kin++
+continue
+}
 
 c.dataset.tone = toneReal
 c.dataset.seal = sealReal
