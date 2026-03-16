@@ -100,9 +100,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = ((analogSeal + tone0*20) % 260) + 1
-let antipodeKin = ((antipodeSeal + tone0*20) % 260) + 1
-let occultKin = ((occultSeal + tone0*20) % 260) + 1
+let analogKin = ((tone0 + analogSeal*13) % 260) + 1
+let antipodeKin = ((tone0 + antipodeSeal*13) % 260) + 1
+let occultKin = ((tone0 + occultSeal*13) % 260) + 1
 
 let harmonic = Math.floor((currentKin-1)/4)
 let wave = Math.floor((currentKin-1)/13)
