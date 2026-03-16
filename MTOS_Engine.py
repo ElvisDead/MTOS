@@ -157,15 +157,8 @@ def kin_from_date(date):
 # TZOLKIN GEOMETRY
 # ==========================================================
 
-ANALOG_MAP = [
-    12,13,14,15,16,
-    17,18,19,0,1,
-    2,6,7,8,9,
-    10,11,3,4,5
-]
-
 def analog(i):
-    return ANALOG_MAP[i]
+    return (i + 4) % 20
 def antipode(i): return (i+10)%20
 def occult(i): return (19-i)%20
 
@@ -944,10 +937,10 @@ def mtos_pressure_gradient():
 
     for kin in range(260):
 
-        tone = (kin % 13)
-        seal = (kin % 20)
+        tone = ((kin-1) % 13)
+        seal = ((kin-1) % 20)
 
-        matrix[seal][tone-1] = gradient[kin]
+        matrix[seal][tone] = gradient[kin]
 
     maxv = np.max(matrix)
 
