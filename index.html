@@ -966,7 +966,7 @@ for(let t=0;t<13;t++){
 
     for(let s=0;s<20;s++){
 
-    let kin = ((s + t*20) % 260) + 1
+    let kin = s*13 + t + 1
     let index = kin - 1
     let v = weather[index] ?? 0
     
@@ -1006,10 +1006,10 @@ let antipode = (s + 10) % 20
 let occult = 19 - s
 let matches = 0
 
-let hoverKin = ((s + t*20) % 260) + 1
+let hoverKin = s*13 + t + 1
 let harmonic = Math.floor((hoverKin-1)/4)
 
-let cellKin = ((col + r*20) % 260) + 1
+let cellKin = col*13 + r + 1
 
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
@@ -1077,6 +1077,8 @@ cell.style.boxShadow=""
 
 })
 
+if(currentKin === null) return
+            
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
@@ -1084,9 +1086,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = (analogSeal*13 + tone0) % 260 + 1
-let antipodeKin = (antipodeSeal*13 + tone0) % 260 + 1
-let occultKin = (occultSeal*13 + tone0) % 260 + 1
+let analogKin = analogSeal*13 + tone0 + 1
+let antipodeKin = antipodeSeal*13 + tone0 + 1
+let occultKin = occultSeal*13 + tone0 + 1
 
 /* вернуть выделение текущего Kin */
 
@@ -1127,7 +1129,6 @@ cell.style.boxShadow="0 0 6px violet"
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
-let analog = (s + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
@@ -1172,7 +1173,10 @@ c.title =
 "Predicted attention: " + attention + "\n" +
 "State: " + state
 
-let distance = Math.abs(kin - currentKin)
+let distance = Math.min(
+Math.abs(kin-currentKin),
+260-Math.abs(kin-currentKin)
+)
 
 if(distance > 40){
 c.style.opacity = 0.65
