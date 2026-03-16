@@ -970,7 +970,7 @@ for(let t=0;t<13;t++){
     for(let s=0;s<20;s++){
 
     const TONES = 13
-    let kin = s*TONES + t + 1
+    let kin = ((t)*20 + s) % 260 + 1
     let index = kin - 1
     let v = weather[index] ?? 0
     
