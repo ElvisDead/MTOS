@@ -754,14 +754,6 @@ map.style.gridAutoRows="12px"
 
 map.appendChild(document.createElement("div"))
 
-seals.forEach(s=>{
-let h=document.createElement("div")
-h.style.fontSize="8px"
-h.style.color="#aaa"
-h.innerText=s
-map.appendChild(h)
-})
-
 for(let t=0;t<rows;t++){
 
 let label=document.createElement("div")
@@ -969,6 +961,21 @@ for(let t=0;t<13;t++){
     let kin = index + 1
     let v = weather[index]
 
+    let index = (s*13 + t) % 260
+    let kin = index + 1
+    let v = weather[index]
+
+    let seal = seals[s]
+    let tone = t + 1
+    let attention = v.toFixed(2)
+
+    let state = "LOW"
+
+    if(attention > 0.75) state = "FOCUS"
+    else if(attention > 0.6) state = "ACTIVE"
+    else if(attention > 0.45) state = "TRANSITION"
+    else state = "RECOVERY"
+
     let c=document.createElement("div")
 
     c.className="cell"
@@ -1074,12 +1081,6 @@ cell.style.boxShadow="0 0 10px white"
 }
     c.style.cursor="pointer"
 
-    if(v>0){
-
-    c.title = "Kin "+kin+" : "+v.toFixed(3)
-
-}
-
     let tone=(kin-1)%13
     let seal=(kin-1)%20
 let tone0 = (currentKin - 1) % 13
@@ -1134,9 +1135,12 @@ if(seal === occultSeal){
 c.style.boxShadow="0 0 6px violet"
 }
 
-c.title=
-"Kin "+kin+"\n"+
-seals[seal]+" — "+tones[tone]
+c.title =
+"Kin " + kin + "\n" +
+"Seal: " + seal + "\n" +
+"Tone: " + tone + "\n\n" +
+"Predicted attention: " + attention + "\n" +
+"State: " + state
 
 let distance = Math.abs(kin - currentKin)
 
