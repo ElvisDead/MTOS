@@ -100,7 +100,7 @@ if(window.currentKin===null) return
 let tone0 = (window.currentKin-1)%13
 let seal0 = (window.currentKin-1)%20
 
-let analogSeal = (seal0 - 5) % 20
+let analogSeal = ((seal0 - 5) % 20 + 20) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
