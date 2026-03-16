@@ -259,11 +259,10 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
 
     contagion = np.mean(GLOBAL_ATTENTION_BUFFER) - 0.5
 
-    if GLOBAL_USERS:
+    if len(GLOBAL_USERS)>0:
         avg = np.mean([seal_resonance(user_i,ui,day_tone) for _,ui,_ in GLOBAL_USERS])
-        network_field = avg * 0.05
     else:
-        network_field = 0
+        avg = 0
 
     noise = np.random.normal(0,0.015)
 
@@ -538,7 +537,7 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
     global GLOBAL_USERS
 
-    if user_name not in [u[0] for u in GLOBAL_USERS]:
+    if user_name and user_name not in [u[0] for u in GLOBAL_USERS]:
         GLOBAL_USERS.append((user_name,user_i,user_tone))
         save_global_users(GLOBAL_USERS)
 
@@ -546,8 +545,9 @@ def simulate(user_i,user_tone,start,days,user_name=None):
         reset_memory()
 
 # ограничение памяти сети
-    GLOBAL_USERS = GLOBAL_USERS[-30:]
-    save_global_users(GLOBAL_USERS)
+    if user_name:
+        GLOBAL_USERS = GLOBAL_USERS[-30:]
+        save_global_users(GLOBAL_USERS)
 
     learn = learning_adjust() + adaptive_learning()
 
@@ -566,9 +566,9 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
         a,f = attention_step(a,f,user_i,user_tone,i,tone,kin,user_name)
 
-        update_seal_memory(i,a)
-        update_kin_memory(kin,a)
         if user_name:
+            update_seal_memory(i,a)
+            update_kin_memory(kin,a)
             update_user_memory(user_name,a)
 
         a = a + collective*0.04
@@ -686,8 +686,8 @@ def phase_density(series):
 
     for i in range(len(series)-1):
 
-        x = int(series[i]*19)
-        y = int(series[i+1]*19)
+        x = min(19,max(0,int(series[i]*19)))
+        y = min(19,max(0,int(series[i+1]*19)))
 
         grid[y][x] += 1
 
@@ -828,7 +828,13 @@ def mtos_260_weather(name,year,month,day):
 
         kin_date = today + datetime.timedelta(days=kin-1)
 
-        series = simulate(seal,tone,kin_date,30)
+        memory_backup_seal = SEAL_MEMORY.copy()
+        memory_backup_kin = KIN_MEMORY.copy()
+
+        series = simulate(seal,tone,kin_date,30,None)
+
+        SEAL_MEMORY[:] = memory_backup_seal
+        KIN_MEMORY[:] = memory_backup_kin
 
         value = float(np.mean(series[:7]))
 
@@ -836,6 +842,8 @@ def mtos_260_weather(name,year,month,day):
 
         value = value + spiral
 
+        if np.isnan(value):
+            value = 0.5
         value = max(0,min(value,1))
 
         matrix[seal][tone-1] = value
@@ -991,7 +999,7 @@ def mtos_wave_structure():
             kin
         )
 
-        matrix[seal][tone-1] = a
+        matrix[int(seal)][int(tone-1)] = float(a)
 
     return matrix.flatten().tolist()
 
