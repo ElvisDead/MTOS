@@ -1013,6 +1013,8 @@ let cellKin = col*13 + r + 1
 
 let wave = Math.floor((cellKin-1)/13)
 let currentWave = Math.floor((hoverKin-1)/13)
+if(wave < 0) wave = 0
+if(currentWave < 0) currentWave = 0
 
 let cellHarmonic = Math.floor((cellKin-1)/4)
 
