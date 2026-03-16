@@ -100,7 +100,7 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = currentKin - seal0 + analogSeal
+let analogKin = ((tone0 + analogSeal*13) % 260) + 1
 let antipodeKin = ((tone0 + antipodeSeal*13) % 260) + 1
 let occultKin = ((tone0 + occultSeal*13) % 260) + 1
 
