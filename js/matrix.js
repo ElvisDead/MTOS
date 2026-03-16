@@ -1,3 +1,5 @@
+import { seals } from "./tzolkin.js"
+
 export function drawMatrix(id,data){
 
 const map=document.getElementById(id)
