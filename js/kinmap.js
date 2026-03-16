@@ -85,11 +85,6 @@ cells.push(c)
 
 }
 
-let tone=(kin-1)%13
-cells.push(c)
-
-}
-
 highlightCurrentKin(cells)
 
 }
