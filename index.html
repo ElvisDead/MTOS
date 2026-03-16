@@ -962,7 +962,7 @@ for(let t=0;t<13;t++){
     let v = weather[index]
     
     let seal = s
-    let seal = seals[s]
+    let sealName = seals[s]
     let tone = t + 1
     let attention = v.toFixed(2)
 
@@ -1078,8 +1078,8 @@ cell.style.boxShadow="0 0 10px white"
 }
     c.style.cursor="pointer"
 
-    let tone=(kin-1)%13
-    let seal=(kin-1)%20
+let toneIndex = (kin-1)%13
+let sealIndex = (kin-1)%20
 let tone0 = (currentKin - 1) % 13
 let seal0 = (currentKin - 1) % 20
 
