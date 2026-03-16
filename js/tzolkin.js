@@ -31,7 +31,7 @@ return ((seal*13)+tone)%260 +1
 
 }
 
-export function tsFromKin(kin){
+ tsFromKin(kin){
 
 let tone=(kin-1)%13
 let seal=(kin-1)%20
@@ -40,7 +40,7 @@ return {tone,seal}
 
 }
 
-export function kinToTS(kin){
+ kinToTS(kin){
 
 let tone=(kin-1)%13
 let seal=(kin-1)%20
