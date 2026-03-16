@@ -86,37 +86,6 @@ cells.push(c)
 }
 
 let tone=(kin-1)%13
-let seal=(kin-1)%20
-
-if(tone===0){
-
-let label=document.createElement("div")
-label.innerText=seals[seal]
-label.style.fontSize="8px"
-label.style.color="#777"
-map.appendChild(label)
-
-}
-
-let v=weather[kin-1] ?? 0
-let val=(max===min)?0:(v-min)/(max-min)
-
-let c=document.createElement("div")
-c.className="cell"
-
-c.dataset.kin=kin
-c.dataset.tone=tone
-c.dataset.seal=seal
-
-c.style.background=getColor(val)
-
-c.title=
-"Kin "+kin+"\n"+
-"Seal: "+seals[seal]+"\n"+
-"Tone: "+(tone+1)+"\n"+
-"Attention: "+v.toFixed(3)
-
-map.appendChild(c)
 cells.push(c)
 
 }
