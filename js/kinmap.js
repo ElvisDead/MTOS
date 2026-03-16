@@ -58,7 +58,7 @@ map.appendChild(label)
 
 for(let tone=0;tone<13;tone++){
 
-let kin = seal*13 + tone + 1
+let kin = ((seal + tone*20) % 260) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
@@ -100,9 +100,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = analogSeal*13 + tone0 + 1
-let antipodeKin = antipodeSeal*13 + tone0 + 1
-let occultKin = occultSeal*13 + tone0 + 1
+let analogKin = ((analogSeal + tone0*20) % 260) + 1
+let antipodeKin = ((antipodeSeal + tone0*20) % 260) + 1
+let occultKin = ((occultSeal + tone0*20) % 260) + 1
 
 let harmonic = Math.floor((currentKin-1)/4)
 let wave = Math.floor((currentKin-1)/13)
