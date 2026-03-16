@@ -19,3 +19,7 @@ import { drawLinearKinMap } from "./linearKinMap.js"
 
 window.drawLinearKinMap = drawLinearKinMap
 
+import { renderMap } from "./renderMap.js"
+
+window.renderMap = renderMap
+
