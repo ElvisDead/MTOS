@@ -163,8 +163,8 @@ c.style.outline="2px solid red"
 
 // occult
 if(kin===occultKin){
-c.style.outline: 2px solid #00ffff
-box-shadow: 0 0 6px #00ffff
+c.style.outline = "2px solid #00ffff"
+c.style.boxShadow = "0 0 6px #00ffff"
 }
 
 // current
