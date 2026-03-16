@@ -108,6 +108,8 @@ cells.forEach(c=>{
 c.style.outline=""
 c.style.boxShadow=""
 
+let kin=parseInt(c.dataset.kin)
+
 // subtle structural grid
 
 if((kin-1)%13===0){
@@ -117,8 +119,6 @@ c.style.borderTop="1px solid #444"
 if((kin-1)%4===0){
 c.style.borderLeft="1px solid #333"
 }
-
-let kin=parseInt(c.dataset.kin)
 
 let waveIndex = Math.floor((kin-1)/13)
 let currentWave = Math.floor((currentKin-1)/13)
