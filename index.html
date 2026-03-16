@@ -960,11 +960,8 @@ for(let t=0;t<13;t++){
     let index = (s*13 + t) % 260
     let kin = index + 1
     let v = weather[index]
-
-    let index = (s*13 + t) % 260
-    let kin = index + 1
-    let v = weather[index]
-
+    
+    let seal = s
     let seal = seals[s]
     let tone = t + 1
     let attention = v.toFixed(2)
@@ -1137,7 +1134,7 @@ c.style.boxShadow="0 0 6px violet"
 
 c.title =
 "Kin " + kin + "\n" +
-"Seal: " + seal + "\n" +
+"Seal: " + sealName + "\n" +
 "Tone: " + tone + "\n\n" +
 "Predicted attention: " + attention + "\n" +
 "State: " + state
