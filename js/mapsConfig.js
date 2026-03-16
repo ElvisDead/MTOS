@@ -14,6 +14,4 @@ wave: () => pyodide.runPython(`mtos_wave_structure()`).toJs(),
 
 tzolkin: () => pyodide.runPython(`mtos_tzolkin_structure()`).toJs(),
 
-geometry: () => pyodide.runPython(`mtos_tzolkin_geometry()`).toJs()
-
 }
