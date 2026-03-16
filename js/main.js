@@ -23,3 +23,7 @@ import { renderMap } from "./renderMap.js"
 
 window.renderMap = renderMap
 
+import { drawPhaseSpace } from "./phaseSpace.js"
+
+window.drawPhaseSpace = drawPhaseSpace
+
