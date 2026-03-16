@@ -534,7 +534,7 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days,user_name=None):
 
-    np.random.seed((user_i*13 + start.toordinal()) % 2**32)
+    np.random.seed(int((user_i*13 + start.toordinal()) % 2**32))
 
     global GLOBAL_USERS
 
@@ -594,9 +594,9 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
         a = a + learning
         
-        a = max(0, min(a, 1))
         if np.isnan(a):
             a = 0.5
+        a = max(0, min(a, 1))
         series.append(a)
 
     return np.array(series)
@@ -614,7 +614,7 @@ def entropy(series):
 
         return 0
 
-    p = hist / s
+    p = hist.astype(float) / s
     p=p[p>0]
 
     v = -np.sum(p*np.log(p))
