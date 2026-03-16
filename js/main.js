@@ -10,3 +10,7 @@ window.getColorInferno = getColorInferno
 import { drawHeatmap } from "./heatmap.js"
 
 window.drawHeatmap = drawHeatmap
+
+import { drawMatrix } from "./matrix.js"
+
+window.drawMatrix = drawMatrix
