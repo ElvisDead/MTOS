@@ -1,55 +1,36 @@
+// GLOBAL STATE
 window.charts = {}
 window.currentKin = null
 window.kinUsers = {}
 
+// IMPORT MODULES
 import { drawChart } from "./charts.js"
-
-window.drawChart = drawChart
-
 import { getColor, getColorInferno } from "./colors.js"
+import { drawHeatmap } from "./heatmap.js"
+import { drawMatrix } from "./matrix.js"
+import { drawLinearKinMap } from "./linearKinMap.js"
+import { renderMap } from "./renderMap.js"
+import { drawPhaseSpace } from "./phaseSpace.js"
+import { exportExperiment } from "./exportExperiment.js"
+import { drawKinMap } from "./kinmap.js"
+import { analog, kinFromTS, tsFromKin, kinToTS } from "./tzolkin.js"
+import { MTOS_MAPS } from "./mapsConfig.js"
+import { run } from "./run.js"
 
+// EXPOSE TO GLOBAL SCOPE
+window.drawChart = drawChart
 window.getColor = getColor
 window.getColorInferno = getColorInferno
-
-import { drawHeatmap } from "./heatmap.js"
-
 window.drawHeatmap = drawHeatmap
-
-import { drawMatrix } from "./matrix.js"
-
 window.drawMatrix = drawMatrix
-
-import { drawLinearKinMap } from "./linearKinMap.js"
-
 window.drawLinearKinMap = drawLinearKinMap
-
-import { renderMap } from "./renderMap.js"
-
 window.renderMap = renderMap
-
-import { drawPhaseSpace } from "./phaseSpace.js"
-
 window.drawPhaseSpace = drawPhaseSpace
-
-import { exportExperiment } from "./exportExperiment.js"
-
 window.exportExperiment = exportExperiment
-
-import { drawKinMap } from "./kinmap.js"
-
 window.drawKinMap = drawKinMap
-
-import { analog, kinFromTS, tsFromKin, kinToTS } from "./tzolkin.js"
-
 window.analog = analog
 window.kinFromTS = kinFromTS
 window.tsFromKin = tsFromKin
 window.kinToTS = kinToTS
-
-import { MTOS_MAPS } from "./mapsConfig.js"
-
 window.MTOS_MAPS = MTOS_MAPS
-
-import { run } from "./run.js"
-
 window.run = run
