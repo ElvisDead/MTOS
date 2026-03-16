@@ -727,6 +727,10 @@ const tones=[
 "T8","T9","T10","T11","T12","T13"
 ]
 
+function kinFromTS(tone,seal){
+return tone*20 + seal + 1
+}
+    
 const MTOS_MAPS = {
 
 pressure: () => pyodide.runPython(`mtos_pressure_map()`).toJs(),
@@ -779,7 +783,7 @@ map.appendChild(label)
 for(let s=0;s<cols;s++){
 
 let v = data[(s*rows) + t] ?? 0
-let kin = s*13 + t + 1
+let kin = kinFromTS(t,s)
 
 let c=document.createElement("div")
     c.onclick=()=>{
