@@ -103,7 +103,9 @@ let analogSeal = (seal0 + 4) % 20
 let antipodeSeal = (seal0 + 10) % 20
 let occultSeal = 19 - seal0
 
-let analogKin = ((tone0 + analogSeal*13) % 260) + 1
+let analogKin = currentKin + (analogSeal - seal0) * 13
+if(analogKin < 1) analogKin += 260
+if(analogKin > 260) analogKin -= 260
 let antipodeKin = ((tone0 + antipodeSeal*13) % 260) + 1
 let occultKin = ((tone0 + occultSeal*13) % 260) + 1
 
@@ -158,7 +160,7 @@ c.style.outline="2px solid red"
 
 // occult
 if(kin===occultKin){
-c.style.outline="2px solid violet"
+c.style.outline="2px solid #00e5ff"
 }
 
 // current
