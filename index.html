@@ -729,7 +729,7 @@ const tones=[
 ]
 
 function kinFromTS(tone,seal){
-return seal*13 + tone + 1
+return ((seal*13 + tone) % 260) + 1
 }
 
 function tsFromKin(kin){
