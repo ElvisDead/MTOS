@@ -154,15 +154,6 @@ def kin_from_date(date):
     return kin,tone,seals[seal_index],seal_index
 
 # ==========================================================
-# TZOLKIN GEOMETRY
-# ==========================================================
-
-def analog(i):
-    return (i + 4) % 20
-def antipode(i): return (i+10)%20
-def occult(i): return (19-i)%20
-
-# ==========================================================
 # RESONANCE FIELD
 # ==========================================================
 
@@ -1186,30 +1177,6 @@ def mtos_tzolkin_structure():
             matrix.append(float(value))
 
     return matrix
-
-def mtos_tzolkin_geometry():
-
-    data = []
-
-    for kin in range(260):
-
-        seal = kin % 20
-
-        analog = (seal + 4) % 20
-        antipode = (seal + 10) % 20
-        occult = 19 - seal
-
-        symmetry = (
-            abs(analog - seal) +
-            abs(antipode - seal) +
-            abs(occult - seal)
-        )
-
-        value = symmetry / 40
-
-        data.append(value)
-
-    return data
 
 def mtos_users_by_kin():
 
