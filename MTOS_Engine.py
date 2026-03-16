@@ -541,7 +541,7 @@ def collective_wave():
 
 def simulate(user_i,user_tone,start,days,user_name=None):
 
-    np.random.seed(user_i*13 + start.toordinal())
+    np.random.seed((user_i*13 + start.toordinal()) % 2**32)
 
     global GLOBAL_USERS
 
