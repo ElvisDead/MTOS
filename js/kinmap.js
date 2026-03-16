@@ -76,7 +76,13 @@ c.dataset.seal = sealReal
 
 c.style.background=getColor(val)
 
-c.title=
+let toneReal = (kin-1)%13
+let sealReal = (kin-1)%20
+
+c.dataset.tone = toneReal
+c.dataset.seal = sealReal
+
+c.title =
 "Kin "+kin+"\n"+
 "Seal: "+seals[sealReal]+"\n"+
 "Tone: "+(toneReal+1)+"\n"+
