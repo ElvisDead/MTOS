@@ -950,8 +950,8 @@ def mtos_pressure_gradient():
 
     for kin in range(260):
 
-        tone = (kin % 13)
-        seal = (kin % 20)
+        tone = (kin-1) % 13
+        seal = (kin-1) % 20
 
         matrix[seal][tone] = gradient[kin]
 
