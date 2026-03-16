@@ -840,9 +840,9 @@ def mtos_260_weather(name,year,month,day):
 
         series = simulate(seal,tone,kin_date,30)
 
-        value = float(series[0])
+        value = float(np.mean(series[:7]))
 
-        spiral = np.sin(2*np.pi*(kin-1)/260) * 0.05
+        spiral = np.sin(2*np.pi*(kin-1)/260) * 0.03
 
         value = value + spiral
 
