@@ -837,7 +837,12 @@ def mtos_260_weather(name,year,month,day):
             value = 0.5
         value = max(0,min(value,1))
 
-        weather[kin-1] = value
+        weather[kin-1] = {
+            "attention": float(np.mean(series[:7])),
+            "activity": float(series[0]),
+            "pressure": abs(series[0] - series[1]) if len(series)>1 else 0,
+            "conflict": float(np.std(series[:5]))
+        }
 
     return weather
 
