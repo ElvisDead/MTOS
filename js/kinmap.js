@@ -80,6 +80,9 @@ let val = (max===min)?0:(attention-min)/(max-min)
 let c=document.createElement("div")
 c.className="cell"
 
+let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
+let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
+
 c.dataset.kin=kin
 let toneReal = (kin-1)%13
 let sealReal = (kin-1)%20
