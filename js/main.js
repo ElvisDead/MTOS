@@ -19,7 +19,9 @@ import { MTOS_MAPS } from "./mapsConfig.js"
 import { run } from "./run.js"
 import { startMTOS } from "./pyodideLoader.js"
 
-startMTOS()
+window.addEventListener("DOMContentLoaded", () => {
+  startMTOS()
+})
 
 // EXPOSE TO GLOBAL SCOPE
 window.drawChart = drawChart
