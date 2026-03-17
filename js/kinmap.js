@@ -78,8 +78,8 @@ c.dataset.seal = sealReal
 
 c.style.background=getColor(val)
 
-let users = kinUsers[kin] || []
-let userList = users.length ? users.join("\n") : "none"
+let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
+let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
 
 c.title =
 "Kin: "+kin+"\n"+
