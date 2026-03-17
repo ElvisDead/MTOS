@@ -968,9 +968,11 @@ def mtos_260_weather(name,year,month,day):
             )
 
             # --- SAVE GLOBAL FIELD (CLIMATE) ---
+            field *= 0.995
+            field = np.clip(field, 0.01, 0.99)
             save_global_field({
-            "field": field.tolist()
-    })
+                "field": field.tolist()
+            })
 
     return weather
 
