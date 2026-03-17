@@ -77,10 +77,10 @@ let conflict  = (w && w.conflict != null) ? w.conflict : 0
 // нормализация для цвета (оставляем старую систему)
 let val = (max===min)?0:(attention-min)/(max-min)
 
-c.style.background = getColor(val)
-
 let c=document.createElement("div")
 c.className="cell"
+
+c.style.background = getColor(val)
 
 let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
 let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
