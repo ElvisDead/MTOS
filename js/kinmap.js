@@ -59,7 +59,9 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
+let shift = Math.floor((weather[row*13+col] || 0) * 13)
+
+let kin = row + 20 * (((2*(col - row + shift)) % 13 + 13) % 13) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
