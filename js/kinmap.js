@@ -35,8 +35,8 @@ const map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns="80px repeat(13,48px)"
-map.style.gridAutoRows="48px"
+map.style.gridTemplateColumns="60px repeat(13,24px)"
+map.style.gridAutoRows="24px"
 
 let min = Math.min(...weather.map(w => (w && w.attention != null) ? w.attention : 0))
 let max = Math.max(...weather.map(w => (w && w.attention != null) ? w.attention : 1))
@@ -97,33 +97,6 @@ if(conflict > 0.15){
 
 // активность = “дыхание”
 c.style.transform = `scale(${1 + activity * 0.25})`
-
-let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
-let userCount = users.length
-
-if(userCount > 1){
-
-  const densityColors = [
-    "#1a1a1a",  // 1 (не используется)
-    "#003366",
-    "#0055aa",
-    "#0088ff",
-    "#00ccff",
-    "#00ffaa",
-    "#aaff00",
-    "#ffff00",
-    "#ff8800",
-    "#ff0000"
-  ]
-
-  let idx = Math.min(userCount, 9)
-  c.style.background = densityColors[idx]
-
-}else{
-  c.style.background = getColor(val)
-}
-
-let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
 
 let clarity = 0
 
