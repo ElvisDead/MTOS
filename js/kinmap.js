@@ -60,9 +60,10 @@ map.appendChild(label)
 for(let col=0;col<13;col++){
 
 let baseKin = row*13 + col + 1
-let shift = Math.floor((weather[baseKin-1] || 0) * 13)
+let dynamicShift = Math.floor((weather[baseKin-1] - 0.5) * 26)
 
-let kin = row + 20 * (((2*(col - row + shift)) % 13 + 13) % 13) + 1
+let kin =
+((baseKin + dynamicShift - 1 + 260) % 260) + 1
 
 let v=weather[kin-1] ?? 0
 let val=(max===min)?0:(v-min)/(max-min)
