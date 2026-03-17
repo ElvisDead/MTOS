@@ -34,6 +34,7 @@ window.drawLinearKinMap = drawLinearKinMap
 window.renderMap = renderMap
 window.drawPhaseSpace = drawPhaseSpace
 window.exportExperiment = exportExperiment
+window.drawGlobalKinMap = drawGlobalKinMap
 window.kinFromTS = kinFromTS
 window.tsFromKin = tsFromKin
 window.kinToTS = kinToTS
