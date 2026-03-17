@@ -127,15 +127,33 @@ return "#ff0033"                    // strong conflict
 }
 
 // 3. рендер
+
+function getRelationLabel(v){
+
+if(v >= 0.75) return "ULTRA SYNERGY"
+if(v >= 0.6) return "STRONG"
+if(v >= 0.45) return "POSITIVE"
+if(v >= 0.25) return "MILD SUPPORT"
+if(v >= 0.1) return "WEAK"
+if(v > -0.1) return "NEUTRAL"
+if(v > -0.25) return "TENSION"
+if(v > -0.45) return "CONFLICT"
+return "STRONG CONFLICT"
+
+}
+
 networkData.forEach(e=>{
 
 let line=document.createElement("div")
 
 let color = getRelationColor(e.value)
 
+let label = getRelationLabel(e.value)
+
 line.innerHTML =
-"<b>"+e.a+"</b> ↔ <b>"+e.b+"</b> : "+
-e.value.toFixed(2)
+"<b>"+e.a+"</b> ↔ <b>"+e.b+"</b><br>"+
+"<span style='color:"+color+"'>"+label+"</span> "+
+"("+e.value.toFixed(2)+")"
 
 line.style.margin="3px"
 line.style.color=color
