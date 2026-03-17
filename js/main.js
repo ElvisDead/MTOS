@@ -47,3 +47,8 @@ if(!p.contains(e.target) && !e.target.classList.contains("cell")){
 p.remove()
 }
 })
+
+const btn = document.getElementById("runBtn")
+if (btn) {
+  btn.addEventListener("click", run)
+}
