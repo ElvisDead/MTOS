@@ -812,8 +812,7 @@ def mtos_260_weather(name,year,month,day):
 
     for kin in range(1,261):
 
-        tone = (kin-1) % 13 + 1
-        seal = (kin-1) % 20
+        
 
         kin_date = today + datetime.timedelta(days=kin-1)
 
@@ -821,12 +820,14 @@ def mtos_260_weather(name,year,month,day):
         memory_backup_kin = KIN_MEMORY.copy()
 
         np.random.seed(kin)
-        series = simulate(seal,tone,kin_date,30,"global")
+        series = simulate(seal,tone,kin_date,30,name)
 
         SEAL_MEMORY[:] = memory_backup_seal
         KIN_MEMORY[:] = memory_backup_kin
 
         value = float(np.mean(series[:7]))
+
+        value += (series[0] - 0.5) * 0.3
 
         spiral = np.sin(2*np.pi*(kin-1)/260) * 0.03
 
