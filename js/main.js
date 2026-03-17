@@ -34,3 +34,11 @@ window.tsFromKin = tsFromKin
 window.kinToTS = kinToTS
 window.MTOS_MAPS = MTOS_MAPS
 window.run = run
+
+document.addEventListener("click",(e)=>{
+let p = document.getElementById("kin-popup")
+if(!p) return
+if(!p.contains(e.target) && !e.target.classList.contains("cell")){
+p.remove()
+}
+})
