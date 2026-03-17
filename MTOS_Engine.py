@@ -817,7 +817,7 @@ def mtos_260_weather(name,year,month,day):
         memory_backup_kin = KIN_MEMORY.copy()
 
         np.random.seed(kin)
-        series = simulate(seal,tone,kin_date,30,None)
+        series = simulate(seal,tone,kin_date,30,"global")
 
         SEAL_MEMORY[:] = memory_backup_seal
         KIN_MEMORY[:] = memory_backup_kin
