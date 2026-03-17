@@ -72,6 +72,11 @@ const weather = pyodide.runPython(
 ).toJs()
 
 const usersByKin = JSON.parse(pyodide.runPython(`mtos_users_by_kin()`))
+window.kinUsers = Object.fromEntries(
+  Object.entries(usersByKin).map(([k,v]) => [parseInt(k), v])
+)
+
+console.log("KIN USERS:", window.kinUsers)
 window.kinUsers = usersByKin
   
 drawKinMap(weather)
