@@ -17,6 +17,9 @@ window.drawKinMap = drawKinMap
 import { kinFromTS, tsFromKin, kinToTS } from "./tzolkin.js"
 import { MTOS_MAPS } from "./mapsConfig.js"
 import { run } from "./run.js"
+import { startMTOS } from "./pyodideLoader.js"
+
+startMTOS()
 
 // EXPOSE TO GLOBAL SCOPE
 window.drawChart = drawChart
