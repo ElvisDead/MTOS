@@ -59,7 +59,8 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let shift = Math.floor((weather[row*13+col] || 0) * 13)
+let baseKin = row*13 + col + 1
+let shift = Math.floor((weather[baseKin-1] || 0) * 13)
 
 let kin = row + 20 * (((2*(col - row + shift)) % 13 + 13) % 13) + 1
 
@@ -70,7 +71,7 @@ let c=document.createElement("div")
 c.className="cell"
 
 c.dataset.kin=kin
-let toneReal = (kin-1)%13
+let toneReal = col
 let sealReal = (kin-1)%20
 
 c.dataset.tone = toneReal
