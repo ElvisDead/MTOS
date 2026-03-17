@@ -940,8 +940,8 @@ def mtos_260_weather(name,year,month,day):
 
                 new_field[i] = new_val
 
-            # нормализация после шага
-            field = np.clip(new_field, 0, 1)
+        # нормализация после шага
+        field = np.clip(new_field, 0, 1)
 
             # ==========================================
             # APPLY BACK TO WEATHER
