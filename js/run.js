@@ -77,7 +77,7 @@ window.kinUsers = Object.fromEntries(
   Object.entries(usersByKin).map(([k,v]) => [parseInt(k), v])
 )
 
-drawGlobalKinMap("kinDistribution")
+drawGlobalKinMap("globalKinMap")
 
 console.log("KIN USERS:", window.kinUsers)
 window.kinUsers = usersByKin
