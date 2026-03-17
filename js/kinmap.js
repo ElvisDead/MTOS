@@ -204,9 +204,9 @@ cells.push(c)
 
 }
 
-highlightCurrentKin(cells)
-
 }
+  
+highlightCurrentKin(cells)
 
 }
 
