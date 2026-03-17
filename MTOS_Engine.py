@@ -902,7 +902,7 @@ def mtos_260_weather(name,year,month,day):
     new_field_input = np.array([w["attention"] for w in weather])
 
     # инерция (память системы)
-    INERTIA = 0.85
+    INERTIA = 0.6
 
     field = prev_field * INERTIA + new_field_input * (1 - INERTIA)
 
@@ -926,11 +926,11 @@ def mtos_260_weather(name,year,month,day):
 
             # --- diffusion ---
             avg = np.mean([field[j] for j in nb])
-            diffusion = field[i]*0.75 + avg*0.25
+            diffusion = field[i]*0.85 + avg*0.15
 
             # --- flow (gradient) ---
             delta = sum((field[j] - field[i]) for j in nb)
-            flow = field[i] + delta * 0.06
+            flow = field[i] + delta * 0.12
 
             # --- interaction ---
             influence = 0
@@ -939,7 +939,7 @@ def mtos_260_weather(name,year,month,day):
                 influence += np.tanh(diff * 3)
 
             influence /= len(nb)
-            interaction = field[i] + influence * 0.10
+            interaction = field[i] + influence * 0.20
 
             # --- combine ---
             new_val = (
