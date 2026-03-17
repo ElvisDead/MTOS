@@ -140,33 +140,53 @@ popup.style.fontSize = "14px"
 popup.style.maxWidth = "260px"
 popup.style.whiteSpace = "pre-line"
 
-popup.innerText =
-"Kin: "+kin+"\n"+
-"Seal: "+seals[sealReal]+"\n"+
-"Tone: "+(toneReal+1)+"\n"+
-"Clarity: "+clarity.toFixed(3)+"\n\n"+
-"--- STATE ---\n"+
-"Attention: "+attention.toFixed(3)+"\n"+
-"Pressure: "+pressure.toFixed(3)+"\n"+
-"Activity: "+activity.toFixed(3)+"\n"+
-"Conflict: "+conflict.toFixed(3)+"\n\n"+
-    
-"Users:\n"+userList
+popup.innerHTML = `
 
-let close = document.createElement("div")
-close.innerText = "×"
-close.style.position = "absolute"
-close.style.top = "6px"
-close.style.right = "10px"
-close.style.cursor = "pointer"
+<div style="font-size:16px;margin-bottom:6px">
+<b>Kin ${kin}</b>
+</div>
 
-close.onclick = () => popup.remove()
+<div style="color:#aaa;margin-bottom:8px">
+${seals[sealReal]} • Tone ${toneReal+1}
+</div>
 
-popup.appendChild(close)
-document.body.appendChild(popup)
+<div style="margin-bottom:10px">
+Clarity: <b>${clarity.toFixed(3)}</b>
+</div>
 
-}
+<div style="margin-bottom:10px">
 
+<div>Attention</div>
+<div style="background:#222;height:6px;border-radius:4px;margin-bottom:6px">
+  <div style="width:${attention*100}%;background:#00ffaa;height:100%;border-radius:4px"></div>
+</div>
+
+<div>Pressure</div>
+<div style="background:#222;height:6px;border-radius:4px;margin-bottom:6px">
+  <div style="width:${pressure*100}%;background:#ffaa00;height:100%;border-radius:4px"></div>
+</div>
+
+<div>Activity</div>
+<div style="background:#222;height:6px;border-radius:4px;margin-bottom:6px">
+  <div style="width:${activity*100}%;background:#00aaff;height:100%;border-radius:4px"></div>
+</div>
+
+<div>Conflict</div>
+<div style="background:#222;height:6px;border-radius:4px">
+  <div style="width:${conflict*100}%;background:#ff4444;height:100%;border-radius:4px"></div>
+</div>
+
+</div>
+
+<div style="margin-top:10px;font-size:12px;color:#888">
+Users:
+</div>
+
+<div style="white-space:pre-line;font-size:12px">
+${userList}
+</div>
+
+`
 
 map.appendChild(c)
 cells.push(c)
