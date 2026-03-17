@@ -1,3 +1,5 @@
+import { drawKinMap } from "./kinmap.js"
+
 export async function run(){
 
 const pyodide = window.pyodide
