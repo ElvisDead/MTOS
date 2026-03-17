@@ -1,3 +1,5 @@
+console.log("KINMAP LOADED AS MODULE")
+
 import { getColor } from "./colors.js"
 
 const seals = [
