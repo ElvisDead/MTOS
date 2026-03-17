@@ -88,6 +88,12 @@ let clarity = (window.currentKin === kin)
 clarity = Math.max(0, Math.min(1, clarity))
 
 c.title =
+"Kin: "+kin+"\n"+
+"Seal: "+seals[sealReal]+"\n"+
+"Tone: "+(toneReal+1)+"\n"+
+"Clarity: "+clarity.toFixed(3)+"\n"+
+"Users:\n"+userList
+
 c.onclick = () => {
 
 let existing = document.getElementById("kin-popup")
@@ -130,11 +136,6 @@ popup.appendChild(close)
 document.body.appendChild(popup)
 
 }
-"Kin: "+kin+"\n"+
-"Seal: "+seals[sealReal]+"\n"+
-"Tone: "+(toneReal+1)+"\n"+
-"Clarity: "+clarity.toFixed(3)+"\n"+
-"Users:\n"+userList
 
 
 map.appendChild(c)
