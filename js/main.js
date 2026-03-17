@@ -52,3 +52,8 @@ const btn = document.getElementById("runBtn")
 if (btn) {
   btn.addEventListener("click", run)
 }
+
+const exportBtn = document.getElementById("exportBtn")
+if (exportBtn) {
+  exportBtn.addEventListener("click", exportExperiment)
+}
