@@ -27,14 +27,16 @@ const seals = [
 
 export function drawKinMap(weather){
 
+console.log("KIN USERS:", window.kinUsers)
+
 window.kinUsers = window.kinUsers || {}
 
 const map=document.getElementById("kinmap")
 map.innerHTML=""
 
 map.style.display="grid"
-map.style.gridTemplateColumns="60px repeat(13,24px)"
-map.style.gridAutoRows="24px"
+map.style.gridTemplateColumns="80px repeat(13,48px)"
+map.style.gridAutoRows="48px"
 
 let min = Math.min(...weather.map(w => (w && w.attention != null) ? w.attention : 0))
 let max = Math.max(...weather.map(w => (w && w.attention != null) ? w.attention : 1))
@@ -85,7 +87,29 @@ let sealReal = (kin-1)%20
 c.dataset.tone = toneReal
 c.dataset.seal = sealReal
 
-c.style.background = getColor(val)
+let userCount = users.length
+
+if(userCount > 1){
+
+  const densityColors = [
+    "#1a1a1a",  // 1 (не используется)
+    "#003366",
+    "#0055aa",
+    "#0088ff",
+    "#00ccff",
+    "#00ffaa",
+    "#aaff00",
+    "#ffff00",
+    "#ff8800",
+    "#ff0000"
+  ]
+
+  let idx = Math.min(userCount, 9)
+  c.style.background = densityColors[idx]
+
+}else{
+  c.style.background = getColor(val)
+}
 
 // давление = яркость
 c.style.opacity = 0.6 + pressure * 0.4
@@ -124,7 +148,7 @@ c.title =
 "Activity: "+activity.toFixed(3)+"\n"+
 "Conflict: "+conflict.toFixed(3)+"\n\n"+
   
-"Users:\n"+userList
+"Users ("+users.length+"):\n"+userList
 
 c.onclick = () => {
 
@@ -187,7 +211,7 @@ Clarity: <b>${clarity.toFixed(3)}</b>
 </div>
 
 <div style="margin-top:10px;font-size:12px;color:#888">
-Users:
+Users (${users.length}):
 </div>
 
 <div style="white-space:pre-line;font-size:12px">
