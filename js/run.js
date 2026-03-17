@@ -98,7 +98,6 @@ const kinMap = JSON.parse(
 pyodide.runPython(`mtos_global_kin_map()`)
 )
 
-drawMatrix("kinDistribution", kinMap)
 drawLinearKinMap("kinLinear", kinMap)
 
 // COLLECTIVE STATE
