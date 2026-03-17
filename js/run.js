@@ -109,16 +109,40 @@ net.innerHTML="No user interactions yet."
 
 net.innerHTML=""
 
+// 1. сортировка по силе
+networkData.sort((a,b)=>b.value - a.value)
+
+// 2. цвет + расширенные уровни
+function getRelationColor(v){
+
+if(v >= 0.75) return "#00ffcc"      // ultra synergy
+if(v >= 0.6) return "#00ff88"       // strong
+if(v >= 0.45) return "#66ff66"      // positive
+if(v >= 0.25) return "#aaff66"      // mild support
+if(v >= 0.1) return "#ffff66"       // weak
+if(v > -0.1) return "#888888"       // neutral
+if(v > -0.25) return "#ff9966"      // tension
+if(v > -0.45) return "#ff5555"      // conflict
+return "#ff0033"                    // strong conflict
+}
+
+// 3. рендер
 networkData.forEach(e=>{
 
 let line=document.createElement("div")
 
+let color = getRelationColor(e.value)
+
 line.innerHTML =
 "<b>"+e.a+"</b> ↔ <b>"+e.b+"</b> : "+
-e.label+
-" ("+e.value.toFixed(2)+")"
+e.value.toFixed(2)
 
 line.style.margin="3px"
+line.style.color=color
+line.style.fontWeight="500"
+line.style.background = "rgba(255,255,255,0.03)"
+line.style.borderLeft = "3px solid " + color
+line.style.paddingLeft = "6px"
 
 net.appendChild(line)
 
