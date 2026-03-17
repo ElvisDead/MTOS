@@ -930,7 +930,7 @@ def mtos_260_weather(name,year,month,day):
 
             # --- flow (gradient) ---
             delta = sum((field[j] - field[i]) for j in nb)
-            flow = field[i] + delta * 0.12
+            flow = field[i] + delta * 0.18
 
             # --- interaction ---
             influence = 0
@@ -939,7 +939,7 @@ def mtos_260_weather(name,year,month,day):
                 influence += np.tanh(diff * 3)
 
             influence /= len(nb)
-            interaction = field[i] + influence * 0.20
+            interaction = field[i] + influence * 0.30
 
             # --- combine ---
             new_val = (
@@ -960,7 +960,7 @@ def mtos_260_weather(name,year,month,day):
     for i in range(260):
         weather[i]["attention"] = float(field[i])
 
-        if field[i] > 0.7:
+        if field[i] > 0.58:
             print(f"PEAK Kin {i+1}: {round(field[i],3)}")
 
         nb = neighbors(i)
