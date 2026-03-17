@@ -34,8 +34,8 @@ map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(13,24px)"
 map.style.gridAutoRows="24px"
 
-let min=Math.min(...weather)
-let max=Math.max(...weather)
+let min = Math.min(...weather.map(w => w?.attention ?? 0))
+let max = Math.max(...weather.map(w => w?.attention ?? 1))
 
 const cells=[]
 
@@ -63,8 +63,15 @@ for(let col=0;col<13;col++){
 
 let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
 
-let v = weather && weather.length===260 ? weather[kin-1] : Math.random()
-let val=(max===min)?0:(v-min)/(max-min)
+let w = weather && weather.length===260 ? weather[kin-1] : null
+
+let attention = w?.attention ?? Math.random()
+let activity  = w?.activity ?? 0.5
+let pressure  = w?.pressure ?? 0
+let conflict  = w?.conflict ?? 0
+
+// нормализация для цвета (оставляем старую систему)
+let val = (max===min)?0:(attention-min)/(max-min)
 
 let c=document.createElement("div")
 c.className="cell"
@@ -76,7 +83,18 @@ let sealReal = (kin-1)%20
 c.dataset.tone = toneReal
 c.dataset.seal = sealReal
 
-c.style.background=getColor(val)
+c.style.background = getColor(val)
+
+// давление = яркость
+c.style.opacity = 0.6 + pressure * 0.4
+
+// конфликт = красное напряжение
+if(conflict > 0.15){
+  c.style.boxShadow = "0 0 6px red"
+}
+
+// активность = “дыхание”
+c.style.transform = `scale(${1 + activity * 0.25})`
 
 let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
 let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
@@ -92,6 +110,12 @@ c.title =
 "Seal: "+seals[sealReal]+"\n"+
 "Tone: "+(toneReal+1)+"\n"+
 "Clarity: "+clarity.toFixed(3)+"\n"+
+  
+"Attention: "+attention.toFixed(3)+"\n"+
+"Pressure: "+pressure.toFixed(3)+"\n"+
+"Activity: "+activity.toFixed(3)+"\n"+
+"Conflict: "+conflict.toFixed(3)+"\n\n"+
+  
 "Users:\n"+userList
 
 c.onclick = () => {
@@ -121,6 +145,12 @@ popup.innerText =
 "Seal: "+seals[sealReal]+"\n"+
 "Tone: "+(toneReal+1)+"\n"+
 "Clarity: "+clarity.toFixed(3)+"\n\n"+
+"--- STATE ---\n"+
+"Attention: "+attention.toFixed(3)+"\n"+
+"Pressure: "+pressure.toFixed(3)+"\n"+
+"Activity: "+activity.toFixed(3)+"\n"+
+"Conflict: "+conflict.toFixed(3)+"\n\n"+
+    
 "Users:\n"+userList
 
 let close = document.createElement("div")
