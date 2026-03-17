@@ -29,7 +29,6 @@ window.drawChart = drawChart
 window.getColor = getColor
 window.getColorInferno = getColorInferno
 window.drawHeatmap = drawHeatmap
-window.drawMatrix = drawMatrix
 window.drawLinearKinMap = drawLinearKinMap
 window.renderMap = renderMap
 window.drawPhaseSpace = drawPhaseSpace
