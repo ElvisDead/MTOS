@@ -87,6 +87,18 @@ let sealReal = (kin-1)%20
 c.dataset.tone = toneReal
 c.dataset.seal = sealReal
 
+// давление = яркость
+c.style.opacity = 0.6 + pressure * 0.4
+
+// конфликт = красное напряжение
+if(conflict > 0.15){
+  c.style.boxShadow = "0 0 6px red"
+}
+
+// активность = “дыхание”
+c.style.transform = `scale(${1 + activity * 0.25})`
+
+let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
 let userCount = users.length
 
 if(userCount > 1){
@@ -111,18 +123,6 @@ if(userCount > 1){
   c.style.background = getColor(val)
 }
 
-// давление = яркость
-c.style.opacity = 0.6 + pressure * 0.4
-
-// конфликт = красное напряжение
-if(conflict > 0.15){
-  c.style.boxShadow = "0 0 6px red"
-}
-
-// активность = “дыхание”
-c.style.transform = `scale(${1 + activity * 0.25})`
-
-let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
 let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
 
 let clarity = 0
@@ -132,8 +132,6 @@ if (window.currentKin !== null) {
     ? 1
     : 1 - Math.abs(kin - window.currentKin) / 130
 }
-
-clarity = Math.max(0, Math.min(1, clarity))
 
 clarity = Math.max(0, Math.min(1, clarity))
 
