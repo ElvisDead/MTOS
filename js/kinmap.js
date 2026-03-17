@@ -101,9 +101,15 @@ c.style.transform = `scale(${1 + activity * 0.25})`
 let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
 let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
 
-let clarity = (window.currentKin === kin)
-? 1
-: 1 - Math.abs(kin - window.currentKin)/130
+let clarity = 0
+
+if (window.currentKin !== null) {
+  clarity = (window.currentKin === kin)
+    ? 1
+    : 1 - Math.abs(kin - window.currentKin) / 130
+}
+
+clarity = Math.max(0, Math.min(1, clarity))
 
 clarity = Math.max(0, Math.min(1, clarity))
 
