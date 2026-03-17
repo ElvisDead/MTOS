@@ -1,5 +1,7 @@
 export function drawGlobalKinMap(id){
 
+console.log("DRAW GLOBAL MAP INTO:", id)
+
 let map = document.getElementById(id)
 map.innerHTML = ""
 
