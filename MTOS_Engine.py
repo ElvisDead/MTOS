@@ -48,6 +48,7 @@ import datetime
 import numpy as np
 import json
 import os
+import time
 
 GLOBAL_USERS = load_global_users()
 GLOBAL_KIN_DISTRIBUTION = [0.5]*260
@@ -819,7 +820,7 @@ def mtos_260_weather(name,year,month,day):
         memory_backup_seal = SEAL_MEMORY.copy()
         memory_backup_kin = KIN_MEMORY.copy()
 
-        np.random.seed(len(GLOBAL_USERS)*1000 + kin)
+        np.random.seed(int(time.time()*1000) % 2**32 + kin)
         series = simulate(seal,tone,kin_date,30,"global")
 
         SEAL_MEMORY[:] = memory_backup_seal
