@@ -80,7 +80,6 @@ window.kinUsers = Object.fromEntries(
 drawGlobalKinMap("globalKinMap")
 
 console.log("KIN USERS:", window.kinUsers)
-window.kinUsers = usersByKin
   
 drawKinMap(weather)
 
