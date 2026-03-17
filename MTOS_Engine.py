@@ -50,6 +50,7 @@ import json
 import os
 import time
 
+USE_CACHE = True
 GLOBAL_USERS = load_global_users()
 GLOBAL_KIN_DISTRIBUTION = [0.5]*260
 GLOBAL_ATTENTION_BUFFER = [0.5]*30
@@ -421,6 +422,32 @@ def load_global_field():
 
     except:
         return {"field":[0.5]*260}
+
+def load_weather_cache():
+
+    from js import localStorage
+    import json
+
+    data = localStorage.getItem("mtos_weather_cache")
+
+    if data is None:
+        return {}
+
+    try:
+        return json.loads(data)
+    except:
+        return {}
+
+
+def save_weather_cache(cache):
+
+    from js import localStorage
+    import json
+
+    localStorage.setItem(
+        "mtos_weather_cache",
+        json.dumps(cache)
+    )
 
 def save_global_field(field):
 
@@ -802,6 +829,15 @@ def mtos_series(name,year,month,day,days=30):
 
 def mtos_260_weather(name,year,month,day):
 
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+
+    if USE_CACHE:
+        cache = load_weather_cache()
+        key = f"{name}_{today}"
+
+    if key in cache:
+        return cache[key]
+
     birth=datetime.date(year,month,day)
 
     kin,tone,seal,i=kin_from_date(birth)
@@ -843,6 +879,16 @@ def mtos_260_weather(name,year,month,day):
             "pressure": abs(series[0] - series[1]) if len(series)>1 else 0,
             "conflict": float(np.std(series[:5]))
         }
+
+    if USE_CACHE:
+
+        cache[key] = weather
+
+        # ограничение размера
+        if len(cache) > 50:
+            cache.pop(next(iter(cache)))
+
+        save_weather_cache(cache)
 
     return weather
 
