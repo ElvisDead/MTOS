@@ -207,8 +207,8 @@ if(window.currentKin===null) return
 let tone0 = (window.currentKin-1)%13
 let seal0 = (window.currentKin-1)%20
 
-let harmonic = Math.floor((currentKin-1)/4)
-let wave = Math.floor((currentKin-1)/13)
+let harmonic = Math.floor((window.currentKin-1)/4)
+let wave = Math.floor((window.currentKin-1)/13)
 
 cells.forEach(c=>{
 
@@ -232,7 +232,7 @@ c.style.borderLeft="1px solid #333"
 }
 
 let waveIndex = Math.floor((kin-1)/13)
-let currentWave = Math.floor((currentKin-1)/13)
+let currentWave = Math.floor((window.currentKin-1)/13)
 
 let tone=(kin-1)%13
 let seal=(kin-1)%20
@@ -269,7 +269,7 @@ c.style.boxShadow=shadows.join(",")
 }
 
 // current
-if(kin===currentKin){
+if(kin===window.currentKin){
 c.style.outline="2px solid white"
 c.style.boxShadow="0 0 10px white"
 }
