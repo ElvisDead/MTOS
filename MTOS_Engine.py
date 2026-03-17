@@ -890,11 +890,11 @@ def mtos_260_weather(name,year,month,day):
 
         save_weather_cache(cache)
 
-        # ==========================================
-        # FIELD DYNAMICS WITH TIME (NEW)
-        # ==========================================
+    # ==========================================
+    # FIELD DYNAMICS WITH TIME (NEW)
+    # ==========================================
 
-        field = np.array([w["attention"] for w in weather])
+    field = np.array([w["attention"] for w in weather])
 
         def neighbors(i):
             return [
@@ -940,22 +940,22 @@ def mtos_260_weather(name,year,month,day):
 
                 new_field[i] = new_val
 
-                # нормализация после шага
-                field = np.clip(new_field, 0, 1)
+            # нормализация после шага
+            field = np.clip(new_field, 0, 1)
 
-                # ==========================================
-                # APPLY BACK TO WEATHER
-                # ==========================================
+            # ==========================================
+            # APPLY BACK TO WEATHER
+            # ==========================================
 
-                for i in range(260):
-                    weather[i]["attention"] = float(field[i])
+            for i in range(260):
+                weather[i]["attention"] = float(field[i])
 
-                    nb = neighbors(i)
-                    gradient = np.mean([abs(field[i] - field[j]) for j in nb])
+                nb = neighbors(i)
+                gradient = np.mean([abs(field[i] - field[j]) for j in nb])
 
-                    weather[i]["pressure"] = float(
-                    weather[i]["pressure"]*0.5 + gradient*0.5
-                )
+                weather[i]["pressure"] = float(
+                weather[i]["pressure"]*0.5 + gradient*0.5
+            )
     
     return weather
 
