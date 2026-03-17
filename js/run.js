@@ -89,10 +89,6 @@ const kinMap = JSON.parse(
 pyodide.runPython(`mtos_global_kin_map()`)
 )
 
-window.kinUsers = JSON.parse(
-pyodide.runPython(`mtos_users_by_kin()`)
-)
-
 drawMatrix("kinDistribution", kinMap)
 drawLinearKinMap("kinLinear", kinMap)
 
