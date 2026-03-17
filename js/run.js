@@ -90,7 +90,7 @@ renderMap("atlas",20,20)
 renderMap("attractor",20,20)
 renderMap("phase")
 renderMap("wave")
-//renderMap("tzolkin")
+renderMap("tzolkin")
 renderMap("geometry")
 
 // GLOBAL KIN DISTRIBUTION
