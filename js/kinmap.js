@@ -25,6 +25,8 @@ const seals = [
 
 export function drawKinMap(weather){
 
+window.kinUsers = window.kinUsers || {}
+
 const map=document.getElementById("kinmap")
 map.innerHTML=""
 
@@ -59,20 +61,16 @@ map.appendChild(label)
 
 for(let col=0;col<13;col++){
 
-let baseKin = row*13 + col + 1
-let dynamicShift = Math.floor((weather[baseKin-1] - 0.5) * 26)
+let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
 
-let kin =
-((baseKin + dynamicShift - 1 + 260) % 260) + 1
-
-let v=weather[kin-1] ?? 0
+let v = weather && weather.length===260 ? weather[kin-1] : Math.random()
 let val=(max===min)?0:(v-min)/(max-min)
 
 let c=document.createElement("div")
 c.className="cell"
 
 c.dataset.kin=kin
-let toneReal = col
+let toneReal = (kin-1)%13
 let sealReal = (kin-1)%20
 
 c.dataset.tone = toneReal
