@@ -188,9 +188,6 @@ ${userList}
 
 `
 
-map.appendChild(c)
-cells.push(c)
-
 }
 
 }
