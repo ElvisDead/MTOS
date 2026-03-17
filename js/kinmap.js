@@ -142,6 +142,13 @@ popup.style.whiteSpace = "pre-line"
 
 popup.innerHTML = `
 
+document.body.appendChild(popup)
+
+}
+
+map.appendChild(c)
+cells.push(c)
+
 <div style="font-size:16px;margin-bottom:6px">
 <b>Kin ${kin}</b>
 </div>
