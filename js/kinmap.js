@@ -36,8 +36,8 @@ map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(13,24px)"
 map.style.gridAutoRows="24px"
 
-let min = Math.min(...weather.map(w => w?.attention ?? 0))
-let max = Math.max(...weather.map(w => w?.attention ?? 1))
+let min = Math.min(...weather.map(w => (w && w.attention != null) ? w.attention : 0))
+let max = Math.max(...weather.map(w => (w && w.attention != null) ? w.attention : 1))
 
 const cells=[]
 
@@ -67,10 +67,10 @@ let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
 
 let w = weather && weather.length===260 ? weather[kin-1] : null
 
-let attention = w?.attention ?? Math.random()
-let activity  = w?.activity ?? 0.5
-let pressure  = w?.pressure ?? 0
-let conflict  = w?.conflict ?? 0
+let attention = (w && w.attention != null) ? w.attention : Math.random()
+let activity  = (w && w.activity != null) ? w.activity : 0.5
+let pressure  = (w && w.pressure != null) ? w.pressure : 0
+let conflict  = (w && w.conflict != null) ? w.conflict : 0
 
 // нормализация для цвета (оставляем старую систему)
 let val = (max===min)?0:(attention-min)/(max-min)
