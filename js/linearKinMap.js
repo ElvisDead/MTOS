@@ -78,4 +78,7 @@ document.body.appendChild(popup)
 }
 
 map.appendChild(c)
+  
+}
+  
 }
