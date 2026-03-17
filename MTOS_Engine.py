@@ -835,8 +835,8 @@ def mtos_260_weather(name,year,month,day):
         cache = load_weather_cache()
         key = f"{name}_{today}"
 
-    if key in cache:
-        return cache[key]
+        if key in cache:
+            return cache[key]
 
     birth=datetime.date(year,month,day)
 
