@@ -208,6 +208,8 @@ highlightCurrentKin(cells)
 
 }
 
+}
+
 export function highlightCurrentKin(cells){
 
 if(window.currentKin===null) return
