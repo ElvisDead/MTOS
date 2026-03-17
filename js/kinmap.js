@@ -194,10 +194,10 @@ Users:
 ${userList}
 </div>
 
-`
+`;
 document.body.appendChild(popup)
 
-}
+})
 
 map.appendChild(c)
 cells.push(c)
