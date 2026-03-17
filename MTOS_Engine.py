@@ -938,41 +938,41 @@ def mtos_260_weather(name,year,month,day):
                 diff = field[j] - field[i]
                 influence += np.tanh(diff * 3)
 
-                influence /= len(nb)
-                interaction = field[i] + influence * 0.10
+            influence /= len(nb)
+            interaction = field[i] + influence * 0.10
 
-                # --- combine ---
-                new_val = (
-                    diffusion * 0.4 +
-                    flow * 0.3 +
-                    interaction * 0.3
-                )
-
-                new_field[i] = new_val
-
-            # нормализация после шага
-            field = np.clip(new_field, 0, 1)
-
-            # ==========================================
-            # APPLY BACK TO WEATHER
-            # ==========================================
-
-            for i in range(260):
-                weather[i]["attention"] = float(field[i])
-
-                nb = neighbors(i)
-                gradient = np.mean([abs(field[i] - field[j]) for j in nb])
-
-                weather[i]["pressure"] = float(
-                weather[i]["pressure"]*0.5 + gradient*0.5
+            # --- combine ---
+            new_val = (
+                diffusion * 0.4 +
+                flow * 0.3 +
+                interaction * 0.3
             )
 
-            # --- SAVE GLOBAL FIELD (CLIMATE) ---
-            field *= 0.995
-            field = np.clip(field, 0.01, 0.99)
-            save_global_field({
-                "field": field.tolist()
-            })
+            new_field[i] = new_val
+
+        # нормализация после шага
+        field = np.clip(new_field, 0, 1)
+
+        # ==========================================
+        # APPLY BACK TO WEATHER
+        # ==========================================
+
+        for i in range(260):
+            weather[i]["attention"] = float(field[i])
+
+            nb = neighbors(i)
+            gradient = np.mean([abs(field[i] - field[j]) for j in nb])
+
+            weather[i]["pressure"] = float(
+            weather[i]["pressure"]*0.5 + gradient*0.5
+        )
+
+        # --- SAVE GLOBAL FIELD (CLIMATE) ---
+        field *= 0.995
+        field = np.clip(field, 0.01, 0.99)
+        save_global_field({
+            "field": field.tolist()
+        })
 
     return weather
 
