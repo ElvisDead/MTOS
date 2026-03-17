@@ -81,10 +81,59 @@ c.style.background=getColor(val)
 let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
 let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
 
+let clarity = (window.currentKin === kin)
+? 1
+: 1 - Math.abs(kin - window.currentKin)/130
+
+clarity = Math.max(0, Math.min(1, clarity))
+
 c.title =
+c.onclick = () => {
+
+let existing = document.getElementById("kin-popup")
+if(existing) existing.remove()
+
+let popup = document.createElement("div")
+popup.id = "kin-popup"
+
+popup.style.position = "fixed"
+popup.style.left = "50%"
+popup.style.top = "50%"
+popup.style.transform = "translate(-50%, -50%)"
+popup.style.background = "#111"
+popup.style.color = "#fff"
+popup.style.padding = "14px"
+popup.style.border = "1px solid #444"
+popup.style.borderRadius = "8px"
+popup.style.zIndex = "9999"
+popup.style.fontSize = "14px"
+popup.style.maxWidth = "260px"
+popup.style.whiteSpace = "pre-line"
+
+popup.innerText =
 "Kin: "+kin+"\n"+
 "Seal: "+seals[sealReal]+"\n"+
 "Tone: "+(toneReal+1)+"\n"+
+"Clarity: "+clarity.toFixed(3)+"\n\n"+
+"Users:\n"+userList
+
+let close = document.createElement("div")
+close.innerText = "×"
+close.style.position = "absolute"
+close.style.top = "6px"
+close.style.right = "10px"
+close.style.cursor = "pointer"
+
+close.onclick = () => popup.remove()
+
+popup.appendChild(close)
+document.body.appendChild(popup)
+
+}
+"Kin: "+kin+"\n"+
+"Seal: "+seals[sealReal]+"\n"+
+"Tone: "+(toneReal+1)+"\n"+
+"Clarity: "+clarity.toFixed(3)+"\n"+
 "Users:\n"+userList
 
 
