@@ -763,6 +763,9 @@ def run_mtos(name,year,month,day):
     store_attention(name,today,kin,series[0])
     update_global_field(today,series[0])
 
+    GLOBAL_KIN_DISTRIBUTION[kin-1] += 0.05
+    GLOBAL_KIN_DISTRIBUTION[kin-1] = min(1, GLOBAL_KIN_DISTRIBUTION[kin-1])
+
     result = {
         "name":name,
         "kin":kin,
@@ -816,7 +819,7 @@ def mtos_260_weather(name,year,month,day):
         memory_backup_seal = SEAL_MEMORY.copy()
         memory_backup_kin = KIN_MEMORY.copy()
 
-        np.random.seed(kin)
+        np.random.seed(len(GLOBAL_USERS)*1000 + kin)
         series = simulate(seal,tone,kin_date,30,"global")
 
         SEAL_MEMORY[:] = memory_backup_seal
