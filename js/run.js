@@ -69,6 +69,9 @@ const weather = pyodide.runPython(
 `mtos_260_weather(name,year,month,day)`
 ).toJs()
 
+const usersByKin = JSON.parse(pyodide.runPython(`mtos_users_by_kin()`))
+window.kinUsers = usersByKin
+  
 drawKinMap(weather)
 
 // HEATMAPS
