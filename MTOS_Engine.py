@@ -245,7 +245,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
     else:
         avg = 0
 
-    network_field = avg * 0.05
+    network_field = avg * 0.025
 
     noise = np.random.normal(0,0.015)
 
@@ -257,9 +257,9 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
         memory*0.06 +
         kin_memory*0.04 +
         user_memory*0.08 +
-        global_field*0.05 +
+        global_field*0.15 +
         network_field +
-        contagion*0.06 +
+        contagion*0.20 +
         noise
     )
 
