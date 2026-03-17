@@ -894,7 +894,17 @@ def mtos_260_weather(name,year,month,day):
     # FIELD DYNAMICS WITH TIME (NEW)
     # ==========================================
 
-    field = np.array([w["attention"] for w in weather])
+    # --- LOAD PREVIOUS FIELD (CLIMATE MEMORY) ---
+
+    global_data = load_global_field()
+    prev_field = np.array(global_data["field"])
+
+    new_field_input = np.array([w["attention"] for w in weather])
+
+    # инерция (память системы)
+    INERTIA = 0.85
+
+    field = prev_field * INERTIA + new_field_input * (1 - INERTIA)
 
     def neighbors(i):
         return [
@@ -956,7 +966,12 @@ def mtos_260_weather(name,year,month,day):
                 weather[i]["pressure"] = float(
                 weather[i]["pressure"]*0.5 + gradient*0.5
             )
-    
+
+            # --- SAVE GLOBAL FIELD (CLIMATE) ---
+            save_global_field({
+            "field": field.tolist()
+    })
+
     return weather
 
 def mtos_user_climate(user_seal):
