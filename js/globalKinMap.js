@@ -6,6 +6,10 @@ window.__globalMapDrawn = true
 console.log("DRAW GLOBAL MAP INTO:", id)
 
 let map = document.getElementById(id)
+
+while(map.firstChild){
+  map.removeChild(map.firstChild)
+}
 map.replaceChildren()
 
 map.style.display = "grid"
