@@ -1,17 +1,54 @@
-export async function exportExperiment(){
+// exportExperiment.js
 
-const pyodide = window.pyodide
+export async function exportExperiment(pyodide) {
 
-let data = pyodide.runPython(`export_experiment()`)
+    try {
 
-let blob = new Blob([data], {type:"application/json"})
+        // =========================
+        // GET DATA FROM PYTHON
+        // =========================
 
-let a = document.createElement("a")
+        const result = await pyodide.runPythonAsync(`
+export_experiment()
+        `);
 
-a.href = URL.createObjectURL(blob)
+        const data = JSON.parse(result);
 
-a.download = "mtos_experiment.json"
+        // =========================
+        // CREATE FILE
+        // =========================
 
-a.click()
+        const blob = new Blob(
+            [JSON.stringify(data, null, 2)],
+            { type: "application/json" }
+        );
 
+        const url = URL.createObjectURL(blob);
+
+        // =========================
+        // DOWNLOAD
+        // =========================
+
+        const a = document.createElement("a");
+        a.href = url;
+
+        const date = new Date().toISOString().slice(0, 10);
+
+        a.download = `mtos_experiment_${date}.json`;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+
+        console.log("Export complete:", data.count, "records");
+
+        return data;
+
+    } catch (err) {
+
+        console.error("Export error:", err);
+        return null;
+    }
 }
