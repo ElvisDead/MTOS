@@ -1,3 +1,5 @@
+import { MTOS_MAPS } from "./mapsConfig.js"
+
 import { drawHeatmap } from "./heatmap.js"
 
 export function renderMap(id, cols=20, rows=13){
