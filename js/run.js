@@ -88,12 +88,12 @@ drawKinMap(weather)
 // HEATMAPS
 renderMap("pressure")
 renderMap("gradient")
-//renderMap("atlas",20,20)
-renderMap("attractor",20,20)
-//renderMap("phase")
-renderMap("wave")
-//renderMap("tzolkin")
-renderMap("geometry")
+renderMap("atlas",20,20)
+//renderMap("attractor",20,20)
+renderMap("phase")
+//renderMap("wave")
+renderMap("tzolkin")
+//renderMap("geometry")
 
 // GLOBAL KIN DISTRIBUTION
 const kinMap = JSON.parse(
