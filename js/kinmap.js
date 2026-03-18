@@ -25,9 +25,6 @@ const seals = [
 
 export function drawKinMap(weather){
 
-console.log("KINMAP BLOCKED")
-return
-
 console.log("KIN USERS:", window.kinUsers)
 
 window.kinUsers = window.kinUsers || {}
