@@ -1410,3 +1410,54 @@ def mtos_summary(name, year, month, day):
         "noise": noise,
         "lyapunov": lyapunov
     }
+# ===============================
+# EXTRACT NODE FUNCTIONS (DATA-DRIVEN)
+# ===============================
+def mtos_node_functions(name, year, month, day):
+
+    weather = mtos_260_weather(name, year, month, day)
+    pressure = mtos_pressure_map()
+
+    # 20 узлов
+    nodes = []
+
+    for seal in range(20):
+
+        att_vals = []
+        press_vals = []
+        noise_vals = []
+
+        for kin in range(1, 261):
+
+            if (kin - 1) % 20 == seal:
+
+                w = weather[kin-1]
+                p = pressure[kin-1]
+
+                att = w["attention"]
+                pr = p
+
+                noise = abs(att - pr)
+
+                att_vals.append(att)
+                press_vals.append(pr)
+                noise_vals.append(noise)
+
+        # агрегаты
+        att_mean = sum(att_vals) / len(att_vals)
+        press_mean = sum(press_vals) / len(press_vals)
+        noise_mean = sum(noise_vals) / len(noise_vals)
+
+        # устойчивость (простая метрика)
+        stability = att_mean - noise_mean
+
+        nodes.append({
+            "seal": seal,
+            "flow": att_mean,
+            "pressure": press_mean,
+            "noise": noise_mean,
+            "stability": stability
+        })
+
+    return nodes
+
