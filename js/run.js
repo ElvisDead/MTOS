@@ -1,5 +1,7 @@
 import { drawKinMap } from "./kinmap.js"
 
+import { startMTOS } from "./pyodideLoader.js"
+
 export async function run(){
 
 if(!window.pyodide){
