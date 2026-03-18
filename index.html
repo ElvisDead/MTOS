@@ -104,65 +104,12 @@ button:hover{
 
 <script type="module">
 
-import { drawGlobalKinMap } from "./globalKinMap.js"
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
+import { initMTOS, runMTOS } from "./main.js"
 
-let pyodide = null
+document.getElementById("runBtn").onclick = runMTOS
 
-async function init(){
-
-    document.getElementById("status").innerText = "Loading Pyodide..."
-
-    pyodide = await loadPyodide()
-
-    const code = await (await fetch("MTOS_Engine.py")).text()
-
-    pyodide.runPython(code)
-
-    document.getElementById("status").innerText = "Ready"
-}
-
-async function run(){
-
-    const name = document.getElementById("name").value
-    const year = +document.getElementById("year").value
-    const month = +document.getElementById("month").value
-    const day = +document.getElementById("day").value
-
-    document.getElementById("status").innerText = "Running..."
-
-    try{
-
-        pyodide.runPython(`
-run_mtos("${name}",${year},${month},${day})
-`)
-
-        // GLOBAL MAP (пока только она)
-        const kinCounts = JSON.parse(
-            pyodide.runPython(`mtos_global_kin_map()`)
-        )
-
-        const usersByKin = JSON.parse(
-            pyodide.runPython(`mtos_users_by_kin()`)
-        )
-
-        drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
-
-        document.getElementById("status").innerText = "Done"
-
-    }catch(e){
-
-        console.error(e)
-        document.getElementById("status").innerText = "ERROR"
-
-    }
-}
-
-document.getElementById("runBtn").onclick = run
-
-init()
+initMTOS()
 
 </script>
-
 </body>
 </html>
