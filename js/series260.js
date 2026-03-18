@@ -5,52 +5,57 @@ export function drawSeries260(id, data){
 
     c.innerHTML = ""
 
-    // центрирование
+    const width = 700
+    const height = 160
+
+    const canvas = document.createElement("canvas")
+    canvas.width = width
+    canvas.height = height
+
+    const ctx = canvas.getContext("2d")
+
     c.style.display = "flex"
-    c.style.flexDirection = "column"
-    c.style.alignItems = "center"
-    c.style.gap = "2px"
-    c.style.width = "100%"
+    c.style.justifyContent = "center"
 
-    // контейнер (одна длинная линия)
-    const row = document.createElement("div")
-
-    row.style.width = "600px"
-    row.style.height = "20px"
-    row.style.display = "flex"
-    row.style.background = "#111"
-    row.style.border = "1px solid #444"
-    row.style.overflow = "hidden"
-
-    // нормализация
     const min = Math.min(...data)
     const max = Math.max(...data)
     const range = max - min || 1
 
-    for(let i=0;i<data.length;i++){
+    const norm = data.map(v => (v - min) / range)
 
-        const v = (data[i] - min) / range
+    ctx.beginPath()
 
-        const cell = document.createElement("div")
+    for(let i=0;i<norm.length;i++){
 
-        cell.style.flex = "1"
-        cell.style.height = "100%"
+        const x = (i/(norm.length-1))*width
+        const y = height - norm[i]*height
 
-        const r = Math.floor(255 * v)
-        const g = Math.floor(200 * (1 - v))
-        const b = 50
-
-        cell.style.background = `rgb(${r},${g},${b})`
-
-        cell.title = `Day ${i+1}: ${data[i].toFixed(3)}`
-
-        // клик как у остальных
-        cell.onclick = () => {
-            alert(`Day ${i+1}\nValue: ${data[i].toFixed(3)}`)
-        }
-
-        row.appendChild(cell)
+        if(i===0) ctx.moveTo(x,y)
+        else ctx.lineTo(x,y)
     }
 
-    c.appendChild(row)
+    ctx.lineTo(width,height)
+    ctx.lineTo(0,height)
+    ctx.closePath()
+
+    ctx.fillStyle = "#888"
+    ctx.globalAlpha = 0.4
+    ctx.fill()
+
+    ctx.globalAlpha = 1
+    ctx.strokeStyle = "#aaa"
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+
+    canvas.onmousemove = (e)=>{
+        const rect = canvas.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const i = Math.floor((x/width)*data.length)
+
+        canvas.title =
+            "Day: " + (i+1) +
+            "\nValue: " + data[i].toFixed(3)
+    }
+
+    c.appendChild(canvas)
 }
