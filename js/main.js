@@ -1,59 +1,54 @@
-// GLOBAL STATE
-window.charts = {}
-window.currentKin = null
-window.kinUsers = {}
+import { drawGlobalKinMap } from "./globalKinMap.js"
+import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
 
-// IMPORT MODULES
-import { drawChart } from "./charts.js"
-import { getColor, getColorInferno } from "./colors.js"
-import { drawHeatmap } from "./heatmap.js"
-import { drawMatrix } from "./matrix.js"
-import { drawLinearKinMap } from "./linearKinMap.js"
-import { renderMap } from "./renderMap.js"
-import { drawPhaseSpace } from "./phaseSpace.js"
-import { exportExperiment } from "./exportExperiment.js"
-//import { drawKinMap } from "./kinmap.js"
-//import { drawGlobalKinMap } from "./globalKinMap.js"
-import { kinFromTS, tsFromKin, kinToTS } from "./tzolkin.js"
-import { MTOS_MAPS } from "./mapsConfig.js"
-import { run } from "./run.js"
-import { startMTOS } from "./pyodideLoader.js"
+let pyodide = null
 
+export async function initMTOS(){
 
-window.addEventListener("DOMContentLoaded", () => {
-  //startMTOS()
-})
+    const status = document.getElementById("status")
+    status.innerText = "Loading Pyodide..."
 
-// EXPOSE TO GLOBAL SCOPE
-window.drawChart = drawChart
-window.getColor = getColor
-window.getColorInferno = getColorInferno
-window.drawHeatmap = drawHeatmap
-window.drawLinearKinMap = drawLinearKinMap
-window.renderMap = renderMap
-window.drawPhaseSpace = drawPhaseSpace
-window.exportExperiment = exportExperiment
-//window.drawGlobalKinMap = drawGlobalKinMap
-window.kinFromTS = kinFromTS
-window.tsFromKin = tsFromKin
-window.kinToTS = kinToTS
-window.MTOS_MAPS = MTOS_MAPS
-window.run = run
+    pyodide = await loadPyodide()
 
-document.addEventListener("click",(e)=>{
-let p = document.getElementById("kin-popup")
-if(!p) return
-if(!p.contains(e.target) && !e.target.classList.contains("cell")){
-p.remove()
-}
-})
+    const code = await (await fetch("MTOS_Engine.py")).text()
 
-const btn = document.getElementById("runBtn")
-if (btn) {
-  btn.addEventListener("click", run)
+    pyodide.runPython(code)
+
+    status.innerText = "Ready"
 }
 
-const exportBtn = document.getElementById("exportBtn")
-if (exportBtn) {
-  exportBtn.addEventListener("click", exportExperiment)
+export async function runMTOS(){
+
+    const status = document.getElementById("status")
+
+    const name = document.getElementById("name").value
+    const year = +document.getElementById("year").value
+    const month = +document.getElementById("month").value
+    const day = +document.getElementById("day").value
+
+    status.innerText = "Running..."
+
+    try{
+
+        pyodide.runPython(`
+run_mtos("${name}",${year},${month},${day})
+`)
+
+        const kinCounts = JSON.parse(
+            pyodide.runPython(`mtos_global_kin_map()`)
+        )
+
+        const usersByKin = JSON.parse(
+            pyodide.runPython(`mtos_users_by_kin()`)
+        )
+
+        drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
+
+        status.innerText = "Done"
+
+    }catch(e){
+
+        console.error(e)
+        status.innerText = "ERROR"
+    }
 }
