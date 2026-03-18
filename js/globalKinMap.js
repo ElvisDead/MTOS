@@ -1,97 +1,39 @@
-// globalKinMap.js
+export function drawGlobalKinMap(id, kinCounts, usersByKin){
 
-import { getColor } from './colors.js';
+    const map = document.getElementById(id)
 
-export async function drawGlobalKinMap(pyodide, canvasId) {
+    if(!map) return
 
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
+    map.innerHTML = ""
 
-    const ctx = canvas.getContext("2d");
+    map.style.display = "grid"
+    map.style.gridTemplateColumns = "repeat(20, 12px)"
+    map.style.gap = "2px"
+    map.style.justifyContent = "center"
+    map.style.marginTop = "20px"
 
-    const width = canvas.width;
-    const height = canvas.height;
+    for(let kin = 1; kin <= 260; kin++){
 
-    ctx.clearRect(0, 0, width, height);
+        const value = kinCounts[kin] || 0
 
-    // =========================
-    // LOAD DATA FROM PYTHON
-    // =========================
+        const cell = document.createElement("div")
 
-    let raw;
+        cell.style.width = "12px"
+        cell.style.height = "12px"
+        cell.style.background = getColor(value)
 
-    try {
+        cell.title = "Kin " + kin + " | Users: " + value
 
-        raw = await pyodide.runPythonAsync(`
-mtos_global_kin_map()
-        `);
-
-    } catch (err) {
-        console.error("GlobalKinMap error:", err);
-        return;
+        map.appendChild(cell)
     }
+}
 
-    const data = JSON.parse(raw);
+function getColor(value){
 
-    // =========================
-    // NORMALIZATION
-    // =========================
-
-    const max = Math.max(...data, 1);
-
-    // =========================
-    // LAYOUT
-    // =========================
-
-    const cols = 26; // 26 * 10 = 260
-    const rows = 10;
-
-    const cellW = width / cols;
-    const cellH = height / rows;
-
-    // =========================
-    // DRAW
-    // =========================
-
-    for (let i = 0; i < 260; i++) {
-
-        const value = data[i] / max;
-
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-
-        const x = col * cellW;
-        const y = row * cellH;
-
-        ctx.fillStyle = getColor(value);
-        ctx.fillRect(x, y, cellW, cellH);
-    }
-
-    // =========================
-    // GRID (optional)
-    // =========================
-
-    ctx.strokeStyle = "#111";
-
-    for (let c = 0; c <= cols; c++) {
-        ctx.beginPath();
-        ctx.moveTo(c * cellW, 0);
-        ctx.lineTo(c * cellW, height);
-        ctx.stroke();
-    }
-
-    for (let r = 0; r <= rows; r++) {
-        ctx.beginPath();
-        ctx.moveTo(0, r * cellH);
-        ctx.lineTo(width, r * cellH);
-        ctx.stroke();
-    }
-
-    // =========================
-    // TITLE
-    // =========================
-
-    ctx.fillStyle = "#ccc";
-    ctx.font = "12px Arial";
-    ctx.fillText("Global Kin Distribution", 10, 15);
+    if(value === 0) return "#111"
+    if(value < 2) return "#003366"
+    if(value < 4) return "#0066cc"
+    if(value < 6) return "#00cc66"
+    if(value < 8) return "#ffcc00"
+    return "#ff3300"
 }
