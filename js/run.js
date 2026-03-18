@@ -87,7 +87,7 @@ drawKinMap(weather)
 
 // HEATMAPS
 renderMap("pressure")
-//renderMap("gradient")
+renderMap("gradient")
 renderMap("atlas",20,20)
 renderMap("attractor",20,20)
 renderMap("phase")
