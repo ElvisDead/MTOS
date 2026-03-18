@@ -32,6 +32,18 @@ run_mtos("${name}", ${year}, ${month}, ${day})
 
         console.log("MTOS result:", result);
 
+        const weatherRaw = await pyodide.runPythonAsync(`
+30 mtos_260_weather("${name}", ${year}, ${month}, ${day})
+`);
+
+window.weather = (typeof weatherRaw === "string")
+? JSON.parse(weatherRaw)
+    : weatherRaw;
+
+        if (typeof drawKinMap === "function") {
+            drawKinMap();
+        }
+        
         // =========================
         // 2. DRAW ALL MAPS
         // =========================
