@@ -1576,10 +1576,13 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     import math
 
     base_field = [0.0 for _ in range(260)]
+    new_weights = []
 
     # ===============================
-    # ВЗВЕШЕННОЕ ВЛИЯНИЕ
+    # 1. ОСНОВНОЙ ВКЛАД
     # ===============================
+    kin_list = []
+
     for user in users:
 
         name = user["name"]
@@ -1588,14 +1591,46 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
         weather = mtos_260_weather(name, year, month, day)
         kin = mtos_current_kin(name, year, month, day) - 1
 
+        kin_list.append(kin)
+
         for i in range(260):
 
             dist = min(abs(i - kin), 260 - abs(i - kin))
-
-            # гауссово влияние
             influence = math.exp(-dist / 8.0)
 
             base_field[i] += weight * weather[i]["attention"] * influence
+
+    # ===============================
+    # 2. ВЗАИМОДЕЙСТВИЕ АГЕНТОВ
+    # ===============================
+    for i in range(len(users)):
+        for j in range(i+1, len(users)):
+
+            kin_i = kin_list[i]
+            kin_j = kin_list[j]
+
+            w_i = users[i].get("weight", 1.0)
+            w_j = users[j].get("weight", 1.0)
+
+            dist = min(abs(kin_i - kin_j), 260 - abs(kin_i - kin_j))
+
+            interaction_strength = math.exp(-dist / 10.0)
+
+            # знак (пока простой)
+            sign = 1.0
+
+            interaction = sign * w_i * w_j * interaction_strength
+
+            # добавляем в поле вокруг обоих
+            for k in range(260):
+
+                d_i = min(abs(k - kin_i), 260 - abs(k - kin_i))
+                d_j = min(abs(k - kin_j), 260 - abs(k - kin_j))
+
+                base_field[k] += interaction * (
+                    math.exp(-d_i / 6.0) +
+                    math.exp(-d_j / 6.0)
+                )
 
     # ===============================
     # НОРМАЛИЗАЦИЯ
@@ -1606,7 +1641,35 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     # ===============================
     # ДИНАМИКА ПОЛЯ
     # ===============================
-    return mtos_field_step_from_array(base_field, prev_field, prev_state)
+    field, state = mtos_field_step_from_array(base_field, prev_field, prev_state)
+
+    # ===============================
+    # 3. АДАПТИВНЫЕ ВЕСА
+    # ===============================
+    for idx, user in enumerate(users):
+
+        old_weight = user.get("weight", 1.0)
+        kin = kin_list[idx]
+
+        local_phi = field[kin]
+        local_state = state[kin]
+
+        boost = 1.0 + 0.5 * local_phi
+        penalty = 0.7 if local_state == 0 else 1.0
+
+        new_w = old_weight * boost * penalty
+        new_w = max(0.1, min(new_w, 3.0))
+
+        new_weights.append(new_w)
+
+    # нормализация весов
+    total = sum(new_weights) or 1
+    new_weights = [w / total * len(users) for w in new_weights]
+
+    for i in range(len(users)):
+        users[i]["weight"] = new_weights[i]
+
+    return field, state, users
 
 def mtos_field_step_from_array(source_array, prev_field, prev_state):
 
