@@ -1,17 +1,79 @@
-export const MTOS_MAPS = {
+// mapsConfig.js
 
-pressure: () => pyodide.runPython(`mtos_pressure_map()`).toJs(),
+import { drawKinMap } from './kinmap.js';
+import { drawLinearKinMap } from './linearKinMap.js';
+import { drawHeatmap } from './heatmap.js';
+import { drawGlobalKinMap } from './globalKinMap.js';
 
-gradient: () => pyodide.runPython(`mtos_pressure_gradient()`).toJs(),
+// =========================
+// MAP REGISTRY
+// =========================
 
-atlas: () => pyodide.runPython(`mtos_climate_atlas()`).toJs(),
+export const MAPS = {
 
-attractor: () => pyodide.runPython(`mtos_attractor_map(name,year,month,day)`).toJs(),
+    kinMap: {
+        id: "kinMap",
+        draw: drawKinMap,
+        needsParams: true
+    },
 
-phase: () => pyodide.runPython(`mtos_phase_matrix()`).toJs(),
+    linearKinMap: {
+        id: "linearMap",
+        draw: drawLinearKinMap,
+        needsParams: true
+    },
 
-wave: () => pyodide.runPython(`mtos_wave_structure()`).toJs(),
+    heatmap: {
+        id: "heatmap",
+        draw: drawHeatmap,
+        needsParams: true
+    },
 
-tzolkin: () => pyodide.runPython(`mtos_tzolkin_structure()`).toJs(),
+    globalKinMap: {
+        id: "globalKinMap",
+        draw: drawGlobalKinMap,
+        needsParams: false
+    }
 
+};
+
+// =========================
+// DRAW ONE MAP
+// =========================
+
+export async function drawMap(name, pyodide, params) {
+
+    const map = MAPS[name];
+
+    if (!map) {
+        console.warn("Map not found:", name);
+        return;
+    }
+
+    try {
+
+        if (map.needsParams) {
+            await map.draw(pyodide, map.id, params);
+        } else {
+            await map.draw(pyodide, map.id);
+        }
+
+    } catch (err) {
+        console.error("Draw error:", name, err);
+    }
+}
+
+// =========================
+// DRAW ALL MAPS
+// =========================
+
+export async function drawAllMaps(pyodide, params) {
+
+    const keys = Object.keys(MAPS);
+
+    for (let key of keys) {
+
+        await drawMap(key, pyodide, params);
+
+    }
 }
