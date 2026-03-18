@@ -1,99 +1,161 @@
-export function drawNetwork(id, users){
+export function drawNetwork(id, users, onSelect){
 
     const root = document.getElementById(id)
     if(!root) return
 
     root.innerHTML = ""
 
-    root.style.display = "flex"
-    root.style.flexDirection = "column"
-    root.style.alignItems = "center"
-
-    const title = document.createElement("div")
-    title.innerText = "Agent Network"
-    title.style.marginBottom = "10px"
-    title.style.fontFamily = "monospace"
-
-    root.appendChild(title)
-
     const canvas = document.createElement("canvas")
-    canvas.width = 400
-    canvas.height = 400
+    canvas.width = 420
+    canvas.height = 420
 
     root.appendChild(canvas)
 
     const ctx = canvas.getContext("2d")
 
-    const cx = 200
-    const cy = 200
-    const R = 130
+    const cx = 210
+    const cy = 210
+    const R = 140
+
+    let selected = null
+    let hover = null
 
     const N = users.length
 
-    // ===============================
-    // ПОЗИЦИИ
-    // ===============================
-    const positions = []
-
-    for(let i=0;i<N;i++){
-
+    const positions = users.map((u, i)=>{
         const angle = (i / N) * Math.PI * 2
-
-        positions.push({
+        return {
             x: cx + R * Math.cos(angle),
             y: cy + R * Math.sin(angle)
-        })
-    }
+        }
+    })
 
-    // ===============================
-    // СВЯЗИ
-    // ===============================
-    for(let i=0;i<N;i++){
-        for(let j=i+1;j<N;j++){
+    function draw(){
 
-            const u1 = users[i]
-            const u2 = users[j]
+        ctx.clearRect(0,0,420,420)
 
-            const w = u1.weight * u2.weight
+        // ===============================
+        // СВЯЗИ
+        // ===============================
+        for(let i=0;i<N;i++){
+            for(let j=i+1;j<N;j++){
 
-            // знак (упрощённо через веса)
-            const sign = (u1.weight > 1 && u2.weight > 1) ? 1 : -1
+                const u1 = users[i]
+                const u2 = users[j]
+
+                const w = u1.weight * u2.weight
+
+                let sign = (u1.weight > 1 && u2.weight > 1) ? 1 : -1
+
+                // фильтр по выбранному
+                if(selected !== null && i !== selected && j !== selected){
+                    ctx.globalAlpha = 0.05
+                }else{
+                    ctx.globalAlpha = 0.9
+                }
+
+                ctx.beginPath()
+                ctx.moveTo(positions[i].x, positions[i].y)
+                ctx.lineTo(positions[j].x, positions[j].y)
+
+                ctx.strokeStyle = sign > 0 ? "#00ff88" : "#ff0044"
+                ctx.lineWidth = Math.max(1, w * 4)
+
+                ctx.stroke()
+            }
+        }
+
+        ctx.globalAlpha = 1
+
+        // ===============================
+        // УЗЛЫ
+        // ===============================
+        for(let i=0;i<N;i++){
+
+            const u = users[i]
+            const p = positions[i]
+
+            let radius = 10 + u.weight * 6
+
+            if(i === selected) radius += 6
+            if(i === hover) radius += 3
 
             ctx.beginPath()
+            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
 
-            ctx.moveTo(positions[i].x, positions[i].y)
-            ctx.lineTo(positions[j].x, positions[j].y)
+            ctx.fillStyle = "#111"
+            ctx.fill()
 
-            if(sign > 0){
-                ctx.strokeStyle = "rgba(0,255,0,0.7)" // синергия
-            }else{
-                ctx.strokeStyle = "rgba(255,0,0,0.7)" // конфликт
+            // рамка
+            if(i === selected){
+                ctx.strokeStyle = "yellow"
+                ctx.lineWidth = 3
+                ctx.stroke()
             }
 
-            ctx.lineWidth = Math.max(1, w * 3)
+            // текст
+            ctx.fillStyle = "#fff"
+            ctx.font = "11px monospace"
+            ctx.textAlign = "center"
 
-            ctx.stroke()
+            ctx.fillText(u.name, p.x, p.y + 4)
         }
     }
 
     // ===============================
-    // УЗЛЫ
+    // CLICK
     // ===============================
-    for(let i=0;i<N;i++){
+    canvas.onclick = (e)=>{
 
-        const u = users[i]
-        const p = positions[i]
+        const rect = canvas.getBoundingClientRect()
 
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, 10 + u.weight * 4, 0, Math.PI * 2)
+        const mx = e.clientX - rect.left
+        const my = e.clientY - rect.top
 
-        ctx.fillStyle = "#111"
-        ctx.fill()
+        for(let i=0;i<N;i++){
 
-        ctx.fillStyle = "#fff"
-        ctx.font = "10px monospace"
-        ctx.textAlign = "center"
+            const dx = mx - positions[i].x
+            const dy = my - positions[i].y
 
-        ctx.fillText(u.name, p.x, p.y + 3)
+            if(Math.sqrt(dx*dx + dy*dy) < 15){
+
+                selected = (selected === i) ? null : i
+
+                if(onSelect){
+                    onSelect(selected !== null ? users[selected] : null)
+                }
+
+                draw()
+                return
+            }
+        }
     }
+
+    // ===============================
+    // HOVER
+    // ===============================
+    canvas.onmousemove = (e)=>{
+
+        const rect = canvas.getBoundingClientRect()
+
+        const mx = e.clientX - rect.left
+        const my = e.clientY - rect.top
+
+        hover = null
+
+        for(let i=0;i<N;i++){
+
+            const dx = mx - positions[i].x
+            const dy = my - positions[i].y
+
+            if(Math.sqrt(dx*dx + dy*dy) < 15){
+                hover = i
+                break
+            }
+        }
+
+        draw()
+    }
+
+    draw()
 }
