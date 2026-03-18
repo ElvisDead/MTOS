@@ -62,7 +62,7 @@ mtos_current_kin("${name}", ${year}, ${month}, ${day})
 `))
 
         // ===============================
-        // TODAY KIN
+        // TODAY
         // ===============================
         const now = new Date()
 
@@ -81,7 +81,7 @@ json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
         // ===============================
-        // USERS + КИН (КРИТИЧНО)
+        // USERS (с фазой)
         // ===============================
         users = [
             {name: name, weight: 1.0},
@@ -89,12 +89,15 @@ json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
             {name: "Bob", weight: 0.6}
         ]
 
-        // добавляем kin каждому агенту
         users = users.map(u=>{
+
             const kin = Number(pyodide.runPython(`
 mtos_current_kin("${u.name}", ${year}, ${month}, ${day})
 `))
-            return {...u, kin}
+
+            const phase = (kin % 20) * Math.PI / 10
+
+            return {...u, kin, phase}
         })
 
         // ===============================
@@ -111,6 +114,7 @@ json.dumps([f,s,u])
         fieldMode  = result[1]
         users      = result[2]
 
+        // 🔥 КЛЮЧ ДЛЯ ИНТЕРФЕРЕНЦИИ
         window.currentUsers = users
 
         status.innerText = "Done"
@@ -151,12 +155,18 @@ mtos_current_kin("${name}", ${y}, ${m}, ${dd})
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-            // обновляем kin у агентов
+            // ===============================
+            // ОБНОВЛЕНИЕ USERS (фаза + kin)
+            // ===============================
             users = users.map(u=>{
+
                 const newKin = Number(pyodide.runPython(`
 mtos_current_kin("${u.name}", ${y}, ${m}, ${dd})
 `))
-                return {...u, kin: newKin}
+
+                const phase = (newKin % 20) * Math.PI / 10
+
+                return {...u, kin: newKin, phase}
             })
 
             const result = JSON.parse(pyodide.runPython(`
@@ -177,6 +187,7 @@ json.dumps([f,s,u])
             fieldMode  = result[1]
             users      = result[2]
 
+            // 🔥 ОБНОВЛЯЕМ ГЛОБАЛЬНО
             window.currentUsers = users
 
             renderAll(weather, pressure, userKin, kin)
