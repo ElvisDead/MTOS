@@ -34,19 +34,38 @@ export function drawWeatherMap(
             let kin = (seal-1)*13 + tone
             while(kin>260) kin-=260
 
-            const phi = fieldData[kin-1]
+            let phi = fieldData[kin-1]
+
+            // ===============================
+            // ЗОНА ВЛИЯНИЯ (КЛЮЧ)
+            // ===============================
+            let influence = 1
+
+            if(selectedAgent){
+
+                const agentKin = selectedAgent.kin - 1
+
+                let dist = Math.abs(kin-1 - agentKin)
+                dist = Math.min(dist, 260 - dist)
+
+                // гауссово затухание
+                influence = Math.exp(-dist / 10)
+
+                // применяем фильтр
+                phi = phi * influence
+            }
 
             const n = (phi - fMin)/(fMax - fMin || 1)
 
-            // базовый цвет
+            // heatmap (синий → красный)
             let r = Math.floor(255 * n)
-            let g = Math.floor(255 * (1 - Math.abs(n-0.5)*2))
+            let g = Math.floor(80 * (1 - n))
             let b = Math.floor(255 * (1 - n))
 
-            // давление overlay
+            // давление (слабо, чтобы не мешало)
             const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
-            r += p * 80
-            b += p * 120
+            r += p * 40
+            b += p * 60
 
             const cell = document.createElement("div")
 
@@ -56,7 +75,7 @@ export function drawWeatherMap(
             cell.style.border = "1px solid #111"
 
             // ===============================
-            // ПОДСВЕТКА
+            // ПОДСВЕТКИ
             // ===============================
             if(kin === highlightKin){
                 cell.style.outline = "3px solid yellow"
@@ -66,12 +85,15 @@ export function drawWeatherMap(
                 cell.style.outline = "3px solid white"
             }
 
-            // выбранный агент
             if(selectedAgent && kin === selectedAgent.kin){
                 cell.style.outline = "3px solid cyan"
             }
 
-            cell.title = `Kin ${kin} | Φ ${phi.toFixed(3)}`
+            cell.title = `
+Kin: ${kin}
+Φ: ${fieldData[kin-1].toFixed(3)}
+Influence: ${influence.toFixed(3)}
+`
 
             grid.appendChild(cell)
         }
