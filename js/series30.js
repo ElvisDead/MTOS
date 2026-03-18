@@ -5,29 +5,57 @@ export function drawSeries30(id, data){
 
     c.innerHTML = ""
 
+    const width = 600
+    const height = 140
+
+    const canvas = document.createElement("canvas")
+    canvas.width = width
+    canvas.height = height
+
+    const ctx = canvas.getContext("2d")
+
     c.style.display = "flex"
-    c.style.flexDirection = "column"
-    c.style.alignItems = "center"
-    c.style.gap = "2px"
-    c.style.width = "100%"
+    c.style.justifyContent = "center"
 
-    for(let i=0;i<data.length;i++){
+    const min = Math.min(...data)
+    const max = Math.max(...data)
+    const range = max - min || 1
 
-        const v = data[i]
+    const norm = data.map(v => (v - min) / range)
 
-        const row = document.createElement("div")
+    ctx.beginPath()
 
-        row.style.width = "400px"
-        row.style.height = "6px"
-        row.style.background = "#222"
+    for(let i=0;i<norm.length;i++){
 
-        const fill = document.createElement("div")
+        const x = (i/(norm.length-1))*width
+        const y = height - norm[i]*height
 
-        fill.style.height = "100%"
-        fill.style.width = (v*100) + "%"
-        fill.style.background = "cyan"
-
-        row.appendChild(fill)
-        c.appendChild(row)
+        if(i===0) ctx.moveTo(x,y)
+        else ctx.lineTo(x,y)
     }
+
+    ctx.lineTo(width,height)
+    ctx.lineTo(0,height)
+    ctx.closePath()
+
+    ctx.fillStyle = "cyan"
+    ctx.globalAlpha = 0.4
+    ctx.fill()
+
+    ctx.globalAlpha = 1
+    ctx.strokeStyle = "cyan"
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    canvas.onmousemove = (e)=>{
+        const rect = canvas.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const i = Math.floor((x/width)*data.length)
+
+        canvas.title =
+            "Day: " + (i+1) +
+            "\nValue: " + data[i].toFixed(3)
+    }
+
+    c.appendChild(canvas)
 }
