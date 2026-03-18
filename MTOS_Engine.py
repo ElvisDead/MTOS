@@ -1360,19 +1360,16 @@ def mtos_current_kin(name, year, month, day):
 
     import datetime
 
-    # Юлианский день
-    def gregorian_to_jdn(y, m, d):
-        a = (14 - m) // 12
-        y2 = y + 4800 - a
-        m2 = m + 12*a - 3
-        return d + ((153*m2 + 2)//5) + 365*y2 + y2//4 - y2//100 + y2//400 - 32045
+    # Python ordinal → JDN
+    date = datetime.date(year, month, day)
 
-    jdn = gregorian_to_jdn(year, month, day)
+    # корректный JDN
+    jdn = date.toordinal() + 1721424.5
 
-    # GMT correlation constant
+    # GMT корреляция
     GMT = 584283
 
-    kin = ((jdn - GMT) % 260) + 1
+    kin = int((jdn - GMT) % 260) + 1
 
     return kin
 
