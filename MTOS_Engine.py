@@ -1354,22 +1354,24 @@ def mtos_kin_activity():
     return json.dumps(kin_activity)
 
 # ===============================
-# CURRENT KIN (13×20 STRUCTURE)
+# GMT CORRELATION (584283)
 # ===============================
 def mtos_current_kin(name, year, month, day):
 
     import datetime
 
-    # базовая дата (якорь цикла)
-    base = datetime.date(2000, 1, 1)
+    # Юлианский день
+    def gregorian_to_jdn(y, m, d):
+        a = (14 - m) // 12
+        y2 = y + 4800 - a
+        m2 = m + 12*a - 3
+        return d + ((153*m2 + 2)//5) + 365*y2 + y2//4 - y2//100 + y2//400 - 32045
 
-    current = datetime.date(year, month, day)
+    jdn = gregorian_to_jdn(year, month, day)
 
-    delta = (current - base).days
+    # GMT correlation constant
+    GMT = 584283
 
-    kin = (delta % 260) + 1
-
-    if kin < 1:
-        kin += 260
+    kin = ((jdn - GMT) % 260) + 1
 
     return kin
