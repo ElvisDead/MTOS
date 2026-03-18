@@ -37,6 +37,7 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
         return;
     }
 
+    console.log("RAW WEATHER:", raw);
     const data = JSON.parse(raw);
 
     // =========================
