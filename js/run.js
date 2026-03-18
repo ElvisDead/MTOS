@@ -1,5 +1,3 @@
-// run.js
-
 import { drawAllMaps } from './mapsConfig.js';
 import { drawChart } from './charts.js';
 
