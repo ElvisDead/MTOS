@@ -38,7 +38,14 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
     }
 
     console.log("RAW WEATHER:", raw);
-    const data = JSON.parse(raw);
+
+    let data;
+
+    if (typeof raw === "string") {
+        data = JSON.parse(raw);
+    } else {
+        data = raw;
+    }
 
     // =========================
     // GRID STRUCTURE (13 x 20)
