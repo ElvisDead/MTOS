@@ -1,4 +1,4 @@
-export function drawWeatherMap(id, data){
+export function drawWeatherMap(id, data, userKin){
 
     const root = document.getElementById(id)
     if(!root) return
@@ -9,31 +9,48 @@ export function drawWeatherMap(id, data){
     root.style.flexDirection = "column"
     root.style.alignItems = "center"
 
-    // === ЛЕГЕНДА ===
+    // ===============================
+    // TODAY KIN (UTC, простая формула)
+    // ===============================
+    const today = new Date()
+
+    const baseDate = new Date(Date.UTC(2000,0,1)) // якорь
+    const diff = Math.floor((today - baseDate) / 86400000)
+
+    let todayKin = (diff % 260) + 1
+    if(todayKin < 1) todayKin += 260
+
+    // ===============================
+    // ЛЕГЕНДА
+    // ===============================
     const legend = document.createElement("div")
-    legend.innerText = "Green ↑ attention | Red ↓ attention"
     legend.style.marginBottom = "10px"
+    legend.innerHTML =
+        "Green ↑ attention | Red ↓ attention | " +
+        "<span style='color:yellow'>■ today</span> | " +
+        "<span style='color:white'>■ user</span>"
     root.appendChild(legend)
 
-    // === КОНТЕЙНЕР С ОСЯМИ ===
+    // ===============================
+    // СЕТКА С ОСЯМИ
+    // ===============================
     const wrapper = document.createElement("div")
+
     wrapper.style.display = "grid"
     wrapper.style.gridTemplateColumns = "30px repeat(20, 16px)"
     wrapper.style.gridTemplateRows = "20px repeat(13, 16px)"
     wrapper.style.gap = "2px"
-    wrapper.style.alignItems = "center"
-    wrapper.style.justifyContent = "center"
 
-    // пустой угол
+    // угол
     wrapper.appendChild(document.createElement("div"))
 
-    // === ОСЬ ПЕЧАТЕЙ (1–20) ===
-    for(let seal=1; seal<=20; seal++){
-        const label = document.createElement("div")
-        label.innerText = seal
-        label.style.fontSize = "10px"
-        label.style.textAlign = "center"
-        wrapper.appendChild(label)
+    // ось seal
+    for(let s=1; s<=20; s++){
+        const d = document.createElement("div")
+        d.innerText = s
+        d.style.fontSize = "10px"
+        d.style.textAlign = "center"
+        wrapper.appendChild(d)
     }
 
     // нормализация
@@ -42,10 +59,12 @@ export function drawWeatherMap(id, data){
     const max = Math.max(...values)
     const range = max - min || 1
 
-    // === СЕТКА ===
+    // ===============================
+    // ГЛАВНАЯ СЕТКА
+    // ===============================
     for(let tone=1; tone<=13; tone++){
 
-        // ось тонов
+        // ось tone
         const tLabel = document.createElement("div")
         tLabel.innerText = tone
         tLabel.style.fontSize = "10px"
@@ -54,7 +73,6 @@ export function drawWeatherMap(id, data){
 
         for(let seal=1; seal<=20; seal++){
 
-            // ВАЖНО: правильная формула Цолькина
             let kin = (seal - 1) * 13 + tone
             while(kin > 260) kin -= 260
 
@@ -73,13 +91,43 @@ export function drawWeatherMap(id, data){
             cell.style.background = `rgb(${r},${g},${b})`
             cell.style.cursor = "pointer"
 
-            cell.title =
-                `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nAttention ${d.attention.toFixed(3)}`
+            // ===============================
+            // WAVE (1–20)
+            // ===============================
+            const wave = Math.floor((kin-1)/13) + 1
 
-            // клик
+            // ===============================
+            // HARMONIC (1–65)
+            // ===============================
+            const harmonic = Math.floor((kin-1)/4) + 1
+
+            // ===============================
+            // ПОДСВЕТКА
+            // ===============================
+            if(kin === todayKin){
+                cell.style.outline = "2px solid yellow"
+            }
+
+            if(userKin && kin === userKin){
+                cell.style.outline = "2px solid white"
+            }
+
+            // ===============================
+            // TOOLTIP
+            // ===============================
+            cell.title =
+                `Kin ${kin}\nTone ${tone}\nSeal ${seal}` +
+                `\nWave ${wave}\nHarmonic ${harmonic}` +
+                `\nAttention ${d.attention.toFixed(3)}`
+
+            // ===============================
+            // CLICK
+            // ===============================
             cell.onclick = () => {
                 alert(
-                    `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nAttention ${d.attention.toFixed(3)}`
+                    `Kin ${kin}\nTone ${tone}\nSeal ${seal}` +
+                    `\nWave ${wave}\nHarmonic ${harmonic}` +
+                    `\nAttention ${d.attention.toFixed(3)}`
                 )
             }
 
