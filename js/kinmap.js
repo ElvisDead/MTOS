@@ -1,291 +1,123 @@
+// kinmap.js
 
+import { getColor, COLORS } from './colors.js';
 
-import { getColor } from "./colors.js"
-
-const seals = [
-"Dragon",
-"Wind",
-"Night",
-"Seed",
-"Serpent",
-"WorldBridger",
-"Hand",
-"Star",
-"Moon",
-"Dog",
-"Monkey",
-"Human",
-"Skywalker",
-"Wizard",
-"Eagle",
-"Warrior",
-"Earth",
-"Mirror",
-"Storm",
-"Sun"
-]
-
-export function drawKinMap(){
-  return
-}
-
-console.log("KIN USERS:", window.kinUsers)
-
-window.kinUsers = window.kinUsers || {}
-
-const map=document.getElementById("kinmap")
-map.innerHTML=""
-
-map.style.display="grid"
-map.style.gridTemplateColumns="60px repeat(13,24px)"
-map.style.gridAutoRows="24px"
-
-let min = Math.min(...weather.map(w => (w && w.attention != null) ? w.attention : 0))
-let max = Math.max(...weather.map(w => (w && w.attention != null) ? w.attention : 1))
-
-const cells=[]
-
-// header
-map.appendChild(document.createElement("div"))
-for(let t=0;t<13;t++){
-let h=document.createElement("div")
-h.innerText="T"+(t+1)
-h.style.fontSize="8px"
-h.style.color="#aaa"
-map.appendChild(h)
-}
-
-// grid
-  
-for(let row=0;row<20;row++){
-
-let label=document.createElement("div")
-label.innerText=seals[row]
-label.style.fontSize="8px"
-label.style.color="#777"
-map.appendChild(label)
-
-for(let col=0;col<13;col++){
-
-let kin = row + 20 * (((2*(col - row)) % 13 + 13) % 13) + 1
-
-let w = weather && weather.length===260 ? weather[kin-1] : null
-
-let attention = (w && w.attention != null) ? w.attention : Math.random()
-let activity  = (w && w.activity != null) ? w.activity : 0.5
-let pressure  = (w && w.pressure != null) ? w.pressure : 0
-let conflict  = (w && w.conflict != null) ? w.conflict : 0
-
-// нормализация для цвета (оставляем старую систему)
-let val = (max===min)?0:(attention-min)/(max-min)
-
-let c=document.createElement("div")
-c.className="cell"
-
-c.style.background = getColor(val)
-
-let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
-let userList = users.length ? users.map(u=>u.name || u).join("\n") : "-"
-
-c.dataset.kin=kin
-let toneReal = (kin-1)%13
-let sealReal = (kin-1)%20
-
-c.dataset.tone = toneReal
-c.dataset.seal = sealReal
-
-// давление = яркость
-c.style.opacity = 0.6 + pressure * 0.4
-
-// конфликт = красное напряжение
-if(conflict > 0.15){
-  c.style.boxShadow = "0 0 6px red"
-}
-
-// активность = “дыхание”
-c.style.transform = `scale(${1 + activity * 0.25})`
-
-let clarity = 0
-
-if (window.currentKin !== null) {
-  clarity = (window.currentKin === kin)
-    ? 1
-    : 1 - Math.abs(kin - window.currentKin) / 130
-}
-
-clarity = Math.max(0, Math.min(1, clarity))
+export async function drawKinMap(pyodide, canvasId, params) {
 
-c.title =
-"Kin: "+kin+"\n"+
-"Seal: "+seals[sealReal]+"\n"+
-"Tone: "+(toneReal+1)+"\n"+
-"Clarity: "+clarity.toFixed(3)+"\n"+
-  
-"Attention: "+attention.toFixed(3)+"\n"+
-"Pressure: "+pressure.toFixed(3)+"\n"+
-"Activity: "+activity.toFixed(3)+"\n"+
-"Conflict: "+conflict.toFixed(3)+"\n\n"+
-  
-"Users ("+users.length+"):\n"+userList
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
 
-c.onclick = () => {
+    const ctx = canvas.getContext("2d");
 
-let existing = document.getElementById("kin-popup")
-if(existing) existing.remove()
+    const width = canvas.width;
+    const height = canvas.height;
 
-let popup = document.createElement("div")
-popup.id = "kin-popup"
+    ctx.clearRect(0, 0, width, height);
 
-popup.style.position = "fixed"
-popup.style.left = "50%"
-popup.style.top = "50%"
-popup.style.transform = "translate(-50%, -50%)"
-popup.style.background = "#111"
-popup.style.color = "#fff"
-popup.style.padding = "14px"
-popup.style.border = "1px solid #444"
-popup.style.borderRadius = "8px"
-popup.style.zIndex = "9999"
-popup.style.fontSize = "14px"
-popup.style.maxWidth = "260px"
-popup.style.whiteSpace = "pre-line"
+    // =========================
+    // PARAMS
+    // =========================
 
-popup.innerHTML = `
+    const { name, year, month, day } = params;
 
-<div style="font-size:16px;margin-bottom:6px">
-<b>Kin ${kin}</b>
-</div>
+    // =========================
+    // LOAD DATA FROM PYTHON
+    // =========================
 
-<div style="color:#aaa;margin-bottom:8px">
-${seals[sealReal]} • Tone ${toneReal+1}
-</div>
+    let raw;
 
-<div style="margin-bottom:10px">
-Clarity: <b>${clarity.toFixed(3)}</b>
-</div>
+    try {
 
-<div style="margin-bottom:10px">
+        raw = await pyodide.runPythonAsync(`
+mtos_260_weather("${name}", ${year}, ${month}, ${day})
+        `);
 
-<div>Attention</div>
-<div style="background:#222;height:6px;border-radius:4px;margin-bottom:6px">
-  <div style="width:${attention*100}%;background:#00ffaa;height:100%;border-radius:4px"></div>
-</div>
+    } catch (err) {
+        console.error("KinMap error:", err);
+        return;
+    }
 
-<div>Pressure</div>
-<div style="background:#222;height:6px;border-radius:4px;margin-bottom:6px">
-  <div style="width:${pressure*100}%;background:#ffaa00;height:100%;border-radius:4px"></div>
-</div>
+    const data = JSON.parse(raw);
 
-<div>Activity</div>
-<div style="background:#222;height:6px;border-radius:4px;margin-bottom:6px">
-  <div style="width:${activity*100}%;background:#00aaff;height:100%;border-radius:4px"></div>
-</div>
+    // =========================
+    // GRID STRUCTURE (13 x 20)
+    // =========================
 
-<div>Conflict</div>
-<div style="background:#222;height:6px;border-radius:4px">
-  <div style="width:${conflict*100}%;background:#ff4444;height:100%;border-radius:4px"></div>
-</div>
+    const cols = 13; // tones
+    const rows = 20; // seals
 
-</div>
+    const cellW = width / cols;
+    const cellH = height / rows;
 
-<div style="margin-top:10px;font-size:12px;color:#888">
-Users (${users.length}):
-</div>
+    // =========================
+    // DRAW CELLS
+    // =========================
 
-<div style="white-space:pre-line;font-size:12px">
-${userList}
-</div>
+    for (let kin = 0; kin < 260; kin++) {
 
-`;
-document.body.appendChild(popup)
+        const item = data[kin];
 
-}
+        if (!item) continue;
 
-map.appendChild(c)
-cells.push(c)
+        const value = item.attention;
 
-}
+        // вычисление координат
+        const tone = kin % 13;
+        const seal = kin % 20;
 
-}
-  
-highlightCurrentKin(cells)
+        const x = tone * cellW;
+        const y = seal * cellH;
 
-}
+        ctx.fillStyle = getColor(value);
 
-export function highlightCurrentKin(cells){
+        ctx.fillRect(x, y, cellW, cellH);
+    }
 
-if(window.currentKin===null) return
+    // =========================
+    // GRID
+    // =========================
 
-let tone0 = (window.currentKin-1)%13
-let seal0 = (window.currentKin-1)%20
+    ctx.strokeStyle = COLORS.grid;
+    ctx.lineWidth = 0.5;
 
-let harmonic = Math.floor((window.currentKin-1)/4)
-let wave = Math.floor((window.currentKin-1)/13)
+    for (let c = 0; c <= cols; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c * cellW, 0);
+        ctx.lineTo(c * cellW, height);
+        ctx.stroke();
+    }
 
-cells.forEach(c=>{
+    for (let r = 0; r <= rows; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * cellH);
+        ctx.lineTo(width, r * cellH);
+        ctx.stroke();
+    }
 
-c.style.outline=""
-c.style.boxShadow=""
+    // =========================
+    // HIGHLIGHT TODAY (Kin 1 в массиве)
+    // =========================
 
-c.style.border=""
-c.style.borderTop=""
-c.style.borderLeft=""
-
-let kin=parseInt(c.dataset.kin)
-
-// subtle structural grid
-
-if((kin-1)%13===0){
-c.style.borderTop="1px solid #444"
-}
-
-if((kin-1)%4===0){
-c.style.borderLeft="1px solid #333"
-}
-
-let waveIndex = Math.floor((kin-1)/13)
-let currentWave = Math.floor((window.currentKin-1)/13)
-
-let tone=(kin-1)%13
-let seal=(kin-1)%20
-
-let shadows=[]
-
-// same tone
-if(tone===tone0){
-shadows.push("0 0 3px cyan")
-}
-
-// same seal
-if(seal===seal0){
-shadows.push("0 0 3px #00ff88")
-}
-
-// harmonic
-if(Math.floor((kin-1)/4)===harmonic){
-shadows.push("0 0 4px #00ccff")
-}
-
-// wave highlight
-if(waveIndex === currentWave){
-
-shadows.push("0 0 4px orange")
-
-// wave line
-c.style.border="1px solid rgba(255,140,0,0.35)"
-
-}
-
-if(shadows.length>0){
-c.style.boxShadow=shadows.join(",")
-}
-
-// current
-if(kin===window.currentKin){
-c.style.outline="2px solid white"
-c.style.boxShadow="0 0 10px white"
-}
-
-})
-
+    const todayKin = 0;
+
+    const tone = todayKin % 13;
+    const seal = todayKin % 20;
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(
+        tone * cellW,
+        seal * cellH,
+        cellW,
+        cellH
+    );
+
+    // =========================
+    // TITLE
+    // =========================
+
+    ctx.fillStyle = COLORS.text;
+    ctx.font = "12px Arial";
+    ctx.fillText("260 Kin Map", 10, 15);
 }
