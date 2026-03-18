@@ -3,7 +3,7 @@ export function drawGlobalKinMap(id){
 console.log("DRAW GLOBAL MAP INTO:", id)
 
 let map = document.getElementById(id)
-map.innerHTML = ""
+map.replaceChildren()
 
 map.style.display = "grid"
 map.style.gridTemplateColumns = "40px repeat(13,12px)"
