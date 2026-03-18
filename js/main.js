@@ -2,6 +2,7 @@ import { drawWeatherMap } from "./weatherMap.js"
 import { initTimeControls } from "./timeController.js"
 
 let pyodide = null
+let fieldState = null
 
 // ===============================
 // INIT
@@ -43,95 +44,50 @@ export async function runMTOS(){
     let pressure = []
     let userKin = 1
     let todayKin = 1
-    let nodeFunctions = []
-    let summary = null
 
     try{
 
         status.innerText = "Running..."
 
-        // ===============================
-        // USER KIN (GMT)
-        // ===============================
+        // USER KIN
         userKin = Number(pyodide.runPython(`
 mtos_current_kin("${name}",${year},${month},${day})
 `))
 
-        // ===============================
         // TODAY KIN
-        // ===============================
         const today = new Date()
 
         todayKin = Number(pyodide.runPython(`
 mtos_current_kin("today", ${today.getFullYear()}, ${today.getMonth()+1}, ${today.getDate()})
 `))
 
-        // ===============================
         // WEATHER
-        // ===============================
         weather = JSON.parse(pyodide.runPython(`
 import json
 json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
 `))
 
-        // ===============================
         // PRESSURE
-        // ===============================
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-        // ===============================
-        // NODE FUNCTIONS (ИЗ ДАННЫХ)
-        // ===============================
-        nodeFunctions = JSON.parse(pyodide.runPython(`
+        // FIELD INIT
+        fieldState = JSON.parse(pyodide.runPython(`
 import json
-json.dumps(mtos_node_functions("${name}",${year},${month},${day}))
-`))
-
-        // ===============================
-        // SUMMARY
-        // ===============================
-        summary = JSON.parse(pyodide.runPython(`
-import json
-json.dumps(mtos_summary("${name}",${year},${month},${day}))
+json.dumps(mtos_field_step("${name}",${year},${month},${day}))
 `))
 
         status.innerText = "Done"
 
     }catch(e){
         console.error(e)
-        status.innerText = "ERROR (но интерфейс жив)"
+        status.innerText = "ERROR"
     }
 
-    // ===============================
-    // WEATHER MAP
-    // ===============================
-    drawWeatherMap("weatherMap", weather, userKin, todayKin, pressure)
+    // РЕНДЕР
+    drawWeatherMap("weatherMap", weather, userKin, todayKin, pressure, fieldState)
 
     // ===============================
-    // SUMMARY BLOCK
-    // ===============================
-    const summaryDiv = document.getElementById("mtosSummary")
-
-    if(summaryDiv && summary){
-
-        summaryDiv.innerHTML = `
-        <b>Today Kin:</b> ${todayKin}<br>
-        <b>User Kin:</b> ${userKin}<br>
-        <b>State:</b> ${summary.state}<br>
-        <b>Attention:</b> ${summary.attention.toFixed(3)}<br>
-        <b>Pressure:</b> ${summary.pressure.toFixed(3)}<br>
-        <b>Noise:</b> ${summary.noise.toFixed(3)}<br>
-        <b>Lyapunov:</b> ${summary.lyapunov.toFixed(3)}
-        `
-    }
-
-    // ===============================
-    // DEBUG NODE FUNCTIONS
-    // ===============================
-    console.log("NODE FUNCTIONS:", nodeFunctions)
-
-    // ===============================
-    // TIME MOTION
+    // TIME
     // ===============================
     let baseYear = year
     let baseMonth = month
@@ -159,15 +115,18 @@ mtos_current_kin("${name}",${y},${m},${dd})
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-            drawWeatherMap("weatherMap", weather, userKin, kin, pressure)
+            // FIELD EVOLUTION
+            fieldState = JSON.parse(pyodide.runPython(`
+import json
+json.dumps(mtos_field_step("${name}",${y},${m},${dd}, ${JSON.stringify(fieldState)}))
+`))
+
+            drawWeatherMap("weatherMap", weather, userKin, kin, pressure, fieldState)
 
         }catch(e){
             console.error("STEP ERROR:", e)
         }
     }
 
-    // ===============================
-    // ВСЕГДА СОЗДАЁМ КНОПКИ
-    // ===============================
     initTimeControls(step)
 }
