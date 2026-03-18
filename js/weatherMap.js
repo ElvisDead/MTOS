@@ -1,39 +1,79 @@
+// ===============================
+// 260 KIN WEATHER MAP (PRO)
+// ===============================
+
 export function drawWeatherMap(id, weather){
 
-    const map = document.getElementById(id)
-    if(!map) return
+    const container = document.getElementById(id)
+    if(!container) return
 
-    map.innerHTML = ""
+    container.innerHTML = ""
 
-    map.style.display = "grid"
-    map.style.gridTemplateColumns = "repeat(20, 14px)"
-    map.style.gap = "2px"
-    map.style.justifyContent = "center"
-    map.style.marginTop = "20px"
+    // GRID
+    container.style.display = "grid"
+    container.style.gridTemplateColumns = "repeat(20, 16px)"
+    container.style.gap = "2px"
+    container.style.justifyContent = "center"
+    container.style.marginTop = "20px"
 
     for(let i = 0; i < 260; i++){
 
-        const val = weather[i] ?? 0
-
         const cell = document.createElement("div")
 
-        cell.style.width = "14px"
-        cell.style.height = "14px"
-        cell.style.background = getColor(val)
+        const data = weather[i] || {
+            attention: 0.5,
+            activity: 0.5,
+            pressure: 0,
+            conflict: 0
+        }
 
-        cell.title = "Kin " + (i+1) + " | " + val.toFixed(3)
+        const val = data.attention
 
-        map.appendChild(cell)
+        // COLOR (УЛУЧШЕННЫЙ ГРАДИЕНТ)
+        const color = getColor(val, data.pressure, data.conflict)
+
+        cell.style.width = "16px"
+        cell.style.height = "16px"
+        cell.style.background = color
+        cell.style.borderRadius = "2px"
+        cell.style.cursor = "pointer"
+
+        // HOVER INFO
+        cell.title =
+            "Kin " + (i+1) +
+            "\nAttention: " + val.toFixed(3) +
+            "\nActivity: " + data.activity.toFixed(3) +
+            "\nPressure: " + data.pressure.toFixed(3) +
+            "\nConflict: " + data.conflict.toFixed(3)
+
+        // INTERACTION (подсветка)
+        cell.onmouseenter = () => {
+            cell.style.transform = "scale(1.4)"
+            cell.style.zIndex = "10"
+        }
+
+        cell.onmouseleave = () => {
+            cell.style.transform = "scale(1)"
+            cell.style.zIndex = "1"
+        }
+
+        container.appendChild(cell)
     }
 }
 
-function getColor(v){
+// ===============================
+// COLOR ENGINE
+// ===============================
+function getColor(attention, pressure, conflict){
 
-    v = Math.max(0, Math.min(1, v))
+    // базовая энергия
+    const r = Math.floor(255 * attention)
 
-    const r = Math.floor(255 * v)
-    const g = Math.floor(200 * v)
-    const b = Math.floor(50 + 100 * (1 - v))
+    // давление → зелёный канал
+    const g = Math.floor(180 * (1 - pressure))
+
+    // конфликт → синий канал
+    const b = Math.floor(200 * conflict)
 
     return `rgb(${r},${g},${b})`
 }
