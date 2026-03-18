@@ -1464,13 +1464,15 @@ def mtos_node_functions(name, year, month, day):
 # ===============================
 # FIELD EQUATION (Φ)
 # ===============================
-def mtos_field_step(name, year, month, day, prev_field=None):
+def mtos_field_step(name, year, month, day, prev_field=None, prev_state=None):
+
+    import math
 
     weather = mtos_260_weather(name, year, month, day)
     pressure = mtos_pressure_map()
 
     # ===============================
-    # SOURCE (S)
+    # SOURCE
     # ===============================
     source2D = [[0 for _ in range(20)] for _ in range(13)]
 
@@ -1482,60 +1484,199 @@ def mtos_field_step(name, year, month, day, prev_field=None):
             att = weather[kin]["attention"]
             pr = pressure[kin]
 
-            # источник
             S = 0.6 * att + 0.4 * pr
-
             source2D[t][s] = S
 
     # ===============================
-    # ИНИЦИАЛИЗАЦИЯ
+    # INIT
     # ===============================
     if prev_field is None:
-        return [source2D[t][s] for t in range(13) for s in range(20)]
+        field = [source2D[t][s] for t in range(13) for s in range(20)]
+        state = [0 for _ in range(260)]
+        return field, state
 
-    # в 2D
-    prev2D = [[0 for _ in range(20)] for _ in range(13)]
+    # reshape
+    prev2D = [[0]*20 for _ in range(13)]
+    prevState2D = [[0]*20 for _ in range(13)]
+
     k = 0
     for t in range(13):
         for s in range(20):
             prev2D[t][s] = prev_field[k]
+            prevState2D[t][s] = prev_state[k]
             k += 1
 
     # ===============================
-    # ПАРАМЕТРЫ
+    # PARAMETERS
     # ===============================
-    D = 0.12
-    decay = 0.03
+    D = 0.08
+    decay = 0.02
+    gamma = 0.5
+
+    # hysteresis thresholds
+    phi_on  = 0.6
+    phi_off = 0.4
+
+    new2D = [[0]*20 for _ in range(13)]
+    newState2D = [[0]*20 for _ in range(13)]
 
     # ===============================
-    # ЭВОЛЮЦИЯ
+    # EVOLUTION
     # ===============================
-    new2D = [[0 for _ in range(20)] for _ in range(13)]
-
     for t in range(13):
         for s in range(20):
 
-            center = prev2D[t][s]
+            phi = prev2D[t][s]
+            state = prevState2D[t][s]
 
             up    = prev2D[(t-1) % 13][s]
             down  = prev2D[(t+1) % 13][s]
             left  = prev2D[t][(s-1) % 20]
             right = prev2D[t][(s+1) % 20]
 
-            laplacian = (up + down + left + right - 4 * center)
+            laplacian = (up + down + left + right - 4 * phi)
 
             diffusion = D * laplacian
-
             source = source2D[t][s]
 
-            new_val = center + diffusion + source - decay * center
+            nonlinear = gamma * phi * (1 - phi)
+
+            # ===============================
+            # HYSTERESIS (ключ)
+            # ===============================
+            if state == 0 and phi > phi_on:
+                state = 1
+            elif state == 1 and phi < phi_off:
+                state = 0
+
+            # влияние состояния
+            hysteresis_boost = 0.25 if state == 1 else -0.1
+
+            new_val = phi + diffusion + source - decay * phi + nonlinear + hysteresis_boost
 
             new2D[t][s] = new_val
+            newState2D[t][s] = state
 
-    # обратно в 1D
-    result = []
+    # flatten
+    field = []
+    state = []
+
     for t in range(13):
         for s in range(20):
-            result.append(new2D[t][s])
+            field.append(new2D[t][s])
+            state.append(newState2D[t][s])
 
-    return result
+    return field, state
+
+# ===============================
+# MULTI-AGENT FIELD
+# ===============================
+def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state=None):
+
+    import math
+
+    # базовое поле (пустое)
+    base_field = [0.0 for _ in range(260)]
+
+    # ===============================
+    # СУММИРУЕМ АГЕНТОВ
+    # ===============================
+    for user in users:
+
+        name = user["name"]
+
+        weather = mtos_260_weather(name, year, month, day)
+        kin = mtos_current_kin(name, year, month, day) - 1
+
+        for i in range(260):
+
+            dist = min(abs(i - kin), 260 - abs(i - kin))
+
+            influence = math.exp(-dist / 10.0)
+
+            base_field[i] += weather[i]["attention"] * influence
+
+    # нормализация
+    max_val = max(base_field) or 1
+    base_field = [v / max_val for v in base_field]
+
+    # ===============================
+    # ПЕРЕДАЁМ В FIELD ДИНАМИКУ
+    # ===============================
+    return mtos_field_step_from_array(base_field, prev_field, prev_state)
+
+def mtos_field_step_from_array(source_array, prev_field, prev_state):
+
+    import math
+
+    # reshape source
+    source2D = [[0]*20 for _ in range(13)]
+
+    k = 0
+    for t in range(13):
+        for s in range(20):
+            source2D[t][s] = source_array[k]
+            k += 1
+
+    if prev_field is None:
+        return source_array, [0]*260
+
+    prev2D = [[0]*20 for _ in range(13)]
+    prevState2D = [[0]*20 for _ in range(13)]
+
+    k = 0
+    for t in range(13):
+        for s in range(20):
+            prev2D[t][s] = prev_field[k]
+            prevState2D[t][s] = prev_state[k]
+            k += 1
+
+    D = 0.08
+    decay = 0.02
+    gamma = 0.5
+
+    phi_on = 0.6
+    phi_off = 0.4
+
+    new2D = [[0]*20 for _ in range(13)]
+    newState2D = [[0]*20 for _ in range(13)]
+
+    for t in range(13):
+        for s in range(20):
+
+            phi = prev2D[t][s]
+            state = prevState2D[t][s]
+
+            up    = prev2D[(t-1)%13][s]
+            down  = prev2D[(t+1)%13][s]
+            left  = prev2D[t][(s-1)%20]
+            right = prev2D[t][(s+1)%20]
+
+            laplacian = (up + down + left + right - 4*phi)
+
+            diffusion = D * laplacian
+            source = source2D[t][s]
+
+            nonlinear = gamma * phi * (1 - phi)
+
+            if state == 0 and phi > phi_on:
+                state = 1
+            elif state == 1 and phi < phi_off:
+                state = 0
+
+            hysteresis = 0.25 if state == 1 else -0.1
+
+            new_val = phi + diffusion + source - decay*phi + nonlinear + hysteresis
+
+            new2D[t][s] = new_val
+            newState2D[t][s] = state
+
+    field = []
+    state = []
+
+    for t in range(13):
+        for s in range(20):
+            field.append(new2D[t][s])
+            state.append(newState2D[t][s])
+
+    return field, state
