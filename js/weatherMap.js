@@ -4,21 +4,22 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
     if(!root) return
 
     root.innerHTML = ""
-
     root.style.display = "flex"
     root.style.flexDirection = "column"
     root.style.alignItems = "center"
 
     const wrapper = document.createElement("div")
 
+    // ЦОЛЬКИН ОРИЕНТАЦИЯ
     wrapper.style.display = "grid"
-    wrapper.style.gridTemplateColumns = "30px repeat(20, 16px)"
-    wrapper.style.gridTemplateRows = "20px repeat(13, 16px)"
+    wrapper.style.gridTemplateColumns = "30px repeat(20, 18px)"
+    wrapper.style.gridTemplateRows = "20px repeat(13, 18px)"
     wrapper.style.gap = "2px"
 
+    // пустой угол
     wrapper.appendChild(document.createElement("div"))
 
-    // ось seal
+    // seal (горизонталь)
     for(let s=1;s<=20;s++){
         const d = document.createElement("div")
         d.innerText = s
@@ -27,21 +28,21 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
         wrapper.appendChild(d)
     }
 
-    // нормализация attention
-    const attVals = data.map(d => d.attention)
-    const attMin = Math.min(...attVals)
-    const attMax = Math.max(...attVals)
-    const attRange = attMax - attMin || 1
+    // === НОРМАЛИЗАЦИЯ (attention)
+    const values = data.map(d => d.attention)
+    const mean = values.reduce((a,b)=>a+b,0)/values.length
+    const std = Math.sqrt(values.reduce((a,b)=>a+(b-mean)**2,0)/values.length) || 1
 
-    // нормализация pressure
-    let pMin = 0, pRange = 1
+    // === НОРМАЛИЗАЦИЯ (pressure)
+    let pMin=0, pMax=1
     if(pressureData){
-        const pVals = pressureData
-        pMin = Math.min(...pVals)
-        const pMax = Math.max(...pVals)
-        pRange = pMax - pMin || 1
+        pMin = Math.min(...pressureData)
+        pMax = Math.max(...pressureData)
     }
 
+    // ===============================
+    // СЕТКА
+    // ===============================
     for(let tone=1;tone<=13;tone++){
 
         const tLabel = document.createElement("div")
@@ -57,61 +58,72 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
 
             const d = data[kin-1]
 
-            // === BASE (attention)
-            const a = (d.attention - attMin)/attRange
+            // ===============================
+            // Z-SCORE (НАУЧНО)
+            // ===============================
+            let z = (d.attention - mean)/std
 
-            let r = Math.floor(255*(1-a))
-            let g = Math.floor(255*a)
-            let b = 50
+            // ограничение
+            z = Math.max(-2, Math.min(2, z))
 
-            // === OVERLAY (pressure)
+            // нормализация [-2..2] → [0..1]
+            const n = (z + 2)/4
+
+            // ===============================
+            // SCIENTIFIC COLOR (BLUE→WHITE→RED)
+            // ===============================
+            const r = Math.floor(255 * n)
+            const g = Math.floor(255 * (1 - Math.abs(n-0.5)*2))
+            const b = Math.floor(255 * (1 - n))
+
+            let finalR = r
+            let finalG = g
+            let finalB = b
+
+            // ===============================
+            // PRESSURE OVERLAY (фиолет)
+            // ===============================
             if(pressureData){
 
-                const p = (pressureData[kin-1] - pMin)/pRange
+                const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
 
-                // добавляем фиолетово-синий слой
-                const pr = Math.floor(120*p)
-                const pb = Math.floor(255*p)
-
-                r = Math.min(255, r + pr*0.3)
-                b = Math.min(255, b + pb*0.5)
+                finalR = Math.min(255, finalR + p*80)
+                finalB = Math.min(255, finalB + p*120)
             }
 
             const cell = document.createElement("div")
 
-            cell.style.width = "16px"
-            cell.style.height = "16px"
-            cell.style.background = `rgb(${r},${g},${b})`
+            cell.style.width = "18px"
+            cell.style.height = "18px"
+            cell.style.background = `rgb(${finalR},${finalG},${finalB})`
 
-            // === подсветки
-            // сброс
+            // ===============================
+            // ЧЁТКИЕ РАМКИ
+            // ===============================
             cell.style.border = "1px solid #111"
 
-            // === TODAY (жёлтая рамка)
             if(kin === highlightKin){
                 cell.style.border = "3px solid yellow"
             }
 
-            // === USER (белая рамка)
             if(userKin && kin === userKin){
                 cell.style.border = "3px solid white"
             }
 
-            // === ЕСЛИ СОВПАЛИ (одна клетка)
             if(userKin && kin === userKin && kin === highlightKin){
                 cell.style.border = "3px solid gold"
             }
 
+            // ===============================
+            // TOOLTIP
+            // ===============================
             const wave = Math.floor((kin-1)/13)+1
             const harmonic = Math.floor((kin-1)/4)+1
-
-            const pressureVal = pressureData ? pressureData[kin-1] : 0
 
             cell.title =
                 `Kin ${kin}\nTone ${tone}\nSeal ${seal}` +
                 `\nWave ${wave}\nHarmonic ${harmonic}` +
-                `\nAttention ${d.attention.toFixed(3)}` +
-                `\nPressure ${pressureVal.toFixed(3)}`
+                `\nZ-score ${z.toFixed(2)}`
 
             wrapper.appendChild(cell)
         }
