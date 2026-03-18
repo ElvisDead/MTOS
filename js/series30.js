@@ -6,20 +6,28 @@ export function drawSeries30(id, data){
     c.innerHTML = ""
 
     c.style.display = "flex"
-    c.style.alignItems = "flex-end"
+    c.style.flexDirection = "column"
+    c.style.alignItems = "center"
     c.style.gap = "2px"
-    c.style.height = "100px"
+    c.style.width = "100%"
 
     for(let i=0;i<data.length;i++){
 
         const v = data[i]
 
-        const bar = document.createElement("div")
+        const row = document.createElement("div")
 
-        bar.style.width = "6px"
-        bar.style.height = (v*100) + "%"
-        bar.style.background = "cyan"
+        row.style.width = "400px"
+        row.style.height = "6px"
+        row.style.background = "#222"
 
-        c.appendChild(bar)
+        const fill = document.createElement("div")
+
+        fill.style.height = "100%"
+        fill.style.width = (v*100) + "%"
+        fill.style.background = "cyan"
+
+        row.appendChild(fill)
+        c.appendChild(row)
     }
 }
