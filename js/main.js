@@ -1,4 +1,5 @@
 import { drawWeatherMap } from "./weatherMap.js"
+import { drawNetwork } from "./network.js"
 import { initTimeControls } from "./timeController.js"
 
 let pyodide = null
@@ -38,10 +39,10 @@ export async function runMTOS(){
 
     const status = document.getElementById("status")
 
-    const name = document.getElementById("name").value
-    const year = parseInt(document.getElementById("year").value)
+    const name  = document.getElementById("name").value
+    const year  = parseInt(document.getElementById("year").value)
     const month = parseInt(document.getElementById("month").value)
-    const day = parseInt(document.getElementById("day").value)
+    const day   = parseInt(document.getElementById("day").value)
 
     let weather = []
     let pressure = []
@@ -53,16 +54,19 @@ export async function runMTOS(){
         status.innerText = "Running..."
 
         // ===============================
-        // USER / TODAY KIN
+        // USER KIN
         // ===============================
         userKin = Number(pyodide.runPython(`
-mtos_current_kin("${name}",${year},${month},${day})
+mtos_current_kin("${name}", ${year}, ${month}, ${day})
 `))
 
-        const today = new Date()
+        // ===============================
+        // TODAY KIN
+        // ===============================
+        const now = new Date()
 
         todayKin = Number(pyodide.runPython(`
-mtos_current_kin("today", ${today.getFullYear()}, ${today.getMonth()+1}, ${today.getDate()})
+mtos_current_kin("today", ${now.getFullYear()}, ${now.getMonth()+1}, ${now.getDate()})
 `))
 
         // ===============================
@@ -70,13 +74,13 @@ mtos_current_kin("today", ${today.getFullYear()}, ${today.getMonth()+1}, ${today
         // ===============================
         weather = JSON.parse(pyodide.runPython(`
 import json
-json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
+json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
 `))
 
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
         // ===============================
-        // INIT AGENTS (С ВЕСАМИ)
+        // АГЕНТЫ (СТАРТ)
         // ===============================
         users = [
             {name: name, weight: 1.0},
@@ -85,7 +89,7 @@ json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
         ]
 
         // ===============================
-        // MULTI-AGENT FIELD INIT
+        // ПОЛЕ (INIT)
         // ===============================
         const result = JSON.parse(pyodide.runPython(`
 import json
@@ -95,8 +99,8 @@ json.dumps([f,s,u])
 `))
 
         fieldState = result[0]
-        fieldMode = result[1]
-        users = result[2]
+        fieldMode  = result[1]
+        users      = result[2]
 
         status.innerText = "Done"
 
@@ -106,16 +110,9 @@ json.dumps([f,s,u])
     }
 
     // ===============================
-    // RENDER
+    // РЕНДЕР (ПЕРВЫЙ)
     // ===============================
-    drawWeatherMap(
-        "weatherMap",
-        weather,
-        userKin,
-        todayKin,
-        pressure,
-        fieldState
-    )
+    renderAll(weather, pressure, userKin, todayKin)
 
     // ===============================
     // TIME EVOLUTION
@@ -124,12 +121,12 @@ json.dumps([f,s,u])
     let baseMonth = month
     let baseDay = day
 
-    function step(dayOffset){
+    function step(offset){
 
         try{
 
             const d = new Date(baseYear, baseMonth - 1, baseDay)
-            d.setDate(d.getDate() + dayOffset)
+            d.setDate(d.getDate() + offset)
 
             const y = d.getFullYear()
             const m = d.getMonth() + 1
@@ -137,11 +134,11 @@ json.dumps([f,s,u])
 
             const weather = JSON.parse(pyodide.runPython(`
 import json
-json.dumps(mtos_260_weather("${name}",${y},${m},${dd}))
+json.dumps(mtos_260_weather("${name}", ${y}, ${m}, ${dd}))
 `))
 
             const kin = Number(pyodide.runPython(`
-mtos_current_kin("${name}",${y},${m},${dd})
+mtos_current_kin("${name}", ${y}, ${m}, ${dd})
 `))
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
@@ -161,17 +158,10 @@ json.dumps([f,s,u])
 `))
 
             fieldState = result[0]
-            fieldMode = result[1]
-            users = result[2]
+            fieldMode  = result[1]
+            users      = result[2]
 
-            drawWeatherMap(
-                "weatherMap",
-                weather,
-                userKin,
-                kin,
-                pressure,
-                fieldState
-            )
+            renderAll(weather, pressure, userKin, kin)
 
         }catch(e){
             console.error("STEP ERROR:", e)
@@ -182,4 +172,23 @@ json.dumps([f,s,u])
     // CONTROLS
     // ===============================
     initTimeControls(step)
+}
+
+// ===============================
+// RENDER ALL
+// ===============================
+function renderAll(weather, pressure, userKin, currentKin){
+
+    // WEATHER MAP
+    drawWeatherMap(
+        "weatherMap",
+        weather,
+        userKin,
+        currentKin,
+        pressure,
+        fieldState
+    )
+
+    // NETWORK
+    drawNetwork("networkMap", users)
 }
