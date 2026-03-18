@@ -22,35 +22,44 @@ export function drawWeatherMap(
     grid.style.gridTemplateRows = "repeat(13, 18px)"
     grid.style.gap = "2px"
 
+    const users = window.currentUsers || []
+
     let fMin = Math.min(...fieldData)
     let fMax = Math.max(...fieldData)
 
-    // ===============================
-    // СОБИРАЕМ ВСЕ ВОЛНЫ АГЕНТОВ
-    // ===============================
-    const waves = []
-
-    if(selectedAgent){
-        waves.push(selectedAgent)
-    }else{
-        // если ничего не выбрано — берём всех
-        waves.push(...window.currentUsers || [])
-    }
+    let pMin = Math.min(...pressureData)
+    let pMax = Math.max(...pressureData)
 
     for(let tone=1;tone<=13;tone++){
         for(let seal=1;seal<=20;seal++){
 
+            // ===============================
+            // KIN
+            // ===============================
             let kin = (seal-1)*13 + tone
             while(kin>260) kin-=260
 
-            let value = 0
+            let phi = fieldData[kin-1]
 
             // ===============================
-            // ИНТЕРФЕРЕНЦИЯ
+            // LATTICE (СТРУКТУРА)
             // ===============================
-            for(let a=0;a<waves.length;a++){
+            const toneNorm = (tone-1)/12
+            const sealNorm = (seal-1)/19
 
-                const agent = waves[a]
+            const lattice = Math.sin((toneNorm + sealNorm) * Math.PI)
+            const latticeNorm = (lattice + 1) / 2
+
+            // ===============================
+            // ИНТЕРФЕРЕНЦИЯ (ВСЕ АГЕНТЫ)
+            // ===============================
+            let waveSum = 0
+
+            const activeAgents = selectedAgent ? [selectedAgent] : users
+
+            for(let a=0;a<activeAgents.length;a++){
+
+                const agent = activeAgents[a]
                 if(!agent.kin) continue
 
                 const aKin = agent.kin - 1
@@ -58,23 +67,62 @@ export function drawWeatherMap(
                 let dist = Math.abs((kin-1) - aKin)
                 dist = Math.min(dist, 260 - dist)
 
+                const phase = agent.phase || 0
                 const amplitude = agent.weight || 1
 
-                // "фаза" через sin
-                const phase = agent.phase || 0
+                const wave =
+                    Math.sin(dist / 5 + phase) *
+                    Math.exp(-dist / 12)
 
-                const wave = Math.sin(dist / 5 + phase) * Math.exp(-dist / 12)
-
-                value += amplitude * wave
+                waveSum += amplitude * wave
             }
 
-            // нормализация
-            const n = (value + 1) / 2
+            const waveNorm = (waveSum + 1) / 2
 
-            // цвет (интерференция)
-            let r = Math.floor(255 * Math.max(0, n))
-            let g = Math.floor(100 * (1 - Math.abs(n-0.5)*2))
-            let b = Math.floor(255 * Math.max(0, 1-n))
+            // ===============================
+            // ЗОНА ВЛИЯНИЯ (если выбран агент)
+            // ===============================
+            let influence = 1
+
+            if(selectedAgent){
+
+                const aKin = selectedAgent.kin - 1
+
+                let dist = Math.abs((kin-1) - aKin)
+                dist = Math.min(dist, 260 - dist)
+
+                influence = Math.exp(-dist / 10)
+
+                phi *= influence
+            }
+
+            // ===============================
+            // FIELD
+            // ===============================
+            const fieldNorm = (phi - fMin)/(fMax - fMin || 1)
+
+            // ===============================
+            // СМЕШИВАНИЕ СЛОЁВ
+            // ===============================
+            const combined =
+                0.5 * fieldNorm +
+                0.25 * latticeNorm +
+                0.25 * waveNorm
+
+            // ===============================
+            // ЦВЕТ (НАУЧНЫЙ ГРАДИЕНТ)
+            // ===============================
+            let r = Math.floor(255 * combined)
+            let g = Math.floor(120 * (1 - Math.abs(combined-0.5)*2))
+            let b = Math.floor(255 * (1 - combined))
+
+            // ===============================
+            // ДАВЛЕНИЕ (оверлей)
+            // ===============================
+            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
+
+            r += p * 40
+            b += p * 60
 
             const cell = document.createElement("div")
 
@@ -98,7 +146,15 @@ export function drawWeatherMap(
                 cell.style.outline = "3px solid cyan"
             }
 
-            cell.title = `Kin ${kin} | wave ${value.toFixed(3)}`
+            // ===============================
+            // TOOLTIP
+            // ===============================
+            cell.title = `
+Kin: ${kin}
+Φ: ${phi.toFixed(3)}
+Wave: ${waveSum.toFixed(3)}
+Lattice: ${latticeNorm.toFixed(3)}
+`
 
             grid.appendChild(cell)
         }
