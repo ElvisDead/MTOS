@@ -66,6 +66,11 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
     // DRAW CELLS
     // =========================
 
+    const values = data.map(d => d.attention);
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
     for (let kin = 0; kin < 260; kin++) {
 
         const item = data[kin];
