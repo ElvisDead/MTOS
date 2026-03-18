@@ -1,5 +1,7 @@
 // charts.js
 
+import { COLORS } from './colors.js';
+
 export function drawChart(canvasId, series, options = {}) {
 
     const canvas = document.getElementById(canvasId);
@@ -20,20 +22,20 @@ export function drawChart(canvasId, series, options = {}) {
     const max = 1;
     const min = 0;
 
-    const color = options.color || "#00ffcc";
+    const color = options.color || COLORS.flow;
 
     // =========================
     // BACKGROUND
     // =========================
 
-    ctx.fillStyle = "#111";
+    ctx.fillStyle = COLORS.background;
     ctx.fillRect(0, 0, width, height);
 
     // =========================
     // GRID
     // =========================
 
-    ctx.strokeStyle = "#222";
+    ctx.strokeStyle = COLORS.grid;
     ctx.lineWidth = 1;
 
     const rows = 5;
@@ -52,7 +54,7 @@ export function drawChart(canvasId, series, options = {}) {
     // AXES
     // =========================
 
-    ctx.strokeStyle = "#444";
+    ctx.strokeStyle = COLORS.axis;
 
     ctx.beginPath();
     ctx.moveTo(padding, padding);
@@ -115,10 +117,10 @@ export function drawChart(canvasId, series, options = {}) {
     // =========================
 
     const states = [
-        { value: 0.72, label: "FOCUS", color: "#00ff88" },
-        { value: 0.60, label: "FLOW", color: "#00ccff" },
-        { value: 0.48, label: "NEUTRAL", color: "#888" },
-        { value: 0.36, label: "FATIGUE", color: "#ffaa00" }
+        { value: 0.72, label: "FOCUS", color: COLORS.focus },
+        { value: 0.60, label: "FLOW", color: COLORS.flow },
+        { value: 0.48, label: "NEUTRAL", color: COLORS.neutral },
+        { value: 0.36, label: "FATIGUE", color: COLORS.fatigue }
     ];
 
     states.forEach(s => {
@@ -146,7 +148,7 @@ export function drawChart(canvasId, series, options = {}) {
     // =========================
 
     if (options.title) {
-        ctx.fillStyle = "#ccc";
+        ctx.fillStyle = COLORS.text;
         ctx.font = "12px Arial";
         ctx.fillText(options.title, padding, 15);
     }
