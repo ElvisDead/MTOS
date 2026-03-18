@@ -1,11 +1,13 @@
-// matrix.js
-
 // ======================================
-// BASIC CONVERSIONS
+// MATRIX CORE (13 x 20)
 // ======================================
 
 // kin (1–260) → tone (0–12), seal (0–19)
 export function kinToTS(kin) {
+
+    if (kin < 1 || kin > 260) {
+        console.warn("kinToTS: invalid kin", kin);
+    }
 
     const k = kin - 1;
 
@@ -18,7 +20,37 @@ export function kinToTS(kin) {
 // tone + seal → kin (1–260)
 export function tsToKin(tone, seal) {
 
+    if (tone < 0 || tone > 12) {
+        console.warn("tsToKin: invalid tone", tone);
+    }
+
+    if (seal < 0 || seal > 19) {
+        console.warn("tsToKin: invalid seal", seal);
+    }
+
     return ((seal * 13 + tone) % 260) + 1;
+}
+
+// ======================================
+// SAFE CONVERSIONS
+// ======================================
+
+export function safeKinToTS(kin) {
+    try {
+        return kinToTS(kin);
+    } catch (e) {
+        console.error("safeKinToTS error:", kin);
+        return { tone: 0, seal: 0 };
+    }
+}
+
+export function safeTsToKin(tone, seal) {
+    try {
+        return tsToKin(tone, seal);
+    } catch (e) {
+        console.error("safeTsToKin error:", tone, seal);
+        return 1;
+    }
 }
 
 // ======================================
@@ -52,12 +84,61 @@ export function buildKinMatrix() {
 
 // создаёт линейный массив 260 kin
 export function buildLinearKin() {
-
     return Array.from({ length: 260 }, (_, i) => i + 1);
 }
 
 // ======================================
-// VALIDATION (очень важно)
+// INDEX HELPERS
+// ======================================
+
+export function indexToKin(i) {
+    return i + 1;
+}
+
+export function kinToIndex(kin) {
+    return kin - 1;
+}
+
+// ======================================
+// NEIGHBOR SYSTEM (ВОССТАНОВЛЕНО)
+// ======================================
+
+export function getNeighbors(kin) {
+
+    const { tone, seal } = kinToTS(kin);
+
+    return {
+        left: tsToKin((tone + 12) % 13, seal),
+        right: tsToKin((tone + 1) % 13, seal),
+        up: tsToKin(tone, (seal + 19) % 20),
+        down: tsToKin(tone, (seal + 1) % 20)
+    };
+}
+
+// ======================================
+// DISTANCE (ВАЖНО ДЛЯ CLARITY)
+// ======================================
+
+export function kinDistance(a, b) {
+
+    const diff = Math.abs(a - b);
+    return Math.min(diff, 260 - diff);
+}
+
+// ======================================
+// WAVE SYSTEM
+// ======================================
+
+export function getWave(kin) {
+    return Math.floor((kin - 1) / 13);
+}
+
+export function getHarmonic(kin) {
+    return Math.floor((kin - 1) / 4);
+}
+
+// ======================================
+// FULL VALIDATION
 // ======================================
 
 export function validateMatrix() {
@@ -67,13 +148,24 @@ export function validateMatrix() {
     for (let kin = 1; kin <= 260; kin++) {
 
         const { tone, seal } = kinToTS(kin);
-
         const reconstructed = tsToKin(tone, seal);
 
         if (reconstructed !== kin) {
             console.warn("Mismatch:", kin, reconstructed);
             errors++;
         }
+    }
+
+    // проверка уникальности
+    const set = new Set();
+
+    for (let kin = 1; kin <= 260; kin++) {
+        set.add(kin);
+    }
+
+    if (set.size !== 260) {
+        console.error("Duplicate kin detected");
+        errors++;
     }
 
     if (errors === 0) {
@@ -84,15 +176,52 @@ export function validateMatrix() {
 }
 
 // ======================================
-// HELPERS
+// CACHE (ВОССТАНОВЛЕНО)
 // ======================================
 
-// индекс 0–259 → kin
-export function indexToKin(i) {
-    return i + 1;
+let _matrixCache = null;
+let _linearCache = null;
+
+export function getMatrixCached() {
+    if (!_matrixCache) {
+        _matrixCache = buildKinMatrix();
+    }
+    return _matrixCache;
 }
 
-// kin → индекс
-export function kinToIndex(kin) {
-    return kin - 1;
+export function getLinearCached() {
+    if (!_linearCache) {
+        _linearCache = buildLinearKin();
+    }
+    return _linearCache;
+}
+
+// ======================================
+// DEBUG TOOLS (ВОССТАНОВЛЕНО)
+// ======================================
+
+export function debugKin(kin) {
+
+    const ts = kinToTS(kin);
+
+    return {
+        kin,
+        tone: ts.tone,
+        seal: ts.seal,
+        wave: getWave(kin),
+        harmonic: getHarmonic(kin),
+        neighbors: getNeighbors(kin)
+    };
+}
+
+// ======================================
+// GLOBAL DEBUG
+// ======================================
+
+if (typeof window !== "undefined") {
+
+    window.debugKin = debugKin;
+    window.buildKinMatrix = buildKinMatrix;
+    window.validateMatrix = validateMatrix;
+
 }
