@@ -5,6 +5,7 @@ let pyodide = null
 
 let fieldState = null
 let fieldMode = null
+let users = []
 
 // ===============================
 // INIT
@@ -52,7 +53,7 @@ export async function runMTOS(){
         status.innerText = "Running..."
 
         // ===============================
-        // USER + TODAY KIN
+        // USER / TODAY KIN
         // ===============================
         userKin = Number(pyodide.runPython(`
 mtos_current_kin("${name}",${year},${month},${day})
@@ -65,7 +66,7 @@ mtos_current_kin("today", ${today.getFullYear()}, ${today.getMonth()+1}, ${today
 `))
 
         // ===============================
-        // WEATHER + PRESSURE (для визуала)
+        // WEATHER / PRESSURE
         // ===============================
         weather = JSON.parse(pyodide.runPython(`
 import json
@@ -75,23 +76,27 @@ json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
         // ===============================
-        // MULTI-AGENT FIELD INIT
+        // INIT AGENTS (С ВЕСАМИ)
         // ===============================
-        const users = [
-            {name: name},
-            {name: "Alice"},
-            {name: "Bob"}
+        users = [
+            {name: name, weight: 1.0},
+            {name: "Alice", weight: 0.8},
+            {name: "Bob", weight: 0.6}
         ]
 
+        // ===============================
+        // MULTI-AGENT FIELD INIT
+        // ===============================
         const result = JSON.parse(pyodide.runPython(`
 import json
 users = ${JSON.stringify(users)}
-f,s = mtos_multi_agents_field(users, ${year}, ${month}, ${day})
-json.dumps([f,s])
+f,s,u = mtos_multi_agents_field(users, ${year}, ${month}, ${day})
+json.dumps([f,s,u])
 `))
 
         fieldState = result[0]
         fieldMode = result[1]
+        users = result[2]
 
         status.innerText = "Done"
 
@@ -123,11 +128,11 @@ json.dumps([f,s])
 
         try{
 
-            const d = new Date(baseYear, baseMonth-1, baseDay)
+            const d = new Date(baseYear, baseMonth - 1, baseDay)
             d.setDate(d.getDate() + dayOffset)
 
             const y = d.getFullYear()
-            const m = d.getMonth()+1
+            const m = d.getMonth() + 1
             const dd = d.getDate()
 
             const weather = JSON.parse(pyodide.runPython(`
@@ -141,16 +146,10 @@ mtos_current_kin("${name}",${y},${m},${dd})
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-            const users = [
-                {name: name},
-                {name: "Alice"},
-                {name: "Bob"}
-            ]
-
             const result = JSON.parse(pyodide.runPython(`
 import json
 users = ${JSON.stringify(users)}
-f,s = mtos_multi_agents_field(
+f,s,u = mtos_multi_agents_field(
     users,
     ${y},
     ${m},
@@ -158,11 +157,12 @@ f,s = mtos_multi_agents_field(
     ${JSON.stringify(fieldState)},
     ${JSON.stringify(fieldMode)}
 )
-json.dumps([f,s])
+json.dumps([f,s,u])
 `))
 
             fieldState = result[0]
             fieldMode = result[1]
+            users = result[2]
 
             drawWeatherMap(
                 "weatherMap",
@@ -179,7 +179,7 @@ json.dumps([f,s])
     }
 
     // ===============================
-    // CONTROLS (PLAY / STEP)
+    // CONTROLS
     // ===============================
     initTimeControls(step)
 }
