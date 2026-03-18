@@ -4,8 +4,6 @@ console.log("MATRIX DRAW CALLED")
 
 export function drawMatrix(id,data){
 
-if(id !== "globalKinMap") return
-
 const map=document.getElementById(id)
 map.innerHTML=""
 
