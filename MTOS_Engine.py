@@ -1578,11 +1578,12 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     base_field = [0.0 for _ in range(260)]
     new_weights = []
 
-    # ===============================
-    # 1. ОСНОВНОЙ ВКЛАД
-    # ===============================
     kin_list = []
+    state_list = []
 
+    # ===============================
+    # 1. БАЗОВЫЙ ВКЛАД
+    # ===============================
     for user in users:
 
         name = user["name"]
@@ -1600,8 +1601,21 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
 
             base_field[i] += weight * weather[i]["attention"] * influence
 
+    # нормализация
+    max_val = max(base_field) or 1
+    base_field = [v / max_val for v in base_field]
+
     # ===============================
-    # 2. ВЗАИМОДЕЙСТВИЕ АГЕНТОВ
+    # 2. ДИНАМИКА ПОЛЯ (получаем state)
+    # ===============================
+    field, state = mtos_field_step_from_array(base_field, prev_field, prev_state)
+
+    # собираем состояния агентов
+    for kin in kin_list:
+        state_list.append(state[kin])
+
+    # ===============================
+    # 3. ВЗАИМОДЕЙСТВИЯ (С ЗНАКОМ)
     # ===============================
     for i in range(len(users)):
         for j in range(i+1, len(users)):
@@ -1612,16 +1626,25 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             w_i = users[i].get("weight", 1.0)
             w_j = users[j].get("weight", 1.0)
 
+            state_i = state_list[i]
+            state_j = state_list[j]
+
             dist = min(abs(kin_i - kin_j), 260 - abs(kin_i - kin_j))
+            strength = math.exp(-dist / 10.0)
 
-            interaction_strength = math.exp(-dist / 10.0)
+            # ===============================
+            # ЗНАК (КЛЮЧ)
+            # ===============================
+            if state_i == 1 and state_j == 1:
+                sign = +1.0      # синергия
+            elif state_i == 0 and state_j == 0:
+                sign = -0.5      # хаос
+            else:
+                sign = -1.0      # конфликт
 
-            # знак (пока простой)
-            sign = 1.0
+            interaction = sign * w_i * w_j * strength
 
-            interaction = sign * w_i * w_j * interaction_strength
-
-            # добавляем в поле вокруг обоих
+            # распространяем влияние
             for k in range(260):
 
                 d_i = min(abs(k - kin_i), 260 - abs(k - kin_i))
@@ -1639,12 +1662,12 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     base_field = [v / max_val for v in base_field]
 
     # ===============================
-    # ДИНАМИКА ПОЛЯ
+    # 4. ВТОРАЯ ДИНАМИКА (после взаимодействий)
     # ===============================
-    field, state = mtos_field_step_from_array(base_field, prev_field, prev_state)
+    field, state = mtos_field_step_from_array(base_field, field, state)
 
     # ===============================
-    # 3. АДАПТИВНЫЕ ВЕСА
+    # 5. АДАПТИВНЫЕ ВЕСА
     # ===============================
     for idx, user in enumerate(users):
 
@@ -1662,7 +1685,6 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
 
         new_weights.append(new_w)
 
-    # нормализация весов
     total = sum(new_weights) or 1
     new_weights = [w / total * len(users) for w in new_weights]
 
