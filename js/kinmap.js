@@ -1,5 +1,3 @@
-
-
 import { getColor } from "./colors.js"
 
 const seals = [
@@ -39,6 +37,7 @@ map.style.display="grid"
 map.style.gridTemplateColumns="60px repeat(13,24px)"
 map.style.gridAutoRows="24px"
 
+const weather = window.weather || [];
 let min = Math.min(...weather.map(w => (w && w.attention != null) ? w.attention : 0))
 let max = Math.max(...weather.map(w => (w && w.attention != null) ? w.attention : 1))
 
