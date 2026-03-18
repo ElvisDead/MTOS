@@ -43,6 +43,8 @@ export async function runMTOS(){
     let pressure = []
     let userKin = 1
     let todayKin = 1
+    let nodeFunctions = []
+    let summary = null
 
     try{
 
@@ -77,20 +79,59 @@ json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
         // ===============================
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
+        // ===============================
+        // NODE FUNCTIONS (ИЗ ДАННЫХ)
+        // ===============================
+        nodeFunctions = JSON.parse(pyodide.runPython(`
+import json
+json.dumps(mtos_node_functions("${name}",${year},${month},${day}))
+`))
+
+        // ===============================
+        // SUMMARY
+        // ===============================
+        summary = JSON.parse(pyodide.runPython(`
+import json
+json.dumps(mtos_summary("${name}",${year},${month},${day}))
+`))
+
         status.innerText = "Done"
 
     }catch(e){
         console.error(e)
-        status.innerText = "ERROR (but UI continues)"
+        status.innerText = "ERROR (но интерфейс жив)"
     }
 
     // ===============================
-    // ВСЕГДА РЕНДЕРИМ
+    // WEATHER MAP
     // ===============================
     drawWeatherMap("weatherMap", weather, userKin, todayKin, pressure)
 
     // ===============================
-    // TIME MOTION (НЕ В TRY!)
+    // SUMMARY BLOCK
+    // ===============================
+    const summaryDiv = document.getElementById("mtosSummary")
+
+    if(summaryDiv && summary){
+
+        summaryDiv.innerHTML = `
+        <b>Today Kin:</b> ${todayKin}<br>
+        <b>User Kin:</b> ${userKin}<br>
+        <b>State:</b> ${summary.state}<br>
+        <b>Attention:</b> ${summary.attention.toFixed(3)}<br>
+        <b>Pressure:</b> ${summary.pressure.toFixed(3)}<br>
+        <b>Noise:</b> ${summary.noise.toFixed(3)}<br>
+        <b>Lyapunov:</b> ${summary.lyapunov.toFixed(3)}
+        `
+    }
+
+    // ===============================
+    // DEBUG NODE FUNCTIONS
+    // ===============================
+    console.log("NODE FUNCTIONS:", nodeFunctions)
+
+    // ===============================
+    // TIME MOTION
     // ===============================
     let baseYear = year
     let baseMonth = month
@@ -124,26 +165,6 @@ mtos_current_kin("${name}",${y},${m},${dd})
             console.error("STEP ERROR:", e)
         }
     }
-
-    // ===============================
-    // SUMMARY DATA
-    // ===============================
-    const summary = JSON.parse(pyodide.runPython(`
-    import json
-    json.dumps(mtos_summary("${name}",${year},${month},${day}))
-    `))
-
-    const summaryDiv = document.getElementById("mtosSummary")
-
-    summaryDiv.innerHTML = `
-    <b>Today Kin:</b> ${todayKin}<br>
-    <b>User Kin:</b> ${userKin}<br>
-    <b>State:</b> ${summary.state}<br>
-    <b>Attention:</b> ${summary.attention.toFixed(3)}<br>
-    <b>Pressure:</b> ${summary.pressure.toFixed(3)}<br>
-    <b>Noise:</b> ${summary.noise.toFixed(3)}<br>
-    <b>Lyapunov:</b> ${summary.lyapunov.toFixed(3)}
-    `
 
     // ===============================
     // ВСЕГДА СОЗДАЁМ КНОПКИ
