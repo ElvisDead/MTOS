@@ -85,11 +85,12 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
 
             // === подсветки
             if(kin === highlightKin){
-                cell.style.outline = "3px solid white"
+                cell.style.outline = "3px solid yellow"
             }
 
             if(userKin && kin === userKin){
-                cell.style.boxShadow = "0 0 6px white"
+                cell.style.outline = "3px solid white"
+                cell.style.boxShadow = "0 0 8px white"
             }
 
             const wave = Math.floor((kin-1)/13)+1
