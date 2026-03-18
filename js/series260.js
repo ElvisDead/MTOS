@@ -5,22 +5,52 @@ export function drawSeries260(id, data){
 
     c.innerHTML = ""
 
-    c.style.display = "grid"
-    c.style.gridTemplateColumns = "repeat(260, 2px)"
-    c.style.gap = "1px"
-    c.style.alignItems = "end"
-    c.style.height = "120px"
+    // центрирование
+    c.style.display = "flex"
+    c.style.flexDirection = "column"
+    c.style.alignItems = "center"
+    c.style.gap = "2px"
+    c.style.width = "100%"
+
+    // контейнер (одна длинная линия)
+    const row = document.createElement("div")
+
+    row.style.width = "600px"
+    row.style.height = "20px"
+    row.style.display = "flex"
+    row.style.background = "#111"
+    row.style.border = "1px solid #444"
+    row.style.overflow = "hidden"
+
+    // нормализация
+    const min = Math.min(...data)
+    const max = Math.max(...data)
+    const range = max - min || 1
 
     for(let i=0;i<data.length;i++){
 
-        const v = data[i]
+        const v = (data[i] - min) / range
 
-        const bar = document.createElement("div")
+        const cell = document.createElement("div")
 
-        bar.style.width = "2px"
-        bar.style.height = (v*100) + "%"
-        bar.style.background = "white"
+        cell.style.flex = "1"
+        cell.style.height = "100%"
 
-        c.appendChild(bar)
+        const r = Math.floor(255 * v)
+        const g = Math.floor(200 * (1 - v))
+        const b = 50
+
+        cell.style.background = `rgb(${r},${g},${b})`
+
+        cell.title = `Day ${i+1}: ${data[i].toFixed(3)}`
+
+        // клик как у остальных
+        cell.onclick = () => {
+            alert(`Day ${i+1}\nValue: ${data[i].toFixed(3)}`)
+        }
+
+        row.appendChild(cell)
     }
+
+    c.appendChild(row)
 }
