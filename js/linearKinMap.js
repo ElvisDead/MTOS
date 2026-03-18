@@ -1,84 +1,119 @@
-export function drawLinearKinMap(id,data){
+// linearKinMap.js
 
-let map=document.getElementById(id)
+import { getColor, COLORS } from './colors.js';
 
-map.innerHTML=""
+export async function drawLinearKinMap(pyodide, canvasId, params) {
 
-map.style.display="grid"
-map.style.gridTemplateColumns="repeat(20,24px)"
-map.style.gridAutoRows="24px"
-  
-for(let kin=1; kin<=260; kin++){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
 
-let c=document.createElement("div")
-c.className="cell"
+    const ctx = canvas.getContext("2d");
 
-// 👉 USERS ИЗ MTOS
-let users = window.kinUsers && window.kinUsers[kin] ? window.kinUsers[kin] : []
-let count = users.length
+    const width = canvas.width;
+    const height = canvas.height;
 
-// 👉 СПИСОК ИМЁН
-let userList = count ? users.map(u=>u.name || u).join("\n") : "-"
+    ctx.clearRect(0, 0, width, height);
 
-// 👉 9 УРОВНЕЙ ЦВЕТА
-if(count > 0){
+    const { name, year, month, day } = params;
 
-const colors = [
-"#222222",
-"#003366",
-"#0055aa",
-"#0088ff",
-"#00ccff",
-"#00ffaa",
-"#aaff00",
-"#ffff00",
-"#ff8800",
-"#ff0000"
-]
+    // =========================
+    // LOAD DATA
+    // =========================
 
-let index = Math.min(count, 9)
-c.style.background = colors[index]
+    let raw;
 
-}else{
-c.style.background="#111"
-}
+    try {
 
-// 👉 HOVER
-c.title = "Kin "+kin+"\nUsers ("+count+"):\n"+userList
+        raw = await pyodide.runPythonAsync(`
+mtos_260_weather("${name}", ${year}, ${month}, ${day})
+        `);
 
-// 👉 КЛИК POPUP
-c.onclick = () => {
+    } catch (err) {
+        console.error("LinearKinMap error:", err);
+        return;
+    }
 
-let existing = document.getElementById("kin-popup")
-if(existing) existing.remove()
+    const data = JSON.parse(raw);
 
-let popup = document.createElement("div")
+    // =========================
+    // LAYOUT
+    // =========================
 
-popup.id="kin-popup"
-popup.style.position="fixed"
-popup.style.left="50%"
-popup.style.top="50%"
-popup.style.transform="translate(-50%,-50%)"
-popup.style.background="#111"
-popup.style.color="#fff"
-popup.style.padding="12px"
-popup.style.border="1px solid #444"
-popup.style.borderRadius="8px"
-popup.style.zIndex="9999"
-popup.style.whiteSpace="pre-line"
+    const total = 260;
 
-popup.innerHTML = `
-<b>Kin ${kin}</b>
+    const cols = 52;   // 52 * 5 = 260 (удобно)
+    const rows = 5;
 
-Users (${count}):
-${userList}
-`
+    const cellW = width / cols;
+    const cellH = height / rows;
 
-document.body.appendChild(popup)
-}
+    // =========================
+    // DRAW
+    // =========================
 
-map.appendChild(c)
-  
-}
-  
+    for (let i = 0; i < total; i++) {
+
+        const item = data[i];
+        if (!item) continue;
+
+        const value = item.attention;
+
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+
+        const x = col * cellW;
+        const y = row * cellH;
+
+        ctx.fillStyle = getColor(value);
+
+        ctx.fillRect(x, y, cellW, cellH);
+    }
+
+    // =========================
+    // GRID
+    // =========================
+
+    ctx.strokeStyle = COLORS.grid;
+    ctx.lineWidth = 0.5;
+
+    for (let c = 0; c <= cols; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c * cellW, 0);
+        ctx.lineTo(c * cellW, height);
+        ctx.stroke();
+    }
+
+    for (let r = 0; r <= rows; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * cellH);
+        ctx.lineTo(width, r * cellH);
+        ctx.stroke();
+    }
+
+    // =========================
+    // HIGHLIGHT TODAY (kin 1)
+    // =========================
+
+    const todayKin = 0;
+
+    const col = todayKin % cols;
+    const row = Math.floor(todayKin / cols);
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(
+        col * cellW,
+        row * cellH,
+        cellW,
+        cellH
+    );
+
+    // =========================
+    // TITLE
+    // =========================
+
+    ctx.fillStyle = COLORS.text;
+    ctx.font = "12px Arial";
+    ctx.fillText("Linear 260 Kin Timeline", 10, 15);
 }
