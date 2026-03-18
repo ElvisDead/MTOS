@@ -21,7 +21,7 @@ import { startMTOS } from "./pyodideLoader.js"
 
 
 window.addEventListener("DOMContentLoaded", () => {
-  //startMTOS()
+  startMTOS()
 })
 
 // EXPOSE TO GLOBAL SCOPE
