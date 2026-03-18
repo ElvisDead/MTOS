@@ -1,4 +1,5 @@
 import { drawWeatherMap } from "./weatherMap.js"
+import { initTimeControls } from "./timeController.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
 import { drawPressureMap } from "./pressureMap.js"
 import { drawPressureGradientMap } from "./pressureGradientMap.js"
@@ -124,5 +125,34 @@ mtos_phase_space("${name}",${year},${month},${day})
     }catch(e){
         console.error(e)
         status.innerText = "ERROR"
+
+let baseYear = year
+let baseMonth = month
+let baseDay = day
+
+function step(dayOffset){
+
+    const d = new Date(baseYear, baseMonth-1, baseDay)
+    d.setDate(d.getDate() + dayOffset)
+
+    const y = d.getFullYear()
+    const m = d.getMonth()+1
+    const dd = d.getDate()
+
+    const weather = JSON.parse(pyodide.runPython(`
+import json
+json.dumps(mtos_260_weather("${name}",${y},${m},${dd}))
+`))
+
+    const kin = pyodide.runPython(`
+mtos_current_kin("${name}",${y},${m},${dd})
+`)
+
+    const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
+
+    drawWeatherMap("weatherMap", weather, userKin, kin, pressure)
+}
+
+initTimeControls(step)
     }
 }
