@@ -100,8 +100,8 @@ export async function runMTOS(){
         const result = JSON.parse(pyodide.runPython(`
 import json
 
-weather = mtos_260_weather("${name}",${year},${month},${day})
-kin = mtos_current_kin("${name}",${year},${month},${day})
+weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
+kin = mtos_current_kin(${JSON.stringify(name)},${year},${month},${day})
 pressure = mtos_pressure_map()
 
 attention = sum([w["attention"] for w in weather]) / 260
@@ -206,8 +206,8 @@ json.dumps([f,s,u])
             const result = JSON.parse(pyodide.runPython(`
 import json
 
-weather = mtos_260_weather("${name}",${y},${m},${dd})
-kin = mtos_current_kin("${name}",${y},${m},${dd})
+weather = mtos_260_weather(${JSON.stringify(name)},${y},${m},${dd})
+kin = mtos_current_kin(${JSON.stringify(name)},${y},${m},${dd})
 pressure = mtos_pressure_map()
 
 attention = sum([w["attention"] for w in weather]) / 260
