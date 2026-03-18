@@ -21,6 +21,9 @@ export function drawClimateAtlas(id, data){
         cell.style.width = "14px"
         cell.style.height = "14px"
         cell.style.background = `rgb(${r},0,${b})`
+        cell.style.cursor = "pointer"
+
+        cell.title = `Resonance: ${v.toFixed(3)}`
 
         c.appendChild(cell)
     }
