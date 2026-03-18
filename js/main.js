@@ -10,7 +10,7 @@ export async function initMTOS(){
 
     pyodide = await loadPyodide()
 
-    const code = await (await fetch("../MTOS_Engine.py")).text()
+    const code = await (await fetch("./MTOS_Engine.py")).text()
 
     pyodide.runPython(code)
 
