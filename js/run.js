@@ -1,6 +1,3 @@
-let old = document.getElementById("kinmap")
-if(old) old.remove()
-
 import { drawKinMap } from "./kinmap.js"
 
 export async function run(){
