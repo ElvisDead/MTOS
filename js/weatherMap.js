@@ -1,39 +1,39 @@
-export function drawGlobalKinMap(id, kinCounts, usersByKin){
+export function drawWeatherMap(id, weather){
 
     const map = document.getElementById(id)
-
     if(!map) return
 
     map.innerHTML = ""
 
     map.style.display = "grid"
-    map.style.gridTemplateColumns = "repeat(20, 12px)"
+    map.style.gridTemplateColumns = "repeat(20, 14px)"
     map.style.gap = "2px"
     map.style.justifyContent = "center"
     map.style.marginTop = "20px"
 
-    for(let kin = 1; kin <= 260; kin++){
+    for(let i = 0; i < 260; i++){
 
-        const value = kinCounts[kin] || 0
+        const val = weather[i] ?? 0
 
         const cell = document.createElement("div")
 
-        cell.style.width = "12px"
-        cell.style.height = "12px"
-        cell.style.background = getColor(value)
+        cell.style.width = "14px"
+        cell.style.height = "14px"
+        cell.style.background = getColor(val)
 
-        cell.title = "Kin " + kin + " | Users: " + value
+        cell.title = "Kin " + (i+1) + " | " + val.toFixed(3)
 
         map.appendChild(cell)
     }
 }
 
-function getColor(value){
+function getColor(v){
 
-    if(value === 0) return "#111"
-    if(value < 2) return "#003366"
-    if(value < 4) return "#0066cc"
-    if(value < 6) return "#00cc66"
-    if(value < 8) return "#ffcc00"
-    return "#ff3300"
+    v = Math.max(0, Math.min(1, v))
+
+    const r = Math.floor(255 * v)
+    const g = Math.floor(200 * v)
+    const b = Math.floor(50 + 100 * (1 - v))
+
+    return `rgb(${r},${g},${b})`
 }
