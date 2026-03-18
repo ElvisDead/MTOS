@@ -1375,3 +1375,41 @@ def mtos_current_kin(name, year, month, day):
     kin = ((jdn - GMT) % 260) + 1
 
     return kin
+
+# ===============================
+# SUMMARY BLOCK
+# ===============================
+def mtos_summary(name, year, month, day):
+
+    weather = mtos_260_weather(name, year, month, day)
+    pressure = mtos_pressure_map()
+
+    # текущий kin
+    kin = mtos_current_kin(name, year, month, day) - 1
+
+    w = weather[kin]
+
+    # простые метрики (как было раньше)
+    attention = w["attention"]
+    press = pressure[kin]
+
+    noise = abs(w["conflict"] - press)
+    lyapunov = (attention * press) - noise
+
+    # состояние
+    if attention > 0.6 and press < 0.4:
+        state = "FLOW"
+    elif press > 0.7:
+        state = "PRESSURE"
+    elif noise > 0.5:
+        state = "CHAOS"
+    else:
+        state = "BALANCE"
+
+    return {
+        "state": state,
+        "attention": attention,
+        "pressure": press,
+        "noise": noise,
+        "lyapunov": lyapunov
+    }
