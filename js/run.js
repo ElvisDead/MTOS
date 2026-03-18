@@ -38,6 +38,54 @@ function validateWeather(data) {
 }
 
 // ======================================
+// CANVAS HELPER (ФИКС)
+// ======================================
+
+function ensureCanvas(containerId) {
+
+    let container = document.getElementById(containerId);
+    if (!container) {
+        console.error("Container not found:", containerId);
+        return null;
+    }
+
+    // очищаем контейнер
+    container.innerHTML = "";
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 600;
+    canvas.height = 300;
+
+    container.appendChild(canvas);
+
+    return canvas;
+}
+
+// ======================================
+// USER TRACKING (ВОССТАНОВЛЕНО)
+// ======================================
+
+function trackUser(name, kin) {
+
+    if (!name || kin == null) return;
+
+    window.kinUsers = window.kinUsers || {};
+
+    if (!window.kinUsers[kin]) {
+        window.kinUsers[kin] = [];
+    }
+
+    const exists = window.kinUsers[kin].some(u => u.name === name);
+
+    if (!exists) {
+        window.kinUsers[kin].push({
+            name,
+            timestamp: Date.now()
+        });
+    }
+}
+
+// ======================================
 // RUN FULL MTOS PIPELINE
 // ======================================
 
@@ -96,33 +144,23 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
         console.log("WEATHER LOADED:", weather.length);
 
         // ======================================
-        // 3. USERS INIT (НЕ ТЕРЯЕМ)
+        // 3. USERS (ВОССТАНОВЛЕНО ПОЛНОСТЬЮ)
         // ======================================
 
         window.kinUsers = window.kinUsers || {};
 
-        if (!window.kinUsers[result.kin]) {
-            window.kinUsers[result.kin] = [];
-        }
-
-        // можно добавлять пользователя (если нужно)
-        if (name) {
-            window.kinUsers[result.kin].push({
-                name,
-                kin: result.kin
-            });
-        }
+        trackUser(name, result.kin);
 
         console.log("KIN USERS:", window.kinUsers);
 
         // ======================================
-        // 4. DRAW MAPS (ЕДИНЫЙ PIPELINE)
+        // 4. DRAW MAPS
         // ======================================
 
         await drawAllMaps(pyodide, params);
 
         // ======================================
-        // 5. SERIES (ГРАФИК)
+        // 5. SERIES (ГРАФИК) — ФИКС
         // ======================================
 
         const seriesRaw = await runPython(pyodide, `
@@ -132,9 +170,15 @@ mtos_series("${name}", ${year}, ${month}, ${day}, 60)
         const series = safeParse(seriesRaw);
 
         if (series) {
-            drawChart("charts", series, {
-                title: "Attention Dynamics"
-            });
+
+            const canvas = ensureCanvas("charts");
+
+            if (canvas) {
+                drawChart(canvas, series, {
+                    title: "Attention Dynamics"
+                });
+            }
+
         } else {
             console.warn("Series invalid");
         }
