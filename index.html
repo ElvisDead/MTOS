@@ -2,178 +2,76 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>MTOS Engine</title>
+<title>MTOS</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0f0f0f;
-    color: #eaeaea;
-
-    display: flex;
-    justify-content: center;
+body{
+    background:#0a0a0a;
+    color:#eee;
+    font-family:Arial;
+    text-align:center;
 }
 
-#app {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+input{
+    padding:8px;
+    margin:5px;
+    background:#111;
+    border:1px solid #333;
+    color:#fff;
 }
 
-h1 {
-    margin-bottom: 20px;
+button{
+    padding:10px 20px;
+    background:#222;
+    color:#fff;
+    border:none;
+    cursor:pointer;
 }
 
-.controls {
-    margin-bottom: 20px;
+.section{
+    margin-top:40px;
 }
 
-input, button {
-    padding: 8px;
-    margin-right: 5px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #fff;
-}
-
-button {
-    cursor: pointer;
-}
-
-button:hover {
-    background: #222;
-}
-
-#maps {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-#kinmap {
-    display: grid;
-}
-
-#charts {
-    margin-top: 20px;
-}
-
-/* CELLS */
-.cell {
-    width: 24px;
-    height: 24px;
-    transition: all 0.2s ease;
-}
-
-.cell:hover {
-    outline: 1px solid #fff;
-}
-
-/* POPUP */
-#kin-popup {
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+#status{
+    margin-top:10px;
+    color:#aaa;
 }
 </style>
-</head>
 
+</head>
 <body>
 
-<div id="app">
-
-<h1>MTOS Engine</h1>
-
-<!-- ========================= -->
-<!-- CONTROLS -->
-<!-- ========================= -->
-
-<div class="controls">
-<input id="name" placeholder="Name">
-<input id="year" type="number" placeholder="Year">
-<input id="month" type="number" placeholder="Month">
-<input id="day" type="number" placeholder="Day">
-<button id="runBtn">Run</button>
-<button id="exportBtn">Export JSON</button>
-</div>
-
-<!-- ========================= -->
-<!-- MAPS -->
-<!-- ========================= -->
-
-<div id="maps">
+<h1>MTOS Scientific Dashboard</h1>
 
 <div>
-<h3>260 Kin Map</h3>
-<div id="kinmap"></div>
-</div>
+
+<input id="name" placeholder="Name">
+<input id="year" placeholder="Year">
+<input id="month" placeholder="Month">
+<input id="day" placeholder="Day">
+
+<br>
+
+<button id="runBtn">RUN</button>
+
+<div id="status">init...</div>
 
 </div>
 
-<!-- ========================= -->
-<!-- CHART -->
-<!-- ========================= -->
-
-<div id="charts"></div>
-
+<div class="section">
+<h2>Global Kin Distribution</h2>
+<div id="globalKinMap"></div>
 </div>
-
-<!-- ========================= -->
-<!-- PYODIDE -->
-<!-- ========================= -->
-
-<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
-
-<!-- ========================= -->
-<!-- BOOT -->
-<!-- ========================= -->
 
 <script type="module">
 
-import { loadPyodideAndRun } from './js/pyodideLoader.js';
-import { initApp } from './js/main.js';
-import { validateMatrix } from './js/matrix.js';
+import { initMTOS, runMTOS } from "./js/main.js"
 
-// 🔥 Глобальная инициализация
-window.weather = null;
-window.currentKin = null;
-window.kinUsers = {};
+document.getElementById("runBtn").onclick = runMTOS
 
-async function boot() {
-
-    console.log("BOOT START");
-
-    const pyodide = await loadPyodideAndRun('./MTOS_Engine.py');
-
-    window.pyodide = pyodide;
-
-    console.log("PYODIDE READY");
-
-    // 🔥 проверка матрицы (критично)
-    try {
-        validateMatrix();
-        console.log("MATRIX OK");
-    } catch (e) {
-        console.error("MATRIX BROKEN", e);
-    }
-
-    initApp(pyodide);
-
-    console.log("APP READY");
-}
-
-boot();
+initMTOS()
 
 </script>
-
-<!-- ========================= -->
-<!-- MODULES -->
-<!-- ========================= -->
-
-<script type="module" src="./js/kinmap.js"></script>
-<script type="module" src="./js/mapsConfig.js"></script>
-<script type="module" src="./js/run.js"></script>
 
 </body>
 </html>
