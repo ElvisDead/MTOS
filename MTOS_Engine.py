@@ -1190,7 +1190,7 @@ def mtos_phase_space(name,year,month,day):
     return json.dumps({
         "x":xs,
         "y":ys
-    }
+    })
 
 def mtos_phase_density(name,year,month,day):
 
