@@ -4,41 +4,68 @@
 <meta charset="UTF-8">
 <title>MTOS FULL SYSTEM</title>
 
-<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-
 <style>
 body{
-    background:#111;
-    color:#eee;
+    background:#000;
+    color:#fff;
     font-family:Arial;
     text-align:center;
 }
 
-.map{
-    margin:20px auto;
-    width:720px;
+h1{
+    margin-top:20px;
 }
 
-.block{
-    margin:40px 0;
+input{
+    width:120px;
+    padding:5px;
+    margin:5px;
+}
+
+button{
+    padding:6px 12px;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+.section{
+    margin-top:40px;
+}
+
+canvas{
+    background:#111;
+}
+
+#networkMap{
+    margin-top:20px;
 }
 </style>
 </head>
 
-<body>
+<body onload="initMTOS()">
 
 <h1>MTOS FULL SYSTEM</h1>
 
-<input id="name" placeholder="Name">
-<input id="year" placeholder="Year">
-<input id="month" placeholder="Month">
-<input id="day" placeholder="Day">
+<!-- INPUT -->
+<div>
+    <input id="name" placeholder="Name">
+    <input id="year" placeholder="Year">
+    <input id="month" placeholder="Month">
+    <input id="day" placeholder="Day">
+</div>
 
-<br><br>
-<button id="runBtn">RUN</button>
+<!-- RUN -->
+<div>
+    <button onclick="runMTOS()">RUN</button>
+</div>
 
-<div id="stats" style="margin-top:10px;"></div>
+<!-- TIME CONTROLS -->
+<div id="timeControls" style="margin-top:10px;"></div>
 
+<!-- STATUS -->
+<div id="status" style="margin-top:5px;">Idle</div>
+
+<!-- SUMMARY -->
 <div id="mtosSummary" style="
     margin:20px;
     text-align:center;
@@ -46,71 +73,57 @@ body{
     line-height:1.6;
 "></div>
 
-<div id="timeControls" style="margin:20px;"></div>
-
-<div id="status">init...</div>
-
-<div class="block">
-<h2>Weather</h2>
-<div id="weatherMap" class="map"></div>
+<!-- WEATHER -->
+<div class="section">
+    <h2>Weather</h2>
+    <div id="weatherMap"></div>
 </div>
 
-<div class="block">
-<h2>Global</h2>
-<div id="globalKinMap" class="map"></div>
+<!-- NETWORK -->
+<div class="section">
+    <h2>Network</h2>
+    <div id="networkMap"></div>
 </div>
 
-<div class="block">
-<h2>Pressure</h2>
-<div id="pressureMap" class="map"></div>
-<div id="pressureGradientMap" class="map"></div>
+<!-- SERIES -->
+<div class="section">
+    <h2>Series</h2>
+    <div id="seriesMap"></div>
 </div>
 
-<div class="block">
-<h2>Attractor</h2>
-<div id="attractorMap" class="map"></div>
+<!-- PHASE SPACE -->
+<div class="section">
+    <h2>Phase Space</h2>
+    <div id="phaseMap"></div>
 </div>
 
-<div class="block">
-<h2>Phase + Wave</h2>
-<div id="phaseMap" class="map"></div>
-<div id="waveMap" class="map"></div>
-<div id="climateMap" class="map"></div>
+<!-- ATTRACTOR -->
+<div class="section">
+    <h2>Attractor</h2>
+    <div id="attractorMap"></div>
 </div>
 
-<div class="block">
-<h2>Series</h2>
-<div id="series7"></div>
-<div id="series30"></div>
-<div id="series260"></div>
+<!-- COLLECTIVE -->
+<div class="section">
+    <h2>Collective</h2>
+    <div id="collectiveMap"></div>
 </div>
 
-<div class="block">
-<h2>Phase Space</h2>
-<div id="phaseSpace"></div>
+<!-- ACTIVITY -->
+<div class="section">
+    <h2>Activity</h2>
+    <div id="activityMap"></div>
 </div>
 
-<div class="block">
-<h2>Network</h2>
-<div id="networkMap"></div>
-</div>
-
-<div class="block">
-<h2>Collective</h2>
-<div id="collectiveMap"></div>
-</div>
-
-<div class="block">
-<h2>Activity</h2>
-<div id="activityMap" class="map"></div>
-</div>
-
+<!-- SCRIPTS -->
 <script type="module">
 import { initMTOS, runMTOS } from "./js/main.js"
 
-document.getElementById("runBtn").onclick = runMTOS
-initMTOS()
+window.initMTOS = initMTOS
+window.runMTOS = runMTOS
 </script>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
 </body>
 </html>
