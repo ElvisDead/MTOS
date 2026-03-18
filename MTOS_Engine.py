@@ -825,7 +825,7 @@ def mtos_series(name,year,month,day,days=30):
 
     series=simulate(i,tone,today,days)
 
-    return json.dumps(series.tolist())
+    return series.tolist()
 
 def mtos_260_weather(name,year,month,day):
 
@@ -836,7 +836,7 @@ def mtos_260_weather(name,year,month,day):
         key = f"{name}_{today}"
 
         if key in cache:
-            return json.dumps(cache[key])
+            return cache[key]
 
     birth=datetime.date(year,month,day)
 
@@ -977,7 +977,7 @@ def mtos_260_weather(name,year,month,day):
         "field": field.tolist()
     })
 
-    return json.dumps(weather)
+    return weather
 
 def mtos_user_climate(user_seal):
 
@@ -1187,10 +1187,10 @@ def mtos_phase_space(name,year,month,day):
         xs.append(float(x))
         ys.append(float(y))
 
-    return json.dumps({
+    return {
         "x":xs,
         "y":ys
-    })
+    }
 
 def mtos_phase_density(name,year,month,day):
 
