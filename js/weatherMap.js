@@ -1,22 +1,40 @@
 export function drawWeatherMap(id, data){
 
-    const c = document.getElementById(id)
-    if(!c) return
+    const root = document.getElementById(id)
+    if(!root) return
 
-    c.innerHTML = ""
+    root.innerHTML = ""
+
+    root.style.display = "flex"
+    root.style.flexDirection = "column"
+    root.style.alignItems = "center"
 
     // === ЛЕГЕНДА ===
     const legend = document.createElement("div")
+    legend.innerText = "Green ↑ attention | Red ↓ attention"
     legend.style.marginBottom = "10px"
-    legend.innerText = "Green = high attention | Red = low attention"
-    c.appendChild(legend)
+    root.appendChild(legend)
 
-    const grid = document.createElement("div")
+    // === КОНТЕЙНЕР С ОСЯМИ ===
+    const wrapper = document.createElement("div")
+    wrapper.style.display = "grid"
+    wrapper.style.gridTemplateColumns = "30px repeat(20, 16px)"
+    wrapper.style.gridTemplateRows = "20px repeat(13, 16px)"
+    wrapper.style.gap = "2px"
+    wrapper.style.alignItems = "center"
+    wrapper.style.justifyContent = "center"
 
-    grid.style.display = "grid"
-    grid.style.gridTemplateColumns = "repeat(20, 16px)"
-    grid.style.gap = "2px"
-    grid.style.justifyContent = "center"
+    // пустой угол
+    wrapper.appendChild(document.createElement("div"))
+
+    // === ОСЬ ПЕЧАТЕЙ (1–20) ===
+    for(let seal=1; seal<=20; seal++){
+        const label = document.createElement("div")
+        label.innerText = seal
+        label.style.fontSize = "10px"
+        label.style.textAlign = "center"
+        wrapper.appendChild(label)
+    }
 
     // нормализация
     const values = data.map(d => d.attention)
@@ -24,41 +42,50 @@ export function drawWeatherMap(id, data){
     const max = Math.max(...values)
     const range = max - min || 1
 
-    for(let i=0;i<260;i++){
+    // === СЕТКА ===
+    for(let tone=1; tone<=13; tone++){
 
-        const d = data[i]
+        // ось тонов
+        const tLabel = document.createElement("div")
+        tLabel.innerText = tone
+        tLabel.style.fontSize = "10px"
+        tLabel.style.textAlign = "right"
+        wrapper.appendChild(tLabel)
 
-        const kin = i+1
-        const tone = ((kin-1)%13)+1
-        const seal = ((kin-1)%20)+1
+        for(let seal=1; seal<=20; seal++){
 
-        const v = (d.attention - min) / range
+            // ВАЖНО: правильная формула Цолькина
+            let kin = (seal - 1) * 13 + tone
+            while(kin > 260) kin -= 260
 
-        const r = Math.floor(255*(1-v))
-        const g = Math.floor(255*v)
-        const b = 50
+            const d = data[kin-1]
 
-        const cell = document.createElement("div")
+            const v = (d.attention - min) / range
 
-        cell.style.width = "16px"
-        cell.style.height = "16px"
-        cell.style.background = `rgb(${r},${g},${b})`
-        cell.style.cursor = "pointer"
+            const r = Math.floor(255*(1-v))
+            const g = Math.floor(255*v)
+            const b = 50
 
-        cell.title =
-            `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nAttention ${d.attention.toFixed(3)}`
+            const cell = document.createElement("div")
 
-        // ВАЖНО: координаты на сетке
-        if(tone === 1){
-            cell.style.outline = "1px solid #555"
+            cell.style.width = "16px"
+            cell.style.height = "16px"
+            cell.style.background = `rgb(${r},${g},${b})`
+            cell.style.cursor = "pointer"
+
+            cell.title =
+                `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nAttention ${d.attention.toFixed(3)}`
+
+            // клик
+            cell.onclick = () => {
+                alert(
+                    `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nAttention ${d.attention.toFixed(3)}`
+                )
+            }
+
+            wrapper.appendChild(cell)
         }
-
-        if(seal === 1){
-            cell.style.borderTop = "2px solid white"
-        }
-
-        grid.appendChild(cell)
     }
 
-    c.appendChild(grid)
+    root.appendChild(wrapper)
 }
