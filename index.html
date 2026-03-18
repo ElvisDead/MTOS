@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>MTOS</title>
 
 <style>
+
 body{
     background:#0a0a0a;
     color:#eee;
     font-family:Arial;
     text-align:center;
+}
+
+h1{
+    margin-top:20px;
+}
+
+#controls{
+    margin:20px;
 }
 
 input{
@@ -28,9 +37,19 @@ button{
     cursor:pointer;
 }
 
-#globalKinMap{
-    margin-top:30px;
+button:hover{
+    background:#444;
 }
+
+#status{
+    margin-top:10px;
+    color:#aaa;
+}
+
+.section{
+    margin-top:40px;
+}
+
 </style>
 
 </head>
@@ -38,16 +57,50 @@ button{
 
 <h1>MTOS</h1>
 
-<input id="name" placeholder="Имя"><br>
-<input id="year" placeholder="Год"><br>
-<input id="month" placeholder="Месяц"><br>
-<input id="day" placeholder="День"><br>
+<div id="controls">
+
+<input id="name" placeholder="Name">
+<input id="year" placeholder="Year">
+<input id="month" placeholder="Month">
+<input id="day" placeholder="Day">
+
+<br>
 
 <button id="runBtn">RUN</button>
 
 <div id="status">init...</div>
 
+</div>
+
+<div class="section">
+<h2>260 Kin Cognitive Weather</h2>
+<div id="weatherMap"></div>
+</div>
+
+<div class="section">
+<h2>Global Kin Distribution</h2>
 <div id="globalKinMap"></div>
+</div>
+
+<div class="section">
+<h2>Linear Kin Distribution</h2>
+<div id="linearKinMap"></div>
+</div>
+
+<div class="section">
+<h2>Phase Space</h2>
+<div id="phaseMap"></div>
+</div>
+
+<div class="section">
+<h2>Pressure Map</h2>
+<div id="pressureMap"></div>
+</div>
+
+<div class="section">
+<h2>Gradient Map</h2>
+<div id="gradientMap"></div>
+</div>
 
 <script type="module">
 
@@ -84,6 +137,7 @@ async function run(){
 run_mtos("${name}",${year},${month},${day})
 `)
 
+        // GLOBAL MAP (пока только она)
         const kinCounts = JSON.parse(
             pyodide.runPython(`mtos_global_kin_map()`)
         )
