@@ -1,9 +1,5 @@
 import { getColor } from "./colors.js"
 
-console.log("KINMAP LOADED AS MODULE")
-
-console.log("KINMAP DRAW")
-
 const seals = [
 "Dragon",
 "Wind",
@@ -28,6 +24,9 @@ const seals = [
 ]
 
 export function drawKinMap(weather){
+
+console.log("KINMAP BLOCKED")
+return
 
 console.log("KIN USERS:", window.kinUsers)
 
