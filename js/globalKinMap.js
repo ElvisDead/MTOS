@@ -1,7 +1,6 @@
 export function drawGlobalKinMap(containerId, kinCounts, usersByKin){
 
     const container = document.getElementById(containerId)
-
     if(!container) return
 
     container.innerHTML = ""
@@ -12,7 +11,6 @@ export function drawGlobalKinMap(containerId, kinCounts, usersByKin){
     grid.style.gridTemplateColumns = "repeat(20, 20px)"
     grid.style.gap = "2px"
     grid.style.justifyContent = "center"
-    grid.style.marginTop = "20px"
 
     for(let i=0;i<260;i++){
 
@@ -35,7 +33,6 @@ export function drawGlobalKinMap(containerId, kinCounts, usersByKin){
         cell.style.width = "20px"
         cell.style.height = "20px"
         cell.style.background = color
-        cell.style.cursor = "pointer"
 
         const users = usersByKin[i+1] || []
 
