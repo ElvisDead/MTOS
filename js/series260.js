@@ -1,61 +1,45 @@
-export function drawSeries260(id, data){
+export function drawSeries(id, weather){
 
-    const c = document.getElementById(id)
-    if(!c) return
+    const root = document.getElementById(id)
+    root.innerHTML = ""
 
-    c.innerHTML = ""
+    const makeSeries = (length, title)=>{
 
-    const width = 700
-    const height = 160
+        const wrap = document.createElement("div")
+        wrap.style.marginBottom = "20px"
 
-    const canvas = document.createElement("canvas")
-    canvas.width = width
-    canvas.height = height
+        const label = document.createElement("div")
+        label.innerText = title
+        label.style.marginBottom = "5px"
 
-    const ctx = canvas.getContext("2d")
+        const canvas = document.createElement("canvas")
+        canvas.width = 260
+        canvas.height = 80
 
-    c.style.display = "flex"
-    c.style.justifyContent = "center"
+        const ctx = canvas.getContext("2d")
 
-    const min = Math.min(...data)
-    const max = Math.max(...data)
-    const range = max - min || 1
+        ctx.beginPath()
 
-    const norm = data.map(v => (v - min) / range)
+        for(let i=0;i<length;i++){
 
-    ctx.beginPath()
+            const val = weather[i].attention
+            const x = (i/length)*260
+            const y = 80 - val*70
 
-    for(let i=0;i<norm.length;i++){
+            if(i===0) ctx.moveTo(x,y)
+            else ctx.lineTo(x,y)
+        }
 
-        const x = (i/(norm.length-1))*width
-        const y = height - norm[i]*height
+        ctx.strokeStyle = "cyan"
+        ctx.stroke()
 
-        if(i===0) ctx.moveTo(x,y)
-        else ctx.lineTo(x,y)
+        wrap.appendChild(label)
+        wrap.appendChild(canvas)
+
+        return wrap
     }
 
-    ctx.lineTo(width,height)
-    ctx.lineTo(0,height)
-    ctx.closePath()
-
-    ctx.fillStyle = "#888"
-    ctx.globalAlpha = 0.4
-    ctx.fill()
-
-    ctx.globalAlpha = 1
-    ctx.strokeStyle = "#aaa"
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-
-    canvas.onmousemove = (e)=>{
-        const rect = canvas.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const i = Math.floor((x/width)*data.length)
-
-        canvas.title =
-            "Day: " + (i+1) +
-            "\nValue: " + data[i].toFixed(3)
-    }
-
-    c.appendChild(canvas)
+    root.appendChild(makeSeries(7,"7 days"))
+    root.appendChild(makeSeries(30,"30 days"))
+    root.appendChild(makeSeries(260,"260 days"))
 }
