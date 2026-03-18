@@ -1469,44 +1469,66 @@ def mtos_field_step(name, year, month, day, prev_field=None):
     weather = mtos_260_weather(name, year, month, day)
     pressure = mtos_pressure_map()
 
-    # текущие значения
-    field = []
+    # ===============================
+    # СОЗДАЁМ 2D ПОЛЕ 13×20
+    # ===============================
+    field2D = [[0 for _ in range(20)] for _ in range(13)]
 
-    for i in range(260):
+    for tone in range(13):
+        for seal in range(20):
 
-        att = weather[i]["attention"]
-        pr = pressure[i]
+            kin = (seal * 13 + tone) % 260
 
-        phi = att * pr
+            att = weather[kin]["attention"]
+            pr = pressure[kin]
 
-        field.append(phi)
+            phi = att * pr
 
-    # если нет прошлого состояния — вернуть базу
+            field2D[tone][seal] = phi
+
+    # если первый шаг
     if prev_field is None:
-        return field
+        return [field2D[t][s] for t in range(13) for s in range(20)]
+
+    # преобразуем prev_field в 2D
+    prev2D = [[0 for _ in range(20)] for _ in range(13)]
+    k = 0
+    for t in range(13):
+        for s in range(20):
+            prev2D[t][s] = prev_field[k]
+            k += 1
 
     # ===============================
-    # ДИФФУЗИЯ (простая)
+    # 2D ДИФФУЗИЯ
     # ===============================
-    new_field = []
+    new2D = [[0 for _ in range(20)] for _ in range(13)]
 
-    for i in range(260):
+    D = 0.15   # коэффициент диффузии
+    decay = 0.03
 
-        left = field[(i - 1) % 260]
-        right = field[(i + 1) % 260]
+    for t in range(13):
+        for s in range(20):
 
-        diffusion = (left + right - 2 * field[i]) * 0.2
+            center = prev2D[t][s]
 
-        # ===============================
-        # ДИССИПАЦИЯ
-        # ===============================
-        decay = field[i] * 0.05
+            # соседи (с цикличностью)
+            up    = prev2D[(t-1) % 13][s]
+            down  = prev2D[(t+1) % 13][s]
+            left  = prev2D[t][(s-1) % 20]
+            right = prev2D[t][(s+1) % 20]
 
-        # ===============================
-        # ОБНОВЛЕНИЕ
-        # ===============================
-        next_phi = field[i] + diffusion - decay
+            laplacian = (up + down + left + right - 4 * center)
 
-        new_field.append(next_phi)
+            diff = D * laplacian
 
-    return new_field
+            new_val = center + diff - decay * center
+
+            new2D[t][s] = new_val
+
+    # обратно в 1D
+    result = []
+    for t in range(13):
+        for s in range(20):
+            result.append(new2D[t][s])
+
+    return result
