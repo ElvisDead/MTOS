@@ -1,4 +1,4 @@
-import { drawKinMap } from "./kinmap.js"
+//import { drawKinMap } from "./kinmap.js"
 
 import { startMTOS } from "./pyodideLoader.js"
 
