@@ -1,115 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>MTOS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
+    <title>MTOS Engine</title>
 
-body{
-    background:#0a0a0a;
-    color:#eee;
-    font-family:Arial;
-    text-align:center;
-}
+    <!-- BASIC STYLE -->
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f0f0f;
+            color: #eaeaea;
+        }
 
-h1{
-    margin-top:20px;
-}
+        #app {
+            padding: 20px;
+        }
 
-#controls{
-    margin:20px;
-}
+        h1 {
+            margin-bottom: 10px;
+        }
 
-input{
-    padding:8px;
-    margin:5px;
-    background:#111;
-    border:1px solid #333;
-    color:#fff;
-}
+        .controls {
+            margin-bottom: 20px;
+        }
 
-button{
-    padding:10px 20px;
-    background:#222;
-    color:#fff;
-    border:none;
-    cursor:pointer;
-}
+        input, button {
+            padding: 8px;
+            margin-right: 5px;
+        }
 
-button:hover{
-    background:#444;
-}
+        canvas {
+            border: 1px solid #333;
+            margin-top: 10px;
+        }
 
-#status{
-    margin-top:10px;
-    color:#aaa;
-}
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
 
-.section{
-    margin-top:40px;
-}
-
-</style>
-
+        .panel {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
 
-<h1>MTOS</h1>
+<div id="app">
 
-<div id="controls">
+    <h1>MTOS Engine</h1>
 
-<input id="name" placeholder="Name">
-<input id="year" placeholder="Year">
-<input id="month" placeholder="Month">
-<input id="day" placeholder="Day">
+    <div class="controls">
+        <input id="name" placeholder="Name">
+        <input id="year" type="number" placeholder="Year">
+        <input id="month" type="number" placeholder="Month">
+        <input id="day" type="number" placeholder="Day">
+        <button id="runBtn">Run</button>
+    </div>
 
-<br>
+    <div class="grid">
 
-<button id="runBtn">RUN</button>
+        <div class="panel">
+            <h3>Kin Map</h3>
+            <canvas id="kinMap" width="300" height="300"></canvas>
+        </div>
 
-<div id="status">init...</div>
+        <div class="panel">
+            <h3>Linear Map</h3>
+            <canvas id="linearMap" width="600" height="150"></canvas>
+        </div>
+
+        <div class="panel">
+            <h3>Heatmap</h3>
+            <canvas id="heatmap" width="300" height="300"></canvas>
+        </div>
+
+        <div class="panel">
+            <h3>Global Kin Distribution</h3>
+            <canvas id="globalKinMap" width="600" height="150"></canvas>
+        </div>
+
+        <div class="panel">
+            <h3>Phase Space</h3>
+            <canvas id="phaseSpace" width="300" height="300"></canvas>
+        </div>
+
+        <div class="panel">
+            <h3>Charts</h3>
+            <canvas id="charts" width="600" height="200"></canvas>
+        </div>
+
+    </div>
 
 </div>
 
-<div class="section">
-<h2>260 Kin Cognitive Weather</h2>
-<div id="weatherMap"></div>
-</div>
+<!-- PYODIDE -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 
-<div class="section">
-<h2>Global Kin Distribution</h2>
-<div id="globalKinMap"></div>
-</div>
-
-<div class="section">
-<h2>Linear Kin Distribution</h2>
-<div id="linearKinMap"></div>
-</div>
-
-<div class="section">
-<h2>Phase Space</h2>
-<div id="phaseMap"></div>
-</div>
-
-<div class="section">
-<h2>Pressure Map</h2>
-<div id="pressureMap"></div>
-</div>
-
-<div class="section">
-<h2>Gradient Map</h2>
-<div id="gradientMap"></div>
-</div>
-
+<!-- CORE SYSTEM -->
 <script type="module">
 
-import { initMTOS, runMTOS } from "./main.js"
+import { loadPyodideAndRun } from './pyodideLoader.js';
+import { initApp } from './main.js';
 
-document.getElementById("runBtn").onclick = runMTOS
+async function boot() {
 
-initMTOS()
+    console.log("Loading Pyodide...");
+
+    const pyodide = await loadPyodideAndRun('./MTOS_Engine.py');
+
+    console.log("Pyodide ready");
+
+    initApp(pyodide);
+
+}
+
+boot();
 
 </script>
+
 </body>
 </html>
