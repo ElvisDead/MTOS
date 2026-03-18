@@ -22,6 +22,9 @@ export function drawAttractorMap(id, data){
         cell.style.width = "14px"
         cell.style.height = "14px"
         cell.style.background = `rgb(${r},${g},${b})`
+        cell.style.cursor = "pointer"
+
+        cell.title = `Density: ${v.toFixed(3)}`
 
         c.appendChild(cell)
     }
