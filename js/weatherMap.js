@@ -1,44 +1,47 @@
-export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
+export function drawWeatherMap(id, data, userKin, highlightKin, pressureData, fieldData){
 
     const root = document.getElementById(id)
     if(!root) return
 
     root.innerHTML = ""
-    const legend = document.createElement("div")
-
-    legend.innerHTML = `
-    <b>Weather Map Legend</b><br>
-    Blue → Low Attention (−σ)<br>
-    White → Neutral<br>
-    Red → High Attention (+σ)<br>
-    Purple → Pressure<br>
-    Yellow border → Today<br>
-    White border → User<br>
-    Gold → Match
-    `
-
-    legend.style.fontFamily = "monospace"
-    legend.style.fontSize = "12px"
-    legend.style.textAlign = "center"
-    legend.style.marginBottom = "10px"
-
-    root.appendChild(legend)
     root.style.display = "flex"
     root.style.flexDirection = "column"
     root.style.alignItems = "center"
 
+    // ===============================
+    // LEGEND
+    // ===============================
+    const legend = document.createElement("div")
+
+    legend.innerHTML = `
+    <b>Weather Map</b><br>
+    Blue → low Φ<br>
+    White → neutral<br>
+    Red → high Φ<br>
+    Purple → pressure<br>
+    Yellow border → today<br>
+    White border → user
+    `
+
+    legend.style.fontFamily = "monospace"
+    legend.style.fontSize = "12px"
+    legend.style.marginBottom = "10px"
+    legend.style.textAlign = "center"
+
+    root.appendChild(legend)
+
+    // ===============================
+    // GRID
+    // ===============================
     const wrapper = document.createElement("div")
 
-    // ЦОЛЬКИН ОРИЕНТАЦИЯ
     wrapper.style.display = "grid"
     wrapper.style.gridTemplateColumns = "30px repeat(20, 18px)"
     wrapper.style.gridTemplateRows = "20px repeat(13, 18px)"
     wrapper.style.gap = "2px"
 
-    // пустой угол
     wrapper.appendChild(document.createElement("div"))
 
-    // seal (горизонталь)
     for(let s=1;s<=20;s++){
         const d = document.createElement("div")
         d.innerText = s
@@ -47,20 +50,24 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
         wrapper.appendChild(d)
     }
 
-    // === НОРМАЛИЗАЦИЯ (attention)
-    const values = data.map(d => d.attention)
-    const mean = values.reduce((a,b)=>a+b,0)/values.length
-    const std = Math.sqrt(values.reduce((a,b)=>a+(b-mean)**2,0)/values.length) || 1
+    // ===============================
+    // NORMALIZATION Φ
+    // ===============================
+    let fMin = 0, fMax = 1
 
-    // === НОРМАЛИЗАЦИЯ (pressure)
-    let pMin=0, pMax=1
+    if(fieldData){
+        fMin = Math.min(...fieldData)
+        fMax = Math.max(...fieldData)
+    }
+
+    let pMin = 0, pMax = 1
     if(pressureData){
         pMin = Math.min(...pressureData)
         pMax = Math.max(...pressureData)
     }
 
     // ===============================
-    // СЕТКА
+    // CELLS
     // ===============================
     for(let tone=1;tone<=13;tone++){
 
@@ -75,22 +82,11 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
             let kin = (seal-1)*13 + tone
             while(kin>260) kin-=260
 
-            const d = data[kin-1]
+            let phi = fieldData ? fieldData[kin-1] : 0
 
-            // ===============================
-            // Z-SCORE (НАУЧНО)
-            // ===============================
-            let z = (d.attention - mean)/std
+            const n = (phi - fMin)/(fMax - fMin || 1)
 
-            // ограничение
-            z = Math.max(-2, Math.min(2, z))
-
-            // нормализация [-2..2] → [0..1]
-            const n = (z + 2)/4
-
-            // ===============================
-            // SCIENTIFIC COLOR (BLUE→WHITE→RED)
-            // ===============================
+            // BLUE → WHITE → RED
             const r = Math.floor(255 * n)
             const g = Math.floor(255 * (1 - Math.abs(n-0.5)*2))
             const b = Math.floor(255 * (1 - n))
@@ -99,15 +95,11 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
             let finalG = g
             let finalB = b
 
-            // ===============================
-            // PRESSURE OVERLAY (фиолет)
-            // ===============================
+            // PRESSURE OVERLAY
             if(pressureData){
-
                 const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
-
-                finalR = Math.min(255, finalR + p*80)
-                finalB = Math.min(255, finalB + p*120)
+                finalR += p * 80
+                finalB += p * 120
             }
 
             const cell = document.createElement("div")
@@ -115,12 +107,9 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
             cell.style.width = "18px"
             cell.style.height = "18px"
             cell.style.background = `rgb(${finalR},${finalG},${finalB})`
-
-            // ===============================
-            // ЧЁТКИЕ РАМКИ
-            // ===============================
             cell.style.border = "1px solid #111"
 
+            // HIGHLIGHT
             if(kin === highlightKin){
                 cell.style.border = "3px solid yellow"
             }
@@ -129,20 +118,11 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
                 cell.style.border = "3px solid white"
             }
 
-            if(userKin && kin === userKin && kin === highlightKin){
+            if(userKin && kin === highlightKin){
                 cell.style.border = "3px solid gold"
             }
 
-            // ===============================
-            // TOOLTIP
-            // ===============================
-            const wave = Math.floor((kin-1)/13)+1
-            const harmonic = Math.floor((kin-1)/4)+1
-
-            cell.title =
-                `Kin ${kin}\nTone ${tone}\nSeal ${seal}` +
-                `\nWave ${wave}\nHarmonic ${harmonic}` +
-                `\nZ-score ${z.toFixed(2)}`
+            cell.title = `Kin ${kin}\nΦ ${phi.toFixed(3)}`
 
             wrapper.appendChild(cell)
         }
