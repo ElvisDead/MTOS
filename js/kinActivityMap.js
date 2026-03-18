@@ -13,6 +13,7 @@ export function drawKinActivity(id, data){
 
     for(let i=0;i<data.length;i++){
 
+        const kin = i+1
         const v = data[i]/max
 
         const r = Math.floor(255*v)
@@ -22,6 +23,9 @@ export function drawKinActivity(id, data){
         cell.style.width = "14px"
         cell.style.height = "14px"
         cell.style.background = `rgb(${r},0,0)`
+        cell.style.cursor = "pointer"
+
+        cell.title = `Kin ${kin}\nActivity: ${data[i]}`
 
         c.appendChild(cell)
     }
