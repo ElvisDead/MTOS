@@ -84,7 +84,7 @@ setTimeout(() => {
 
 console.log("KIN USERS:", window.kinUsers)
   
-drawKinMap(weather)
+//drawKinMap(weather)
 
 // HEATMAPS
 renderMap("pressure")
