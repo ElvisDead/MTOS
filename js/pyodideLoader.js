@@ -1,23 +1,66 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.mjs";
+// pyodideLoader.js
 
-export async function startMTOS(){
+let pyodideInstance = null;
 
-console.log("Loading Pyodide...");
+export async function loadPyodideAndRun(pythonFilePath) {
 
-const pyodide = await loadPyodide();
+    // =========================
+    // CACHE (чтобы не грузить 2 раза)
+    // =========================
 
-window.pyodide = pyodide;
+    if (pyodideInstance) {
+        console.log("Pyodide already loaded");
+        return pyodideInstance;
+    }
 
-document.getElementById("runBtn").disabled=false
-document.getElementById("runBtn").innerText="Run MTOS"
+    try {
 
-await pyodide.loadPackage("numpy");
+        // =========================
+        // LOAD PYODIDE
+        // =========================
 
-const response = await fetch("./MTOS_Engine.py");
-const code = await response.text();
+        console.log("Loading Pyodide...");
 
-await pyodide.runPythonAsync(code);
+        const pyodide = await loadPyodide({
+            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/"
+        });
 
-console.log("MTOS engine loaded");
+        console.log("Pyodide loaded");
 
+        // =========================
+        // LOAD PYTHON FILE
+        // =========================
+
+        const response = await fetch(pythonFilePath);
+
+        if (!response.ok) {
+            throw new Error("Failed to load Python file: " + pythonFilePath);
+        }
+
+        const code = await response.text();
+
+        // =========================
+        // EXECUTE PYTHON
+        // =========================
+
+        console.log("Running MTOS engine...");
+
+        await pyodide.runPythonAsync(code);
+
+        console.log("MTOS engine ready");
+
+        // =========================
+        // SAVE INSTANCE
+        // =========================
+
+        pyodideInstance = pyodide;
+
+        return pyodide;
+
+    } catch (err) {
+
+        console.error("Pyodide init error:", err);
+
+        throw err;
+    }
 }
