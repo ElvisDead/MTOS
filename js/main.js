@@ -1,4 +1,3 @@
-import { drawWeatherMap } from "./weatherMap.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
 
 let pyodide = null
@@ -45,10 +44,8 @@ run_mtos("${name}",${year},${month},${day})
         drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
 
         const weather = JSON.parse(
-            pyodide.runPython(`mtos_weather_map()`)
+            pyodide.runPython(`mtos_260_weather_map(("${name}",${year},${month},${day})`)
         )
-
-        drawWeatherMap("weatherMap", weather)
 
         status.innerText = "Done"
 
