@@ -2,7 +2,9 @@ import { drawWeatherMap } from "./weatherMap.js"
 import { initTimeControls } from "./timeController.js"
 
 let pyodide = null
+
 let fieldState = null
+let fieldMode = null
 
 // ===============================
 // INIT
@@ -13,8 +15,8 @@ export async function initMTOS(){
 
     try{
         status.innerText = "Loading Pyodide..."
-        pyodide = await loadPyodide()
 
+        pyodide = await loadPyodide()
         await pyodide.loadPackage("numpy")
 
         const code = await fetch("./MTOS_Engine.py").then(r => r.text())
@@ -49,32 +51,47 @@ export async function runMTOS(){
 
         status.innerText = "Running..."
 
-        // USER KIN
+        // ===============================
+        // USER + TODAY KIN
+        // ===============================
         userKin = Number(pyodide.runPython(`
 mtos_current_kin("${name}",${year},${month},${day})
 `))
 
-        // TODAY KIN
         const today = new Date()
 
         todayKin = Number(pyodide.runPython(`
 mtos_current_kin("today", ${today.getFullYear()}, ${today.getMonth()+1}, ${today.getDate()})
 `))
 
-        // WEATHER
+        // ===============================
+        // WEATHER + PRESSURE (для визуала)
+        // ===============================
         weather = JSON.parse(pyodide.runPython(`
 import json
 json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
 `))
 
-        // PRESSURE
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-        // FIELD INIT
-        fieldState = JSON.parse(pyodide.runPython(`
+        // ===============================
+        // MULTI-AGENT FIELD INIT
+        // ===============================
+        const users = [
+            {name: name},
+            {name: "Alice"},
+            {name: "Bob"}
+        ]
+
+        const result = JSON.parse(pyodide.runPython(`
 import json
-json.dumps(mtos_field_step("${name}",${year},${month},${day}))
+users = ${JSON.stringify(users)}
+f,s = mtos_multi_agents_field(users, ${year}, ${month}, ${day})
+json.dumps([f,s])
 `))
+
+        fieldState = result[0]
+        fieldMode = result[1]
 
         status.innerText = "Done"
 
@@ -83,11 +100,20 @@ json.dumps(mtos_field_step("${name}",${year},${month},${day}))
         status.innerText = "ERROR"
     }
 
-    // РЕНДЕР
-    drawWeatherMap("weatherMap", weather, userKin, todayKin, pressure, fieldState)
+    // ===============================
+    // RENDER
+    // ===============================
+    drawWeatherMap(
+        "weatherMap",
+        weather,
+        userKin,
+        todayKin,
+        pressure,
+        fieldState
+    )
 
     // ===============================
-    // TIME
+    // TIME EVOLUTION
     // ===============================
     let baseYear = year
     let baseMonth = month
@@ -115,18 +141,45 @@ mtos_current_kin("${name}",${y},${m},${dd})
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-            // FIELD EVOLUTION
-            fieldState = JSON.parse(pyodide.runPython(`
+            const users = [
+                {name: name},
+                {name: "Alice"},
+                {name: "Bob"}
+            ]
+
+            const result = JSON.parse(pyodide.runPython(`
 import json
-json.dumps(mtos_field_step("${name}",${y},${m},${dd}, ${JSON.stringify(fieldState)}))
+users = ${JSON.stringify(users)}
+f,s = mtos_multi_agents_field(
+    users,
+    ${y},
+    ${m},
+    ${dd},
+    ${JSON.stringify(fieldState)},
+    ${JSON.stringify(fieldMode)}
+)
+json.dumps([f,s])
 `))
 
-            drawWeatherMap("weatherMap", weather, userKin, kin, pressure, fieldState)
+            fieldState = result[0]
+            fieldMode = result[1]
+
+            drawWeatherMap(
+                "weatherMap",
+                weather,
+                userKin,
+                kin,
+                pressure,
+                fieldState
+            )
 
         }catch(e){
             console.error("STEP ERROR:", e)
         }
     }
 
+    // ===============================
+    // CONTROLS (PLAY / STEP)
+    // ===============================
     initTimeControls(step)
 }
