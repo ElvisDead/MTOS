@@ -77,7 +77,14 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
 
         if (!item) continue;
 
-        const value = item.attention;
+        let value = item.attention;
+
+        if (max !== min) {
+            value = (value - min) / (max - min);
+        }
+
+        // усиление через pressure (по желанию, но лучше оставить)
+        value = value * (0.7 + item.pressure * 0.3);
 
         // вычисление координат
         const tone = (kin % 13);
