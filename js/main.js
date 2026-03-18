@@ -1,6 +1,5 @@
 import { drawWeatherMap } from "./weatherMap.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
 
 let pyodide = null
 
