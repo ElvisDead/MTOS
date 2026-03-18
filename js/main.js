@@ -34,18 +34,40 @@ export async function initMTOS(){
 // USER MEMORY
 // ===============================
 function loadUsers(){
-    const saved = localStorage.getItem("mtos_users")
-    return saved ? JSON.parse(saved) : []
-}
 
+    try{
+        const saved = localStorage.getItem("mtos_users")
+
+        if(!saved) return []
+
+        const parsed = JSON.parse(saved)
+
+        // защита
+        if(Array.isArray(parsed)){
+            return parsed
+        }else{
+            return []
+        }
+
+    }catch(e){
+        return []
+    }
+}
 function saveUsers(list){
     localStorage.setItem("mtos_users", JSON.stringify(list))
 }
 
 function addUser(list, name){
+
+    // страховка
+    if(!Array.isArray(list)){
+        list = []
+    }
+
     if(name && !list.includes(name)){
         list.push(name)
     }
+
     return list
 }
 
