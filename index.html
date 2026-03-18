@@ -5,7 +5,6 @@
 <title>MTOS</title>
 
 <style>
-
 body{
     background:#0a0a0a;
     color:#eee;
@@ -13,16 +12,8 @@ body{
     text-align:center;
 }
 
-h1{
-    margin-top:20px;
-}
-
-#app{
-    margin-top:30px;
-}
-
 input{
-    padding:10px;
+    padding:8px;
     margin:5px;
     background:#111;
     border:1px solid #333;
@@ -31,35 +22,21 @@ input{
 
 button{
     padding:10px 20px;
-    margin-top:10px;
     background:#222;
     color:#fff;
     border:none;
     cursor:pointer;
 }
 
-button:hover{
-    background:#444;
+#globalKinMap{
+    margin-top:30px;
 }
-
-#status{
-    margin-top:20px;
-    color:#aaa;
-}
-
-#output{
-    margin-top:20px;
-}
-
 </style>
 
 </head>
-
 <body>
 
 <h1>MTOS</h1>
-
-<div id="app">
 
 <input id="name" placeholder="Имя"><br>
 <input id="year" placeholder="Год"><br>
@@ -68,18 +45,13 @@ button:hover{
 
 <button id="runBtn">RUN</button>
 
-<div id="status">готов</div>
-
-<div id="output"></div>
+<div id="status">init...</div>
 
 <div id="globalKinMap"></div>
-
-</div>
 
 <script type="module">
 
 import { drawGlobalKinMap } from "./globalKinMap.js"
-
 import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
 
 let pyodide = null
@@ -90,49 +62,46 @@ async function init(){
 
     pyodide = await loadPyodide()
 
-    const response = await fetch("MTOS_Engine.py")
-    const code = await response.text()
+    const code = await (await fetch("MTOS_Engine.py")).text()
 
     pyodide.runPython(code)
 
     document.getElementById("status").innerText = "Ready"
-
 }
 
 async function run(){
 
     const name = document.getElementById("name").value
-    const year = parseInt(document.getElementById("year").value)
-    const month = parseInt(document.getElementById("month").value)
-    const day = parseInt(document.getElementById("day").value)
+    const year = +document.getElementById("year").value
+    const month = +document.getElementById("month").value
+    const day = +document.getElementById("day").value
 
     document.getElementById("status").innerText = "Running..."
 
     try{
 
-        const result = pyodide.runPython(`
-import json
+        pyodide.runPython(`
 run_mtos("${name}",${year},${month},${day})
 `)
 
-        const data = JSON.parse(result)
+        const kinCounts = JSON.parse(
+            pyodide.runPython(`mtos_global_kin_map()`)
+        )
 
-        const kinCounts = JSON.parse(pyodide.runPython(`mtos_global_kin_map()`))
-        const usersByKin = JSON.parse(pyodide.runPython(`mtos_users_by_kin()`))
+        const usersByKin = JSON.parse(
+            pyodide.runPython(`mtos_users_by_kin()`)
+        )
 
         drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
-
-        document.getElementById("output").innerText = JSON.stringify(data,null,2)
 
         document.getElementById("status").innerText = "Done"
 
     }catch(e){
 
-        document.getElementById("status").innerText = "Error"
         console.error(e)
+        document.getElementById("status").innerText = "ERROR"
 
     }
-
 }
 
 document.getElementById("runBtn").onclick = run
