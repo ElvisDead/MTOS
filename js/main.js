@@ -13,7 +13,7 @@ import { renderMap } from "./renderMap.js"
 import { drawPhaseSpace } from "./phaseSpace.js"
 import { exportExperiment } from "./exportExperiment.js"
 //import { drawKinMap } from "./kinmap.js"
-import { drawGlobalKinMap } from "./globalKinMap.js"
+//import { drawGlobalKinMap } from "./globalKinMap.js"
 import { kinFromTS, tsFromKin, kinToTS } from "./tzolkin.js"
 import { MTOS_MAPS } from "./mapsConfig.js"
 import { run } from "./run.js"
@@ -33,7 +33,7 @@ window.drawLinearKinMap = drawLinearKinMap
 window.renderMap = renderMap
 window.drawPhaseSpace = drawPhaseSpace
 window.exportExperiment = exportExperiment
-window.drawGlobalKinMap = drawGlobalKinMap
+//window.drawGlobalKinMap = drawGlobalKinMap
 window.kinFromTS = kinFromTS
 window.tsFromKin = tsFromKin
 window.kinToTS = kinToTS
