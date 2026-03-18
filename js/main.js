@@ -1,3 +1,4 @@
+import { drawWeatherMap } from "./weatherMap.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
 import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
 
@@ -43,6 +44,12 @@ run_mtos("${name}",${year},${month},${day})
         )
 
         drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
+
+        const weather = JSON.parse(
+            pyodide.runPython(`mtos_weather_map()`)
+        )
+
+        drawWeatherMap("weatherMap", weather)
 
         status.innerText = "Done"
 
