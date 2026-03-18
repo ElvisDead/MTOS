@@ -1470,27 +1470,30 @@ def mtos_field_step(name, year, month, day, prev_field=None):
     pressure = mtos_pressure_map()
 
     # ===============================
-    # СОЗДАЁМ 2D ПОЛЕ 13×20
+    # SOURCE (S)
     # ===============================
-    field2D = [[0 for _ in range(20)] for _ in range(13)]
+    source2D = [[0 for _ in range(20)] for _ in range(13)]
 
-    for tone in range(13):
-        for seal in range(20):
+    for t in range(13):
+        for s in range(20):
 
-            kin = (seal * 13 + tone) % 260
+            kin = (s * 13 + t) % 260
 
             att = weather[kin]["attention"]
             pr = pressure[kin]
 
-            phi = att * pr
+            # источник
+            S = 0.6 * att + 0.4 * pr
 
-            field2D[tone][seal] = phi
+            source2D[t][s] = S
 
-    # если первый шаг
+    # ===============================
+    # ИНИЦИАЛИЗАЦИЯ
+    # ===============================
     if prev_field is None:
-        return [field2D[t][s] for t in range(13) for s in range(20)]
+        return [source2D[t][s] for t in range(13) for s in range(20)]
 
-    # преобразуем prev_field в 2D
+    # в 2D
     prev2D = [[0 for _ in range(20)] for _ in range(13)]
     k = 0
     for t in range(13):
@@ -1499,19 +1502,21 @@ def mtos_field_step(name, year, month, day, prev_field=None):
             k += 1
 
     # ===============================
-    # 2D ДИФФУЗИЯ
+    # ПАРАМЕТРЫ
+    # ===============================
+    D = 0.12
+    decay = 0.03
+
+    # ===============================
+    # ЭВОЛЮЦИЯ
     # ===============================
     new2D = [[0 for _ in range(20)] for _ in range(13)]
-
-    D = 0.15   # коэффициент диффузии
-    decay = 0.03
 
     for t in range(13):
         for s in range(20):
 
             center = prev2D[t][s]
 
-            # соседи (с цикличностью)
             up    = prev2D[(t-1) % 13][s]
             down  = prev2D[(t+1) % 13][s]
             left  = prev2D[t][(s-1) % 20]
@@ -1519,9 +1524,11 @@ def mtos_field_step(name, year, month, day, prev_field=None):
 
             laplacian = (up + down + left + right - 4 * center)
 
-            diff = D * laplacian
+            diffusion = D * laplacian
 
-            new_val = center + diff - decay * center
+            source = source2D[t][s]
+
+            new_val = center + diffusion + source - decay * center
 
             new2D[t][s] = new_val
 
