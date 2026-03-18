@@ -1461,3 +1461,52 @@ def mtos_node_functions(name, year, month, day):
 
     return nodes
 
+# ===============================
+# FIELD EQUATION (Φ)
+# ===============================
+def mtos_field_step(name, year, month, day, prev_field=None):
+
+    weather = mtos_260_weather(name, year, month, day)
+    pressure = mtos_pressure_map()
+
+    # текущие значения
+    field = []
+
+    for i in range(260):
+
+        att = weather[i]["attention"]
+        pr = pressure[i]
+
+        phi = att * pr
+
+        field.append(phi)
+
+    # если нет прошлого состояния — вернуть базу
+    if prev_field is None:
+        return field
+
+    # ===============================
+    # ДИФФУЗИЯ (простая)
+    # ===============================
+    new_field = []
+
+    for i in range(260):
+
+        left = field[(i - 1) % 260]
+        right = field[(i + 1) % 260]
+
+        diffusion = (left + right - 2 * field[i]) * 0.2
+
+        # ===============================
+        # ДИССИПАЦИЯ
+        # ===============================
+        decay = field[i] * 0.05
+
+        # ===============================
+        # ОБНОВЛЕНИЕ
+        # ===============================
+        next_phi = field[i] + diffusion - decay
+
+        new_field.append(next_phi)
+
+    return new_field
