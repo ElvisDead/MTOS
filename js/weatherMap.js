@@ -4,6 +4,25 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
     if(!root) return
 
     root.innerHTML = ""
+    const legend = document.createElement("div")
+
+    legend.innerHTML = `
+    <b>Weather Map Legend</b><br>
+    Blue → Low Attention (−σ)<br>
+    White → Neutral<br>
+    Red → High Attention (+σ)<br>
+    Purple → Pressure<br>
+    Yellow border → Today<br>
+    White border → User<br>
+    Gold → Match
+    `
+
+    legend.style.fontFamily = "monospace"
+    legend.style.fontSize = "12px"
+    legend.style.textAlign = "center"
+    legend.style.marginBottom = "10px"
+
+    root.appendChild(legend)
     root.style.display = "flex"
     root.style.flexDirection = "column"
     root.style.alignItems = "center"
