@@ -25,6 +25,8 @@ export async function loadPyodideAndRun(pythonFilePath) {
             indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/"
         });
 
+        await pyodide.loadPackage("numpy");
+
         console.log("Pyodide loaded");
 
         // =========================
