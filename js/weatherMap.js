@@ -1,5 +1,5 @@
 // ===============================
-// 260 KIN WEATHER MAP (PRO)
+// 260 KIN WEATHER MAP (FINAL)
 // ===============================
 
 export function drawWeatherMap(id, weather){
@@ -9,7 +9,6 @@ export function drawWeatherMap(id, weather){
 
     container.innerHTML = ""
 
-    // GRID
     container.style.display = "grid"
     container.style.gridTemplateColumns = "repeat(20, 16px)"
     container.style.gap = "2px"
@@ -29,16 +28,19 @@ export function drawWeatherMap(id, weather){
 
         const val = data.attention
 
-        // COLOR (УЛУЧШЕННЫЙ ГРАДИЕНТ)
-        const color = getColor(val, data.pressure, data.conflict)
+        // COLOR
+        const r = Math.floor(255 * val)
+        const g = Math.floor(180 * (1 - data.pressure))
+        const b = Math.floor(200 * data.conflict)
 
         cell.style.width = "16px"
         cell.style.height = "16px"
-        cell.style.background = color
+        cell.style.background = `rgb(${r},${g},${b})`
         cell.style.borderRadius = "2px"
         cell.style.cursor = "pointer"
+        cell.style.transition = "transform 0.1s"
 
-        // HOVER INFO
+        // TOOLTIP
         cell.title =
             "Kin " + (i+1) +
             "\nAttention: " + val.toFixed(3) +
@@ -46,9 +48,9 @@ export function drawWeatherMap(id, weather){
             "\nPressure: " + data.pressure.toFixed(3) +
             "\nConflict: " + data.conflict.toFixed(3)
 
-        // INTERACTION (подсветка)
+        // HOVER
         cell.onmouseenter = () => {
-            cell.style.transform = "scale(1.4)"
+            cell.style.transform = "scale(1.35)"
             cell.style.zIndex = "10"
         }
 
@@ -59,21 +61,4 @@ export function drawWeatherMap(id, weather){
 
         container.appendChild(cell)
     }
-}
-
-// ===============================
-// COLOR ENGINE
-// ===============================
-function getColor(attention, pressure, conflict){
-
-    // базовая энергия
-    const r = Math.floor(255 * attention)
-
-    // давление → зелёный канал
-    const g = Math.floor(180 * (1 - pressure))
-
-    // конфликт → синий канал
-    const b = Math.floor(200 * conflict)
-
-    return `rgb(${r},${g},${b})`
 }
