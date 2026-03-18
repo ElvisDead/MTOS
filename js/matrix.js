@@ -2,6 +2,8 @@ import { seals } from "./tzolkin.js"
 
 export function drawMatrix(id,data){
 
+if(id === "kinmap") return
+
 const map=document.getElementById(id)
 map.innerHTML=""
 
