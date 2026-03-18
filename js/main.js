@@ -16,21 +16,38 @@ export async function initMTOS(){
 
     const status = document.getElementById("status")
 
-    try{
-        status.innerText = "Loading Pyodide..."
+    pyodide = await loadPyodide()
+    await pyodide.loadPackage("numpy")
 
-        pyodide = await loadPyodide()
-        await pyodide.loadPackage("numpy")
+    const code = await fetch("./MTOS_Engine.py").then(r => r.text())
+    pyodide.runPython(code)
 
-        const code = await fetch("./MTOS_Engine.py").then(r => r.text())
-        pyodide.runPython(code)
+    status.innerText = "Ready"
+}
 
-        status.innerText = "Ready"
+// ===============================
+// LOAD USERS (memory)
+// ===============================
+function loadUsers(){
+    const saved = localStorage.getItem("mtos_users")
+    return saved ? JSON.parse(saved) : []
+}
 
-    }catch(e){
-        console.error(e)
-        status.innerText = "INIT ERROR"
+// ===============================
+// SAVE USERS
+// ===============================
+function saveUsers(list){
+    localStorage.setItem("mtos_users", JSON.stringify(list))
+}
+
+// ===============================
+// ADD USER (без дублей)
+// ===============================
+function addUser(list, name){
+    if(!list.includes(name)){
+        list.push(name)
     }
+    return list
 }
 
 // ===============================
@@ -38,25 +55,26 @@ export async function initMTOS(){
 // ===============================
 export async function runMTOS(){
 
-    const status = document.getElementById("status")
-
     const name  = document.getElementById("name").value
-    const year  = parseInt(document.getElementById("year").value)
-    const month = parseInt(document.getElementById("month").value)
-    const day   = parseInt(document.getElementById("day").value)
+    const year  = +document.getElementById("year").value
+    const month = +document.getElementById("month").value
+    const day   = +document.getElementById("day").value
 
-    try{
+    // ===============================
+    // USER MEMORY
+    // ===============================
+    let userList = loadUsers()
+    userList = addUser(userList, name)
+    saveUsers(userList)
 
-        status.innerText = "Running..."
-
-        // ===============================
-        // PYTHON DATA
-        // ===============================
-        const result = JSON.parse(pyodide.runPython(`
+    // ===============================
+    // PYTHON DATA
+    // ===============================
+    const result = JSON.parse(pyodide.runPython(`
 import json
 
-weather = mtos_260_weather("${name}", ${year}, ${month}, ${day})
-kin = mtos_current_kin("${name}", ${year}, ${month}, ${day})
+weather = mtos_260_weather("${name}",${year},${month},${day})
+kin = mtos_current_kin("${name}",${year},${month},${day})
 pressure = mtos_pressure_map()
 
 attention = sum([w["attention"] for w in weather]) / 260
@@ -75,31 +93,100 @@ json.dumps({
 })
 `))
 
-        const weather = result.weather
-        const pressure = result.pressure
-        const userKin = result.kin
+    const weather = result.weather
+    const pressure = result.pressure
+    const userKin = result.kin
 
-        // ===============================
-        // TODAY
-        // ===============================
-        const now = new Date()
+    const now = new Date()
 
-        const todayKin = Number(pyodide.runPython(`
-mtos_current_kin("today", ${now.getFullYear()}, ${now.getMonth()+1}, ${now.getDate()})
+    const todayKin = Number(pyodide.runPython(`
+mtos_current_kin("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
 `))
 
-        // ===============================
-        // USERS (ТОЛЬКО 1)
-        // ===============================
-        users = [{
-            name: name,
+    // ===============================
+    // BUILD USERS (ВСЕ!)
+    // ===============================
+    users = userList.map(uName=>{
+
+        const kin = Number(pyodide.runPython(`
+mtos_current_kin("${uName}",${year},${month},${day})
+`))
+
+        const phase = (kin % 20) * Math.PI / 10
+
+        return {
+            name: uName,
+            kin,
+            phase,
             weight: 1
-        }]
+        }
+    })
+
+    // ===============================
+    // FIELD
+    // ===============================
+    const fieldResult = JSON.parse(pyodide.runPython(`
+import json
+users = ${JSON.stringify(users)}
+f,s,u = mtos_multi_agents_field(users,${year},${month},${day})
+json.dumps([f,s,u])
+`))
+
+    fieldState = fieldResult[0]
+    fieldMode  = fieldResult[1]
+    users      = fieldResult[2]
+
+    window.currentUsers = users
+
+    // ===============================
+    // UI STATE
+    // ===============================
+    renderCognitiveState(
+        userKin,
+        todayKin,
+        result.attention,
+        result.noise,
+        result.lyapunov,
+        result.prediction
+    )
+
+    // ===============================
+    // RENDER
+    // ===============================
+    drawWeatherMap(
+        "weatherMap",
+        weather,
+        userKin,
+        todayKin,
+        pressure,
+        fieldState,
+        selectedAgent
+    )
+
+    drawNetwork("networkMap", users, (agent)=>{
+        selectedAgent = agent
+    })
+
+    // ===============================
+    // TIME
+    // ===============================
+    let baseYear = year
+    let baseMonth = month
+    let baseDay = day
+
+    function step(offset){
+
+        const d = new Date(baseYear, baseMonth-1, baseDay)
+        d.setDate(d.getDate() + offset)
+
+        const y = d.getFullYear()
+        const m = d.getMonth()+1
+        const dd = d.getDate()
 
         users = users.map(u=>{
 
             const kin = Number(pyodide.runPython(`
-mtos_current_kin("${u.name}", ${year}, ${month}, ${day})
+mtos_current_kin("${u.name}",${y},${m},${dd})
 `))
 
             const phase = (kin % 20) * Math.PI / 10
@@ -107,13 +194,17 @@ mtos_current_kin("${u.name}", ${year}, ${month}, ${day})
             return {...u, kin, phase}
         })
 
-        // ===============================
-        // FIELD
-        // ===============================
         const fieldResult = JSON.parse(pyodide.runPython(`
 import json
 users = ${JSON.stringify(users)}
-f,s,u = mtos_multi_agents_field(users, ${year}, ${month}, ${day})
+f,s,u = mtos_multi_agents_field(
+ users,
+ ${y},
+ ${m},
+ ${dd},
+ ${JSON.stringify(fieldState)},
+ ${JSON.stringify(fieldMode)}
+)
 json.dumps([f,s,u])
 `))
 
@@ -123,147 +214,12 @@ json.dumps([f,s,u])
 
         window.currentUsers = users
 
-        // ===============================
-        // UI STATE (КЛЮЧ)
-        // ===============================
-        renderCognitiveState(
-            userKin,
-            todayKin,
-            result.attention,
-            result.noise,
-            result.lyapunov,
-            result.prediction
-        )
-
-        // ===============================
-        // RENDER
-        // ===============================
-        drawWeatherMap(
-            "weatherMap",
-            weather,
-            userKin,
-            todayKin,
-            pressure,
-            fieldState,
-            selectedAgent
-        )
-
         drawNetwork("networkMap", users, (agent)=>{
             selectedAgent = agent
         })
-
-        status.innerText = "Done"
-
-        // ===============================
-        // TIME CONTROL
-        // ===============================
-        let baseYear = year
-        let baseMonth = month
-        let baseDay = day
-
-        function step(offset){
-
-            try{
-
-                const d = new Date(baseYear, baseMonth-1, baseDay)
-                d.setDate(d.getDate() + offset)
-
-                const y = d.getFullYear()
-                const m = d.getMonth()+1
-                const dd = d.getDate()
-
-                const result = JSON.parse(pyodide.runPython(`
-import json
-
-weather = mtos_260_weather("${name}", ${y}, ${m}, ${dd})
-kin = mtos_current_kin("${name}", ${y}, ${m}, ${dd})
-pressure = mtos_pressure_map()
-
-attention = sum([w["attention"] for w in weather]) / 260
-noise = sum([abs(w["attention"]-0.5) for w in weather]) / 260
-lyapunov = noise * 2.5
-prediction = attention * (1 - noise)
-
-json.dumps({
- "weather": weather,
- "pressure": pressure,
- "kin": kin,
- "attention": attention,
- "noise": noise,
- "lyapunov": lyapunov,
- "prediction": prediction
-})
-`))
-
-                const weather = result.weather
-                const pressure = result.pressure
-                const currentKin = result.kin
-
-                users = users.map(u=>{
-
-                    const kin = Number(pyodide.runPython(`
-mtos_current_kin("${u.name}", ${y}, ${m}, ${dd})
-`))
-
-                    const phase = (kin % 20) * Math.PI / 10
-
-                    return {...u, kin, phase}
-                })
-
-                const fieldResult = JSON.parse(pyodide.runPython(`
-import json
-users = ${JSON.stringify(users)}
-f,s,u = mtos_multi_agents_field(
-    users,
-    ${y},
-    ${m},
-    ${dd},
-    ${JSON.stringify(fieldState)},
-    ${JSON.stringify(fieldMode)}
-)
-json.dumps([f,s,u])
-`))
-
-                fieldState = fieldResult[0]
-                fieldMode  = fieldResult[1]
-                users      = fieldResult[2]
-
-                window.currentUsers = users
-
-                renderCognitiveState(
-                    currentKin,
-                    todayKin,
-                    result.attention,
-                    result.noise,
-                    result.lyapunov,
-                    result.prediction
-                )
-
-                drawWeatherMap(
-                    "weatherMap",
-                    weather,
-                    currentKin,
-                    todayKin,
-                    pressure,
-                    fieldState,
-                    selectedAgent
-                )
-
-                drawNetwork("networkMap", users, (agent)=>{
-                    selectedAgent = agent
-                })
-
-            }catch(e){
-                console.error("STEP ERROR:", e)
-            }
-        }
-
-        initTimeControls(step)
-
-    }catch(e){
-        console.error(e)
-        status.innerText = "ERROR"
     }
+
+    initTimeControls(step)
 }
 
 // ===============================
@@ -279,8 +235,6 @@ function renderCognitiveState(
 ){
 
     const el = document.getElementById("mtosSummary")
-
-    if(!el) return
 
     el.innerHTML = `
     <div style="font-weight:bold; font-size:16px;">
