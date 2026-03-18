@@ -13,8 +13,12 @@ export const MAPS = {
 
     kinMap: {
         id: "kinMap",
-        draw: drawKinMap,
-        needsParams: true
+        draw: () => {
+        if (typeof drawKinMap === "function") {
+            drawKinMap();
+        }
+        },
+        needsParams: false
     },
 
     linearKinMap: {
@@ -55,7 +59,7 @@ export async function drawMap(name, pyodide, params) {
         if (map.needsParams) {
             await map.draw(pyodide, map.id, params);
         } else {
-            await map.draw(pyodide, map.id);
+            await map.draw();
         }
 
     } catch (err) {
