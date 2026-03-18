@@ -825,7 +825,7 @@ def mtos_series(name,year,month,day,days=30):
 
     series=simulate(i,tone,today,days)
 
-    return series.tolist()
+    return json.dumps(series.tolist())
 
 def mtos_260_weather(name,year,month,day):
 
@@ -977,7 +977,7 @@ def mtos_260_weather(name,year,month,day):
         "field": field.tolist()
     })
 
-    return weather
+    return json.dumps(weather)
 
 def mtos_user_climate(user_seal):
 
@@ -1187,7 +1187,7 @@ def mtos_phase_space(name,year,month,day):
         xs.append(float(x))
         ys.append(float(y))
 
-    return {
+    return json.dumps({
         "x":xs,
         "y":ys
     }
