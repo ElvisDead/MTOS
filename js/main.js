@@ -1,54 +1,51 @@
-import { drawGlobalKinMap } from "./globalKinMap.js"
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
+// main.js
 
-let pyodide = null
+import { runMTOS } from './run.js';
+import { exportExperiment } from './exportExperiment.js';
 
-export async function initMTOS(){
+// ======================================
+// INIT APP
+// ======================================
 
-    const status = document.getElementById("status")
-    status.innerText = "Loading Pyodide..."
+export function initApp(pyodide) {
 
-    pyodide = await loadPyodide()
+    console.log("App initialized");
 
-    const code = await (await fetch("MTOS_Engine.py")).text()
+    const runBtn = document.getElementById("runBtn");
+    const exportBtn = document.getElementById("exportBtn");
 
-    pyodide.runPython(code)
+    if (!runBtn) {
+        console.error("runBtn not found");
+        return;
+    }
 
-    status.innerText = "Ready"
-}
+    // =========================
+    // RUN BUTTON
+    // =========================
 
-export async function runMTOS(){
+    runBtn.onclick = async () => {
 
-    const status = document.getElementById("status")
+        const name = document.getElementById("name").value || "User";
+        const year = parseInt(document.getElementById("year").value) || 1987;
+        const month = parseInt(document.getElementById("month").value) || 1;
+        const day = parseInt(document.getElementById("day").value) || 1;
 
-    const name = document.getElementById("name").value
-    const year = +document.getElementById("year").value
-    const month = +document.getElementById("month").value
-    const day = +document.getElementById("day").value
+        const params = { name, year, month, day };
 
-    status.innerText = "Running..."
+        console.log("Running with:", params);
 
-    try{
+        await runMTOS(pyodide, params);
+    };
 
-        pyodide.runPython(`
-run_mtos("${name}",${year},${month},${day})
-`)
+    // =========================
+    // EXPORT BUTTON
+    // =========================
 
-        const kinCounts = JSON.parse(
-            pyodide.runPython(`mtos_global_kin_map()`)
-        )
+    if (exportBtn) {
 
-        const usersByKin = JSON.parse(
-            pyodide.runPython(`mtos_users_by_kin()`)
-        )
+        exportBtn.onclick = () => {
+            exportExperiment(pyodide);
+        };
 
-        drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
-
-        status.innerText = "Done"
-
-    }catch(e){
-
-        console.error(e)
-        status.innerText = "ERROR"
     }
 }
