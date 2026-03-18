@@ -84,13 +84,22 @@ export function drawWeatherMap(id, data, userKin, highlightKin, pressureData){
             cell.style.background = `rgb(${r},${g},${b})`
 
             // === подсветки
+            // сброс
+            cell.style.border = "1px solid #111"
+
+            // === TODAY (жёлтая рамка)
             if(kin === highlightKin){
-                cell.style.outline = "3px solid yellow"
+                cell.style.border = "3px solid yellow"
             }
 
+            // === USER (белая рамка)
             if(userKin && kin === userKin){
-                cell.style.outline = "3px solid white"
-                cell.style.boxShadow = "0 0 8px white"
+                cell.style.border = "3px solid white"
+            }
+
+            // === ЕСЛИ СОВПАЛИ (одна клетка)
+            if(userKin && kin === userKin && kin === highlightKin){
+                cell.style.border = "3px solid gold"
             }
 
             const wave = Math.floor((kin-1)/13)+1
