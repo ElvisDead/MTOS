@@ -1,5 +1,8 @@
 export function drawGlobalKinMap(id){
 
+let map = document.getElementById(id)
+if(!map) return
+
 if(window.__globalMapDrawn) return
 window.__globalMapDrawn = true
 
