@@ -1,5 +1,5 @@
 // ===============================
-// GLOBAL KIN DISTRIBUTION MAP (PRO)
+// GLOBAL KIN DISTRIBUTION (FINAL)
 // ===============================
 
 export function drawGlobalKinMap(id, kinCounts, usersByKin){
@@ -9,9 +9,7 @@ export function drawGlobalKinMap(id, kinCounts, usersByKin){
 
     container.innerHTML = ""
 
-    // ===============================
-    // HEADER (TOP KINS)
-    // ===============================
+    // TOP KINS HEADER
     const header = document.createElement("div")
     header.style.marginBottom = "10px"
     header.style.fontSize = "14px"
@@ -24,9 +22,7 @@ export function drawGlobalKinMap(id, kinCounts, usersByKin){
 
     container.appendChild(header)
 
-    // ===============================
     // GRID
-    // ===============================
     const grid = document.createElement("div")
 
     grid.style.display = "grid"
@@ -36,22 +32,25 @@ export function drawGlobalKinMap(id, kinCounts, usersByKin){
 
     const max = Math.max(...kinCounts, 1)
 
-    for(let i=0;i<260;i++){
+    for(let i = 0; i < 260; i++){
 
-        const val = kinCounts[i] / max
         const count = kinCounts[i]
+        const val = count / max
 
         const users = usersByKin[i+1] || []
 
         const cell = document.createElement("div")
 
-        const color = getColor(val)
+        const r = Math.floor(255 * val)
+        const g = Math.floor(120 * (1 - val))
+        const b = 80
 
         cell.style.width = "16px"
         cell.style.height = "16px"
-        cell.style.background = color
+        cell.style.background = `rgb(${r},${g},${b})`
         cell.style.borderRadius = "2px"
         cell.style.cursor = "pointer"
+        cell.style.transition = "transform 0.1s"
 
         // TOOLTIP
         cell.title =
@@ -59,9 +58,9 @@ export function drawGlobalKinMap(id, kinCounts, usersByKin){
             "\nUsers: " + count +
             "\nDensity: " + val.toFixed(3)
 
-        // HOVER EFFECT
+        // HOVER
         cell.onmouseenter = () => {
-            cell.style.transform = "scale(1.4)"
+            cell.style.transform = "scale(1.35)"
             cell.style.zIndex = "10"
         }
 
@@ -77,20 +76,7 @@ export function drawGlobalKinMap(id, kinCounts, usersByKin){
 }
 
 // ===============================
-// COLOR SCALE
-// ===============================
-function getColor(v){
-
-    // мягкий heatmap
-    const r = Math.floor(255 * v)
-    const g = Math.floor(120 * (1 - v))
-    const b = Math.floor(80)
-
-    return `rgb(${r},${g},${b})`
-}
-
-// ===============================
-// TOP KINS ANALYTICS
+// TOP KINS
 // ===============================
 function getTopKins(kinCounts, n){
 
@@ -101,5 +87,5 @@ function getTopKins(kinCounts, n){
 
     arr.sort((a,b) => b.count - a.count)
 
-    return arr.slice(0,n)
+    return arr.slice(0, n)
 }
