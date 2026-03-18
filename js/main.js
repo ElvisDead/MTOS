@@ -126,6 +126,26 @@ mtos_current_kin("${name}",${y},${m},${dd})
     }
 
     // ===============================
+    // SUMMARY DATA
+    // ===============================
+    const summary = JSON.parse(pyodide.runPython(`
+    import json
+    json.dumps(mtos_summary("${name}",${year},${month},${day}))
+    `))
+
+    const summaryDiv = document.getElementById("mtosSummary")
+
+    summaryDiv.innerHTML = `
+    <b>Today Kin:</b> ${todayKin}<br>
+    <b>User Kin:</b> ${userKin}<br>
+    <b>State:</b> ${summary.state}<br>
+    <b>Attention:</b> ${summary.attention.toFixed(3)}<br>
+    <b>Pressure:</b> ${summary.pressure.toFixed(3)}<br>
+    <b>Noise:</b> ${summary.noise.toFixed(3)}<br>
+    <b>Lyapunov:</b> ${summary.lyapunov.toFixed(3)}
+    `
+
+    // ===============================
     // ВСЕГДА СОЗДАЁМ КНОПКИ
     // ===============================
     initTimeControls(step)
