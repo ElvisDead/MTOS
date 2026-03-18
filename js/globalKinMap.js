@@ -13,23 +13,35 @@ export function drawGlobalKinMap(id, kinCounts, usersByKin){
 
     for(let i=0;i<260;i++){
 
-        const v = kinCounts[i]/max
+        const kin = i+1
+        const tone = ((kin-1)%13)+1
+        const seal = ((kin-1)%20)+1
+
+        const count = kinCounts[i]
+        const v = count/max
 
         const r = Math.floor(255*v)
         const g = Math.floor(180*v)
         const b = 50
+
+        const users = usersByKin[kin] || []
 
         const cell = document.createElement("div")
 
         cell.style.width = "14px"
         cell.style.height = "14px"
         cell.style.background = `rgb(${r},${g},${b})`
-
-        const users = usersByKin[i+1] || []
+        cell.style.cursor = "pointer"
 
         cell.title =
-            "Kin " + (i+1) +
-            "\nUsers: " + users.length
+            `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nUsers: ${users.length}`
+
+        cell.onclick = () => {
+            alert(
+                `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nUsers:\n` +
+                users.map(u=>u.name).join("\n")
+            )
+        }
 
         c.appendChild(cell)
     }
