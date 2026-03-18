@@ -1,8 +1,12 @@
+// ===============================
 // IMPORTS
+// ===============================
 import { drawWeatherMap } from "./weatherMap.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
 
+// ===============================
 // GLOBAL STATE
+// ===============================
 let pyodide = null
 
 // ===============================
@@ -15,15 +19,17 @@ export async function initMTOS(){
 
     try{
 
-        // LOAD PYODIDE
-        pyodide = await loadPyodide
-        if(!pyodide.loadedPackages.has("numpy")){
-            await pyodide.loadPackage("numpy")
-        }
+        // 1. LOAD PYODIDE (ПРАВИЛЬНО)
+        pyodide = await loadPyodide()
+
+        status.innerText = "Loading NumPy..."
+
+        // 2. LOAD NUMPY (ОБЯЗАТЕЛЬНО)
+        await pyodide.loadPackage("numpy")
 
         status.innerText = "Loading MTOS Engine..."
 
-        // LOAD PYTHON ENGINE
+        // 3. LOAD PYTHON ENGINE
         const code = await fetch("./MTOS_Engine.py").then(r => r.text())
 
         pyodide.runPython(code)
@@ -37,7 +43,6 @@ export async function initMTOS(){
     }
 }
 
-
 // ===============================
 // RUN
 // ===============================
@@ -50,11 +55,18 @@ export async function runMTOS(){
     const month = parseInt(document.getElementById("month").value)
     const day = parseInt(document.getElementById("day").value)
 
+    if(!name || !year || !month || !day){
+        status.innerText = "Fill all fields"
+        return
+    }
+
     status.innerText = "Running..."
 
     try{
 
+        // ===============================
         // RUN CORE
+        // ===============================
         pyodide.runPython(`
 run_mtos("${name}",${year},${month},${day})
 `)
@@ -75,12 +87,14 @@ run_mtos("${name}",${year},${month},${day})
         // ===============================
         // WEATHER MAP (260)
         // ===============================
-        const weather = pyodide.runPython(`
+        const weather = JSON.parse(
+            pyodide.runPython(`
 import json
 json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
 `)
+        )
 
-        drawWeatherMap("weatherMap", JSON.parse(weather))
+        drawWeatherMap("weatherMap", weather)
 
         status.innerText = "Done"
 
