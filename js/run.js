@@ -4,9 +4,7 @@ import { startMTOS } from "./pyodideLoader.js"
 
 export async function run(){
 
-if(!window.pyodide){
-  await startMTOS()
-}
+await startMTOS()
 
 const pyodide = window.pyodide
 
@@ -82,7 +80,7 @@ setTimeout(() => {
     drawGlobalKinMap("globalKinMap")
 }, 0)
 
-console.log("KIN USERS:", window.kinUsers)
+//console.log("KIN USERS:", window.kinUsers)
   
 //drawKinMap(weather)
 
