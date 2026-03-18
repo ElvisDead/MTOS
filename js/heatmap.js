@@ -1,60 +1,102 @@
-import { seals, tones } from "./tzolkin.js"
-import { getColor } from "./colors.js"
+// heatmap.js
 
-export function drawHeatmap(id,data,cols,rows=cols){
+import { getHeatColor, COLORS } from './colors.js';
 
-let map=document.getElementById(id)
-map.innerHTML=""
+export async function drawHeatmap(pyodide, canvasId, params) {
 
-map.style.display="grid"
-map.style.gridTemplateColumns=`40px repeat(${cols},12px)`
-map.style.gridTemplateRows=`repeat(${rows+1},14px)`
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
 
-map.appendChild(document.createElement("div"))
+    const ctx = canvas.getContext("2d");
 
-let headers = cols==20 ? seals : tones
+    const width = canvas.width;
+    const height = canvas.height;
 
-headers.forEach(s=>{
+    ctx.clearRect(0, 0, width, height);
 
-let h=document.createElement("div")
-h.style.fontSize="8px"
-h.style.color="#aaa"
-h.innerText=s
+    // =========================
+    // PARAMS
+    // =========================
 
-map.appendChild(h)
+    const { name, year, month, day } = params;
 
-})
+    // =========================
+    // LOAD DATA FROM PYTHON
+    // =========================
 
-for(let y=0;y<rows;y++){
+    let raw;
 
-let label=document.createElement("div")
-label.style.fontSize="8px"
-label.style.color="#aaa"
-label.innerText = rows==13 ? tones[y] : seals[y]
+    try {
 
-map.appendChild(label)
+        raw = await pyodide.runPythonAsync(`
+mtos_phase_density("${name}", ${year}, ${month}, ${day})
+        `);
 
-for(let x=0;x<cols;x++){
+    } catch (err) {
+        console.error("Heatmap error:", err);
+        return;
+    }
 
-let kin = x + y*13 + 1
+    const data = JSON.parse(raw);
 
-let v=data[kin-1] ?? 0
+    // =========================
+    // GRID
+    // =========================
 
-let val=v
-if(val<0) val=0
-if(val>1) val=1
+    const size = 20;
 
-let c=document.createElement("div")
-c.className="cell"
+    const cellW = width / size;
+    const cellH = height / size;
 
-c.style.background=getColor(val)
+    // =========================
+    // DRAW
+    // =========================
 
-c.title=`${Number(v).toFixed(2)}`
+    for (let y = 0; y < size; y++) {
 
-map.appendChild(c)
+        for (let x = 0; x < size; x++) {
 
-}
+            const index = y * size + x;
+            const value = data[index] || 0;
 
-}
+            ctx.fillStyle = getHeatColor(value);
 
+            ctx.fillRect(
+                x * cellW,
+                y * cellH,
+                cellW,
+                cellH
+            );
+        }
+    }
+
+    // =========================
+    // GRID LINES (optional)
+    // =========================
+
+    ctx.strokeStyle = COLORS.grid;
+    ctx.lineWidth = 0.5;
+
+    for (let i = 0; i <= size; i++) {
+
+        // vertical
+        ctx.beginPath();
+        ctx.moveTo(i * cellW, 0);
+        ctx.lineTo(i * cellW, height);
+        ctx.stroke();
+
+        // horizontal
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellH);
+        ctx.lineTo(width, i * cellH);
+        ctx.stroke();
+    }
+
+    // =========================
+    // TITLE
+    // =========================
+
+    ctx.fillStyle = COLORS.text;
+    ctx.font = "12px Arial";
+    ctx.fillText("Phase Density Heatmap", 10, 15);
 }
