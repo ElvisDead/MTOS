@@ -210,6 +210,7 @@ cells.push(c)
 highlightCurrentKin(cells)
 
 }
+}
 
 export function highlightCurrentKin(cells){
 
