@@ -7,6 +7,7 @@ let pyodide = null
 let fieldState = null
 let fieldMode = null
 let users = []
+let selectedAgent = null
 
 // ===============================
 // INIT
@@ -80,7 +81,7 @@ json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
         // ===============================
-        // АГЕНТЫ (СТАРТ)
+        // USERS + КИН (КРИТИЧНО)
         // ===============================
         users = [
             {name: name, weight: 1.0},
@@ -88,8 +89,16 @@ json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
             {name: "Bob", weight: 0.6}
         ]
 
+        // добавляем kin каждому агенту
+        users = users.map(u=>{
+            const kin = Number(pyodide.runPython(`
+mtos_current_kin("${u.name}", ${year}, ${month}, ${day})
+`))
+            return {...u, kin}
+        })
+
         // ===============================
-        // ПОЛЕ (INIT)
+        // FIELD INIT
         // ===============================
         const result = JSON.parse(pyodide.runPython(`
 import json
@@ -109,13 +118,10 @@ json.dumps([f,s,u])
         status.innerText = "ERROR"
     }
 
-    // ===============================
-    // РЕНДЕР (ПЕРВЫЙ)
-    // ===============================
     renderAll(weather, pressure, userKin, todayKin)
 
     // ===============================
-    // TIME EVOLUTION
+    // TIME
     // ===============================
     let baseYear = year
     let baseMonth = month
@@ -143,6 +149,14 @@ mtos_current_kin("${name}", ${y}, ${m}, ${dd})
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
+            // обновляем kin у агентов
+            users = users.map(u=>{
+                const newKin = Number(pyodide.runPython(`
+mtos_current_kin("${u.name}", ${y}, ${m}, ${dd})
+`))
+                return {...u, kin: newKin}
+            })
+
             const result = JSON.parse(pyodide.runPython(`
 import json
 users = ${JSON.stringify(users)}
@@ -168,27 +182,25 @@ json.dumps([f,s,u])
         }
     }
 
-    // ===============================
-    // CONTROLS
-    // ===============================
     initTimeControls(step)
 }
 
 // ===============================
-// RENDER ALL
+// RENDER
 // ===============================
 function renderAll(weather, pressure, userKin, currentKin){
 
-    // WEATHER MAP
     drawWeatherMap(
         "weatherMap",
         weather,
         userKin,
         currentKin,
         pressure,
-        fieldState
+        fieldState,
+        selectedAgent
     )
 
-    // NETWORK
-    drawNetwork("networkMap", users)
+    drawNetwork("networkMap", users, (agent)=>{
+        selectedAgent = agent
+    })
 }
