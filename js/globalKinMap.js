@@ -1,3 +1,6 @@
+if(window.__globalMapDrawn) return
+window.__globalMapDrawn = true
+
 export function drawGlobalKinMap(id){
 
 console.log("DRAW GLOBAL MAP INTO:", id)
