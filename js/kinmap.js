@@ -30,7 +30,6 @@ console.log("KIN USERS:", window.kinUsers)
 window.kinUsers = window.kinUsers || {}
 
 const map=document.getElementById("kinmap")
-if(!map) return
 map.innerHTML=""
 
 map.style.display="grid"
