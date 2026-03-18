@@ -1,6 +1,8 @@
 import { seals, tones } from "./tzolkin.js"
 import { getColor } from "./colors.js"
-
+export function drawHeatmap(){
+  return
+}
 export function drawHeatmap(id,data,cols,rows=cols){
 
 let map=document.getElementById(id)
