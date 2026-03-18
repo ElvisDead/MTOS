@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MTOS Scientific Dashboard</title>
+<title>MTOS FULL SYSTEM</title>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
@@ -14,64 +14,89 @@ body{
     text-align:center;
 }
 
-.container{
-    margin:40px auto;
-    width:800px;
-}
-
-input{
-    width:120px;
-    padding:8px;
-    margin:5px;
-    background:#222;
-    color:#eee;
-    border:1px solid #555;
-}
-
-button{
-    padding:10px 20px;
-    background:#444;
-    color:#fff;
-    border:none;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#666;
-}
-
 .map{
-    margin:30px auto;
-    width:700px;
+    margin:20px auto;
+    width:720px;
+}
+
+.block{
+    margin:40px 0;
 }
 </style>
 </head>
 
 <body>
 
-<h1>MTOS Dashboard</h1>
+<h1>MTOS FULL SYSTEM</h1>
 
-<div class="container">
-    <input id="name" placeholder="Name">
-    <input id="year" placeholder="Year">
-    <input id="month" placeholder="Month">
-    <input id="day" placeholder="Day">
-    <br>
-    <button id="runBtn">RUN</button>
-    <div id="status">init...</div>
-</div>
+<input id="name" placeholder="Name">
+<input id="year" placeholder="Year">
+<input id="month" placeholder="Month">
+<input id="day" placeholder="Day">
 
+<br><br>
+<button id="runBtn">RUN</button>
+
+<div id="status">init...</div>
+
+<div class="block">
 <h2>Weather</h2>
 <div id="weatherMap" class="map"></div>
+</div>
 
-<h2>Global Kin</h2>
+<div class="block">
+<h2>Global</h2>
 <div id="globalKinMap" class="map"></div>
+</div>
 
+<div class="block">
 <h2>Pressure</h2>
 <div id="pressureMap" class="map"></div>
+<div id="pressureGradientMap" class="map"></div>
+</div>
+
+<div class="block">
+<h2>Attractor</h2>
+<div id="attractorMap" class="map"></div>
+</div>
+
+<div class="block">
+<h2>Phase + Wave</h2>
+<div id="phaseMap" class="map"></div>
+<div id="waveMap" class="map"></div>
+<div id="climateMap" class="map"></div>
+</div>
+
+<div class="block">
+<h2>Series</h2>
+<div id="series7"></div>
+<div id="series30"></div>
+<div id="series260"></div>
+</div>
+
+<div class="block">
+<h2>Phase Space</h2>
+<div id="phaseSpace"></div>
+</div>
+
+<div class="block">
+<h2>Network</h2>
+<div id="networkMap"></div>
+</div>
+
+<div class="block">
+<h2>Collective</h2>
+<div id="collectiveMap"></div>
+</div>
+
+<div class="block">
+<h2>Activity</h2>
+<div id="activityMap" class="map"></div>
+</div>
 
 <script type="module">
 import { initMTOS, runMTOS } from "./js/main.js"
+
 document.getElementById("runBtn").onclick = runMTOS
 initMTOS()
 </script>
