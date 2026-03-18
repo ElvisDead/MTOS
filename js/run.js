@@ -2,12 +2,11 @@ import { drawKinMap } from "./kinmap.js"
 
 export async function run(){
 
-const pyodide = window.pyodide
-
-if(!pyodide){
-alert("MTOS engine still loading. Please wait a few seconds.")
-return
+if(!window.pyodide){
+  await startMTOS()
 }
+
+const pyodide = window.pyodide
 
 // USER INPUT
 const name = document.getElementById("name").value
