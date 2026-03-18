@@ -97,9 +97,9 @@ mtos_phase_space("${name}",${year},${month},${day})
         const collective = pyodide.runPython(`mtos_collective()`)
         const activity = JSON.parse(pyodide.runPython(`mtos_kin_activity()`))
 
-        const userKin = pyodide.runPython(`
+        const userKin = Number(pyodide.runPython(`
             mtos_current_kin("${name}",${year},${month},${day})
-        `)
+        `))
 
         drawWeatherMap("weatherMap", weather, userKin)
         drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
