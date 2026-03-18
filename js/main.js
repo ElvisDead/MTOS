@@ -16,7 +16,8 @@ export async function initMTOS(){
     try{
 
         // LOAD PYODIDE
-        pyodide = await loadPyodide()
+        pyodide = await loadPyodide
+        await pyodide.loadPackage("numpy")
 
         status.innerText = "Loading MTOS Engine..."
 
