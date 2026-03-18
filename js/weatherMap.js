@@ -61,7 +61,9 @@ export function drawWeatherMap(
                 const amplitude = agent.weight || 1
 
                 // "фаза" через sin
-                const wave = Math.sin(dist / 5) * Math.exp(-dist / 12)
+                const phase = agent.phase || 0
+
+                const wave = Math.sin(dist / 5 + phase) * Math.exp(-dist / 12)
 
                 value += amplitude * wave
             }
