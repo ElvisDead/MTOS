@@ -1352,3 +1352,24 @@ def mtos_kin_activity():
         kin_activity[kin-1] += 1
 
     return json.dumps(kin_activity)
+
+# ===============================
+# CURRENT KIN (13×20 STRUCTURE)
+# ===============================
+def mtos_current_kin(name, year, month, day):
+
+    import datetime
+
+    # базовая дата (якорь цикла)
+    base = datetime.date(2000, 1, 1)
+
+    current = datetime.date(year, month, day)
+
+    delta = (current - base).days
+
+    kin = (delta % 260) + 1
+
+    if kin < 1:
+        kin += 260
+
+    return kin
