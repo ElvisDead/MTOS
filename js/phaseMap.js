@@ -20,6 +20,9 @@ export function drawPhaseMap(id, data){
         cell.style.width = "14px"
         cell.style.height = "14px"
         cell.style.background = `rgb(${gray},${gray},${gray})`
+        cell.style.cursor = "pointer"
+
+        cell.title = `Phase: ${v.toFixed(3)}`
 
         c.appendChild(cell)
     }
