@@ -1,6 +1,4 @@
-export function drawKinMap(){
-  return
-}
+
 
 import { getColor } from "./colors.js"
 
@@ -27,7 +25,9 @@ const seals = [
 "Sun"
 ]
 
-export function drawKinMap(weather){
+export function drawKinMap(){
+  return
+}
 
 console.log("KIN USERS:", window.kinUsers)
 
