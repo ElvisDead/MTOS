@@ -2,73 +2,98 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MTOS</title>
+<title>MTOS Scientific Dashboard</title>
+
+<!-- PYODIDE -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
 <style>
 body{
-    background:#0a0a0a;
+    background:#111;
     color:#eee;
     font-family:Arial;
     text-align:center;
 }
 
+h1{
+    margin-top:20px;
+}
+
+.container{
+    margin:40px auto;
+    width:800px;
+}
+
 input{
+    width:120px;
     padding:8px;
     margin:5px;
-    background:#111;
-    border:1px solid #333;
-    color:#fff;
+    background:#222;
+    color:#eee;
+    border:1px solid #555;
 }
 
 button{
     padding:10px 20px;
-    background:#222;
+    background:#444;
     color:#fff;
     border:none;
     cursor:pointer;
 }
 
-.section{
-    margin-top:40px;
+button:hover{
+    background:#666;
 }
 
 #status{
     margin-top:10px;
-    color:#aaa;
+    color:#0f0;
+}
+
+/* MAPS */
+
+.map{
+    margin:40px auto;
+    width:700px;
+}
+
+/* GRID CELLS */
+
+.cell{
+    width:12px;
+    height:12px;
 }
 </style>
-    
-<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-
 </head>
+
 <body>
 
 <h1>MTOS Scientific Dashboard</h1>
 
-<div>
+<div class="container">
 
-<input id="name" placeholder="Name">
-<input id="year" placeholder="Year">
-<input id="month" placeholder="Month">
-<input id="day" placeholder="Day">
+    <div>
+        <input id="name" placeholder="Name">
+        <input id="year" placeholder="Year">
+        <input id="month" placeholder="Month">
+        <input id="day" placeholder="Day">
+    </div>
 
-<br>
+    <button id="runBtn">RUN</button>
 
-<button id="runBtn">RUN</button>
-
-<div id="status">init...</div>
+    <div id="status">init...</div>
 
 </div>
 
-<div class="section">
+<!-- MAPS -->
+
 <h2>260 Kin Cognitive Weather</h2>
-<div id="weatherMap"></div>
-</div>
+<div id="weatherMap" class="map"></div>
 
-<div class="section">
 <h2>Global Kin Distribution</h2>
-<div id="globalKinMap"></div>
-</div>
+<div id="globalKinMap" class="map"></div>
+
+<!-- MAIN SCRIPT -->
 
 <script type="module">
 
