@@ -74,10 +74,17 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
     for (let kin = 0; kin < 260; kin++) {
 
         const item = data[kin];
-
         if (!item) continue;
 
         let value = item.attention;
+
+        // ✅ НОРМАЛИЗАЦИЯ
+        if (max !== min) {
+            value = (value - min) / (max - min);
+        }
+
+        // ✅ УСИЛЕНИЕ ЧЕРЕЗ PRESSURE
+        value = value * (0.7 + item.pressure * 0.3);
 
         if (max !== min) {
             value = (value - min) / (max - min);
