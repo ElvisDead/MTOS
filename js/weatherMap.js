@@ -25,8 +25,17 @@ export function drawWeatherMap(
     let fMin = Math.min(...fieldData)
     let fMax = Math.max(...fieldData)
 
-    let pMin = Math.min(...pressureData)
-    let pMax = Math.max(...pressureData)
+    // ===============================
+    // СОБИРАЕМ ВСЕ ВОЛНЫ АГЕНТОВ
+    // ===============================
+    const waves = []
+
+    if(selectedAgent){
+        waves.push(selectedAgent)
+    }else{
+        // если ничего не выбрано — берём всех
+        waves.push(...window.currentUsers || [])
+    }
 
     for(let tone=1;tone<=13;tone++){
         for(let seal=1;seal<=20;seal++){
@@ -34,38 +43,36 @@ export function drawWeatherMap(
             let kin = (seal-1)*13 + tone
             while(kin>260) kin-=260
 
-            let phi = fieldData[kin-1]
+            let value = 0
 
             // ===============================
-            // ЗОНА ВЛИЯНИЯ (КЛЮЧ)
+            // ИНТЕРФЕРЕНЦИЯ
             // ===============================
-            let influence = 1
+            for(let a=0;a<waves.length;a++){
 
-            if(selectedAgent){
+                const agent = waves[a]
+                if(!agent.kin) continue
 
-                const agentKin = selectedAgent.kin - 1
+                const aKin = agent.kin - 1
 
-                let dist = Math.abs(kin-1 - agentKin)
+                let dist = Math.abs((kin-1) - aKin)
                 dist = Math.min(dist, 260 - dist)
 
-                // гауссово затухание
-                influence = Math.exp(-dist / 10)
+                const amplitude = agent.weight || 1
 
-                // применяем фильтр
-                phi = phi * influence
+                // "фаза" через sin
+                const wave = Math.sin(dist / 5) * Math.exp(-dist / 12)
+
+                value += amplitude * wave
             }
 
-            const n = (phi - fMin)/(fMax - fMin || 1)
+            // нормализация
+            const n = (value + 1) / 2
 
-            // heatmap (синий → красный)
-            let r = Math.floor(255 * n)
-            let g = Math.floor(80 * (1 - n))
-            let b = Math.floor(255 * (1 - n))
-
-            // давление (слабо, чтобы не мешало)
-            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
-            r += p * 40
-            b += p * 60
+            // цвет (интерференция)
+            let r = Math.floor(255 * Math.max(0, n))
+            let g = Math.floor(100 * (1 - Math.abs(n-0.5)*2))
+            let b = Math.floor(255 * Math.max(0, 1-n))
 
             const cell = document.createElement("div")
 
@@ -75,7 +82,7 @@ export function drawWeatherMap(
             cell.style.border = "1px solid #111"
 
             // ===============================
-            // ПОДСВЕТКИ
+            // ВЫДЕЛЕНИЯ
             // ===============================
             if(kin === highlightKin){
                 cell.style.outline = "3px solid yellow"
@@ -89,11 +96,7 @@ export function drawWeatherMap(
                 cell.style.outline = "3px solid cyan"
             }
 
-            cell.title = `
-Kin: ${kin}
-Φ: ${fieldData[kin-1].toFixed(3)}
-Influence: ${influence.toFixed(3)}
-`
+            cell.title = `Kin ${kin} | wave ${value.toFixed(3)}`
 
             grid.appendChild(cell)
         }
