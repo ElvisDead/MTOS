@@ -27,17 +27,13 @@ export async function drawKinMap(pyodide, canvasId, params) {
     let raw;
 
     try {
-
         raw = await pyodide.runPythonAsync(`
 mtos_260_weather("${name}", ${year}, ${month}, ${day})
         `);
-
     } catch (err) {
         console.error("KinMap error:", err);
         return;
     }
-
-    console.log("RAW WEATHER:", raw);
 
     let data;
 
@@ -56,57 +52,52 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
     // GRID STRUCTURE (13 x 20)
     // =========================
 
-    const cols = 13; // tones
-    const rows = 20; // seals
+    const cols = 13;
+    const rows = 20;
 
     const cellW = width / cols;
     const cellH = height / rows;
 
-// =========================
-// DRAW CELLS
-// =========================
+    // =========================
+    // DRAW CELLS
+    // =========================
 
-// собираем значения attention
-const values = data.map(d => d.attention);
+    const values = data.map(d => d.attention);
 
-// диапазон
-const min = Math.min(...values);
-const max = Math.max(...values);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
 
-for (let kin = 0; kin < 260; kin++) {
+    for (let kin = 0; kin < 260; kin++) {
 
-    const item = data[kin];
-    if (!item) continue;
+        const item = data[kin];
+        if (!item) continue;
 
-    // базовое значение
-    let value = item.attention;
+        let value = item.attention;
 
-    // нормализация (0 → 1)
-    if (max !== min) {
-        value = (value - min) / (max - min);
-    } else {
-        value = 0.5;
+        // нормализация
+        if (max !== min) {
+            value = (value - min) / (max - min);
+        } else {
+            value = 0.5;
+        }
+
+        // усиление через pressure
+        const pressure = item.pressure || 0;
+        value = value * (0.7 + pressure * 0.3);
+
+        // clamp
+        value = Math.max(0, Math.min(1, value));
+
+        const tone = kin % 13;
+        const seal = Math.floor(kin / 13);
+
+        const x = tone * cellW;
+        const y = seal * cellH;
+
+        ctx.fillStyle = getColor(value);
+        ctx.fillRect(x, y, cellW, cellH);
     }
 
-    // добавляем влияние pressure
-    const pressure = item.pressure || 0;
-    value = value * (0.7 + pressure * 0.3);
-
-    // защита от выхода за границы
-    value = Math.max(0, Math.min(1, value));
-
-    // координаты (ПРАВИЛЬНЫЕ)
-    const tone = kin % 13;
-    const seal = Math.floor(kin / 13);
-
-    const x = tone * cellW;
-    const y = seal * cellH;
-
-    // цвет
-    ctx.fillStyle = getColor(value);
-    ctx.fillRect(x, y, cellW, cellH);
-}
-    
     // =========================
     // GRID
     // =========================
@@ -129,13 +120,13 @@ for (let kin = 0; kin < 260; kin++) {
     }
 
     // =========================
-    // HIGHLIGHT TODAY (Kin 1 в массиве)
+    // HIGHLIGHT TODAY
     // =========================
 
     const todayKin = new Date().getDate() % 260;
 
     const tone = todayKin % 13;
-    const seal = todayKin % 20;
+    const seal = Math.floor(todayKin / 13);
 
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
