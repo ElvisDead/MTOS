@@ -111,6 +111,8 @@ json.dumps([f,s,u])
         fieldMode  = result[1]
         users      = result[2]
 
+        window.currentUsers = users
+
         status.innerText = "Done"
 
     }catch(e){
@@ -174,6 +176,8 @@ json.dumps([f,s,u])
             fieldState = result[0]
             fieldMode  = result[1]
             users      = result[2]
+
+            window.currentUsers = users
 
             renderAll(weather, pressure, userKin, kin)
 
