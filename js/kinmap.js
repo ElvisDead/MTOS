@@ -29,8 +29,6 @@ const seals = [
 
 export function drawKinMap(weather){
 
-return
-
 console.log("KIN USERS:", window.kinUsers)
 
 window.kinUsers = window.kinUsers || {}
