@@ -4,7 +4,9 @@ import { startMTOS } from "./pyodideLoader.js"
 
 export async function run(){
 
-await startMTOS()
+if(!window.pyodide){
+  await startMTOS()
+}
 
 const pyodide = window.pyodide
 
