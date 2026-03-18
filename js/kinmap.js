@@ -47,6 +47,11 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
         data = raw;
     }
 
+    if (!Array.isArray(data)) {
+        console.error("Weather is not array:", data);
+        return;
+    }
+
     // =========================
     // GRID STRUCTURE (13 x 20)
     // =========================
@@ -70,8 +75,8 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
         const value = item.attention;
 
         // вычисление координат
-        const tone = kin % 13;
-        const seal = kin % 20;
+        const tone = (kin % 13);
+        const seal = Math.floor(kin / 13);
 
         const x = tone * cellW;
         const y = seal * cellH;
@@ -106,7 +111,7 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
     // HIGHLIGHT TODAY (Kin 1 в массиве)
     // =========================
 
-    const todayKin = 0;
+    const todayKin = new Date().getDate() % 260;
 
     const tone = todayKin % 13;
     const seal = todayKin % 20;
