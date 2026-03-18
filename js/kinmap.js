@@ -1,3 +1,7 @@
+export function drawKinMap(){
+  return
+}
+
 import { getColor } from "./colors.js"
 
 const seals = [
