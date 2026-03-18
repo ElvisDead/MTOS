@@ -26,7 +26,6 @@ const seals = [
 ]
 
 export function drawKinMap(){
-  return
 }
 
 console.log("KIN USERS:", window.kinUsers)
