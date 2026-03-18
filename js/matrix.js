@@ -17,7 +17,10 @@ export function kinToTS(kin) {
     };
 }
 
-// tone + seal → kin (1–260)
+// ======================================
+// CORRECT ts → kin (CRT FIX)
+// ======================================
+
 export function tsToKin(tone, seal) {
 
     if (tone < 0 || tone > 12) {
@@ -28,7 +31,17 @@ export function tsToKin(tone, seal) {
         console.warn("tsToKin: invalid seal", seal);
     }
 
-    return ((seal * 13 + tone) % 260) + 1;
+    // 🔥 ПРАВИЛЬНАЯ ЛОГИКА (без формулы!)
+    for (let i = 0; i < 260; i++) {
+
+        if (i % 13 === tone && i % 20 === seal) {
+            return i + 1;
+        }
+
+    }
+
+    console.error("tsToKin FAILED:", tone, seal);
+    return 1;
 }
 
 // ======================================
@@ -57,7 +70,6 @@ export function safeTsToKin(tone, seal) {
 // GRID BUILDERS
 // ======================================
 
-// создаёт 20×13 матрицу kin
 export function buildKinMatrix() {
 
     const rows = 20;
@@ -82,7 +94,6 @@ export function buildKinMatrix() {
     return matrix;
 }
 
-// создаёт линейный массив 260 kin
 export function buildLinearKin() {
     return Array.from({ length: 260 }, (_, i) => i + 1);
 }
@@ -100,7 +111,7 @@ export function kinToIndex(kin) {
 }
 
 // ======================================
-// NEIGHBOR SYSTEM (ВОССТАНОВЛЕНО)
+// NEIGHBORS
 // ======================================
 
 export function getNeighbors(kin) {
@@ -116,7 +127,7 @@ export function getNeighbors(kin) {
 }
 
 // ======================================
-// DISTANCE (ВАЖНО ДЛЯ CLARITY)
+// DISTANCE
 // ======================================
 
 export function kinDistance(a, b) {
@@ -126,7 +137,7 @@ export function kinDistance(a, b) {
 }
 
 // ======================================
-// WAVE SYSTEM
+// WAVE / HARMONIC
 // ======================================
 
 export function getWave(kin) {
@@ -138,7 +149,7 @@ export function getHarmonic(kin) {
 }
 
 // ======================================
-// FULL VALIDATION
+// VALIDATION (ФИКС)
 // ======================================
 
 export function validateMatrix() {
@@ -156,18 +167,6 @@ export function validateMatrix() {
         }
     }
 
-    // проверка уникальности
-    const set = new Set();
-
-    for (let kin = 1; kin <= 260; kin++) {
-        set.add(kin);
-    }
-
-    if (set.size !== 260) {
-        console.error("Duplicate kin detected");
-        errors++;
-    }
-
     if (errors === 0) {
         console.log("Matrix OK");
     } else {
@@ -176,7 +175,7 @@ export function validateMatrix() {
 }
 
 // ======================================
-// CACHE (ВОССТАНОВЛЕНО)
+// CACHE
 // ======================================
 
 let _matrixCache = null;
@@ -197,7 +196,7 @@ export function getLinearCached() {
 }
 
 // ======================================
-// DEBUG TOOLS (ВОССТАНОВЛЕНО)
+// DEBUG
 // ======================================
 
 export function debugKin(kin) {
