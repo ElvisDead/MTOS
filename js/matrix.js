@@ -4,6 +4,8 @@ console.log("MATRIX DRAW CALLED")
 
 export function drawMatrix(id,data){
 
+return
+
 const map=document.getElementById(id)
 map.innerHTML=""
 
