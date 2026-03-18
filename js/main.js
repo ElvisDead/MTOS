@@ -1,4 +1,5 @@
 // IMPORTS
+import { drawWeatherMap } from "./weatherMap.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
 
 // GLOBAL STATE
@@ -76,7 +77,7 @@ import json
 json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
 `)
 
-        drawWeatherMap(weather)
+        drawWeatherMap("weatherMap", JSON.parse(weather))
 
         status.innerText = "Done"
 
@@ -84,37 +85,5 @@ json.dumps(mtos_260_weather("${name}",${year},${month},${day}))
 
         console.error(e)
         status.innerText = "ERROR"
-    }
-}
-
-
-// ===============================
-// WEATHER MAP (ВСТРОЕННЫЙ, БЕЗ ОТДЕЛЬНОГО ФАЙЛА)
-// ===============================
-function drawWeatherMap(data){
-
-    const container = document.getElementById("weatherMap")
-    container.innerHTML = ""
-
-    const weather = JSON.parse(data)
-
-    container.style.display = "grid"
-    container.style.gridTemplateColumns = "repeat(20, 14px)"
-    container.style.gridGap = "2px"
-
-    for(let i=0;i<260;i++){
-
-        const cell = document.createElement("div")
-
-        const val = weather[i].attention
-
-        const r = Math.floor(255 * val)
-        const b = Math.floor(255 * (1 - val))
-
-        cell.style.width = "12px"
-        cell.style.height = "12px"
-        cell.style.background = `rgb(${r},0,${b})`
-
-        container.appendChild(cell)
     }
 }
