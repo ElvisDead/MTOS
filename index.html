@@ -117,6 +117,11 @@ run_mtos("${name}",${year},${month},${day})
 
         const data = JSON.parse(result)
 
+        const kinCounts = JSON.parse(pyodide.runPython(`mtos_global_kin_map()`))
+        const usersByKin = JSON.parse(pyodide.runPython(`mtos_users_by_kin()`))
+
+        drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
+
         document.getElementById("output").innerText = JSON.stringify(data,null,2)
 
         document.getElementById("status").innerText = "Done"
