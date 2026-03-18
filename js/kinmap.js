@@ -62,49 +62,51 @@ mtos_260_weather("${name}", ${year}, ${month}, ${day})
     const cellW = width / cols;
     const cellH = height / rows;
 
-    // =========================
-    // DRAW CELLS
-    // =========================
+// =========================
+// DRAW CELLS
+// =========================
 
-    const values = data.map(d => d.attention);
+// собираем значения attention
+const values = data.map(d => d.attention);
 
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+// диапазон
+const min = Math.min(...values);
+const max = Math.max(...values);
 
-    for (let kin = 0; kin < 260; kin++) {
+for (let kin = 0; kin < 260; kin++) {
 
-        const item = data[kin];
-        if (!item) continue;
+    const item = data[kin];
+    if (!item) continue;
 
-        let value = item.attention;
+    // базовое значение
+    let value = item.attention;
 
-        // ✅ НОРМАЛИЗАЦИЯ
-        if (max !== min) {
-            value = (value - min) / (max - min);
-        }
-
-        // ✅ УСИЛЕНИЕ ЧЕРЕЗ PRESSURE
-        value = value * (0.7 + item.pressure * 0.3);
-
-        if (max !== min) {
-            value = (value - min) / (max - min);
-        }
-
-        // усиление через pressure (по желанию, но лучше оставить)
-        value = value * (0.7 + item.pressure * 0.3);
-
-        // вычисление координат
-        const tone = (kin % 13);
-        const seal = Math.floor(kin / 13);
-
-        const x = tone * cellW;
-        const y = seal * cellH;
-
-        ctx.fillStyle = getColor(value);
-
-        ctx.fillRect(x, y, cellW, cellH);
+    // нормализация (0 → 1)
+    if (max !== min) {
+        value = (value - min) / (max - min);
+    } else {
+        value = 0.5;
     }
 
+    // добавляем влияние pressure
+    const pressure = item.pressure || 0;
+    value = value * (0.7 + pressure * 0.3);
+
+    // защита от выхода за границы
+    value = Math.max(0, Math.min(1, value));
+
+    // координаты (ПРАВИЛЬНЫЕ)
+    const tone = kin % 13;
+    const seal = Math.floor(kin / 13);
+
+    const x = tone * cellW;
+    const y = seal * cellH;
+
+    // цвет
+    ctx.fillStyle = getColor(value);
+    ctx.fillRect(x, y, cellW, cellH);
+}
+    
     // =========================
     // GRID
     // =========================
