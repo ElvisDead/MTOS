@@ -9,6 +9,14 @@ let fieldMode = null
 let users = []
 let selectedAgent = null
 
+let learningMemory = {}
+let agentCounter = 0
+
+const MAX_AGENTS = 10
+const MIN_AGENTS = 2
+
+const AGENT_TYPES = ["explorer","stabilizer","amplifier","disruptor"]
+
 // ===============================
 // INIT
 // ===============================
@@ -54,25 +62,16 @@ export async function runMTOS(){
 
         status.innerText = "Running..."
 
-        // ===============================
-        // USER KIN
-        // ===============================
         userKin = Number(pyodide.runPython(`
 mtos_current_kin("${name}", ${year}, ${month}, ${day})
 `))
 
-        // ===============================
-        // TODAY
-        // ===============================
         const now = new Date()
 
         todayKin = Number(pyodide.runPython(`
 mtos_current_kin("today", ${now.getFullYear()}, ${now.getMonth()+1}, ${now.getDate()})
 `))
 
-        // ===============================
-        // WEATHER / PRESSURE
-        // ===============================
         weather = JSON.parse(pyodide.runPython(`
 import json
 json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
@@ -80,29 +79,14 @@ json.dumps(mtos_260_weather("${name}", ${year}, ${month}, ${day}))
 
         pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-        // ===============================
-        // USERS (с фазой)
-        // ===============================
         users = [
-            {name: name, weight: 1.0},
-            {name: "Alice", weight: 0.8},
-            {name: "Bob", weight: 0.6}
+            createAgent(name,1.0),
+            createAgent("Alice",0.8),
+            createAgent("Bob",0.6)
         ]
 
-        users = users.map(u=>{
+        users = enrichAgents(users, year, month, day)
 
-            const kin = Number(pyodide.runPython(`
-mtos_current_kin("${u.name}", ${year}, ${month}, ${day})
-`))
-
-            const phase = (kin % 20) * Math.PI / 10
-
-            return {...u, kin, phase}
-        })
-
-        // ===============================
-        // FIELD INIT
-        // ===============================
         const result = JSON.parse(pyodide.runPython(`
 import json
 users = ${JSON.stringify(users)}
@@ -114,7 +98,6 @@ json.dumps([f,s,u])
         fieldMode  = result[1]
         users      = result[2]
 
-        // 🔥 КЛЮЧ ДЛЯ ИНТЕРФЕРЕНЦИИ
         window.currentUsers = users
 
         status.innerText = "Done"
@@ -126,9 +109,6 @@ json.dumps([f,s,u])
 
     renderAll(weather, pressure, userKin, todayKin)
 
-    // ===============================
-    // TIME
-    // ===============================
     let baseYear = year
     let baseMonth = month
     let baseDay = day
@@ -155,19 +135,7 @@ mtos_current_kin("${name}", ${y}, ${m}, ${dd})
 
             const pressure = JSON.parse(pyodide.runPython(`mtos_pressure_map()`))
 
-            // ===============================
-            // ОБНОВЛЕНИЕ USERS (фаза + kin)
-            // ===============================
-            users = users.map(u=>{
-
-                const newKin = Number(pyodide.runPython(`
-mtos_current_kin("${u.name}", ${y}, ${m}, ${dd})
-`))
-
-                const phase = (newKin % 20) * Math.PI / 10
-
-                return {...u, kin: newKin, phase}
-            })
+            users = enrichAgents(users, y, m, dd)
 
             const result = JSON.parse(pyodide.runPython(`
 import json
@@ -187,7 +155,51 @@ json.dumps([f,s,u])
             fieldMode  = result[1]
             users      = result[2]
 
-            // 🔥 ОБНОВЛЯЕМ ГЛОБАЛЬНО
+            // ===============================
+            // LEARNING + ROLE BEHAVIOR
+            // ===============================
+            const decay = 0.85
+
+            users = users.map(u=>{
+
+                const kinIndex = u.kin - 1
+                const phi = fieldState[kinIndex]
+
+                if(!learningMemory[u.name]){
+                    learningMemory[u.name] = 0
+                }
+
+                learningMemory[u.name] =
+                    decay * learningMemory[u.name] +
+                    (1 - decay) * phi
+
+                const gain = Math.tanh(learningMemory[u.name])
+
+                let newWeight = u.weight
+
+                // ===============================
+                // РОЛЕВОЕ ПОВЕДЕНИЕ
+                // ===============================
+                if(u.type === "amplifier"){
+                    newWeight *= (1 + 0.6 * gain)
+                }
+                else if(u.type === "stabilizer"){
+                    newWeight *= (1 + 0.2 * gain)
+                }
+                else if(u.type === "explorer"){
+                    newWeight *= (1 + 0.3 * Math.random())
+                }
+                else if(u.type === "disruptor"){
+                    newWeight *= (1 - 0.4 * gain)
+                }
+
+                newWeight = Math.max(0.2, Math.min(newWeight, 3))
+
+                return {...u, weight:newWeight}
+            })
+
+            users = evolveAgents(users)
+
             window.currentUsers = users
 
             renderAll(weather, pressure, userKin, kin)
@@ -198,6 +210,71 @@ json.dumps([f,s,u])
     }
 
     initTimeControls(step)
+}
+
+// ===============================
+// CREATE AGENT
+// ===============================
+function createAgent(name, weight){
+
+    const type = AGENT_TYPES[
+        Math.floor(Math.random() * AGENT_TYPES.length)
+    ]
+
+    return {name, weight, type}
+}
+
+// ===============================
+// ENRICH
+// ===============================
+function enrichAgents(users, y, m, d){
+
+    return users.map(u=>{
+
+        const kin = Number(pyodide.runPython(`
+mtos_current_kin("${u.name}", ${y}, ${m}, ${d})
+`))
+
+        const phase = (kin % 20) * Math.PI / 10
+
+        return {...u, kin, phase}
+    })
+}
+
+// ===============================
+// EVOLUTION
+// ===============================
+function evolveAgents(users){
+
+    users = users.filter(u => u.weight > 0.25 || users.length <= MIN_AGENTS)
+
+    let newAgents = []
+
+    users.forEach(u=>{
+
+        if(u.weight > 1.6 && users.length + newAgents.length < MAX_AGENTS){
+
+            const child = createAgent("Agent_" + (++agentCounter), u.weight*0.5)
+
+            newAgents.push(child)
+        }
+    })
+
+    users = [...users, ...newAgents]
+
+    users = users.map(u=>({
+
+        ...u,
+        phase: u.phase + (Math.random()-0.5)*0.2,
+        weight: u.weight + (Math.random()-0.5)*0.05
+    }))
+
+    const total = users.reduce((s,u)=>s+u.weight,0)||1
+
+    return users.map(u=>({
+        ...u,
+        weight: Math.max(0.2, Math.min(3, u.weight / total * users.length))
+    }))
 }
 
 // ===============================
