@@ -1575,15 +1575,15 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
 
     import math
 
-    # базовое поле (пустое)
     base_field = [0.0 for _ in range(260)]
 
     # ===============================
-    # СУММИРУЕМ АГЕНТОВ
+    # ВЗВЕШЕННОЕ ВЛИЯНИЕ
     # ===============================
     for user in users:
 
         name = user["name"]
+        weight = user.get("weight", 1.0)
 
         weather = mtos_260_weather(name, year, month, day)
         kin = mtos_current_kin(name, year, month, day) - 1
@@ -1592,16 +1592,19 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
 
             dist = min(abs(i - kin), 260 - abs(i - kin))
 
-            influence = math.exp(-dist / 10.0)
+            # гауссово влияние
+            influence = math.exp(-dist / 8.0)
 
-            base_field[i] += weather[i]["attention"] * influence
+            base_field[i] += weight * weather[i]["attention"] * influence
 
-    # нормализация
+    # ===============================
+    # НОРМАЛИЗАЦИЯ
+    # ===============================
     max_val = max(base_field) or 1
     base_field = [v / max_val for v in base_field]
 
     # ===============================
-    # ПЕРЕДАЁМ В FIELD ДИНАМИКУ
+    # ДИНАМИКА ПОЛЯ
     # ===============================
     return mtos_field_step_from_array(base_field, prev_field, prev_state)
 
