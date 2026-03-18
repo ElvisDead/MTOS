@@ -21,6 +21,9 @@ export function drawWaveMap(id, data){
         cell.style.width = "14px"
         cell.style.height = "14px"
         cell.style.background = `rgb(${r},${g},0)`
+        cell.style.cursor = "pointer"
+
+        cell.title = `Wave: ${v.toFixed(3)}`
 
         c.appendChild(cell)
     }
