@@ -1,6 +1,7 @@
 // ===============================
 // IMPORTS
 // ===============================
+import { drawPressureMap } from "./pressureMap.js"
 import { drawWeatherMap } from "./weatherMap.js"
 import { drawGlobalKinMap } from "./globalKinMap.js"
 
@@ -83,6 +84,12 @@ run_mtos("${name}",${year},${month},${day})
         )
 
         drawGlobalKinMap("globalKinMap", kinCounts, usersByKin)
+
+        const pressure = JSON.parse(
+            pyodide.runPython(`mtos_pressure_map()`)
+        )
+
+        drawPressureMap("pressureMap", pressure)
 
         // ===============================
         // WEATHER MAP (260)
