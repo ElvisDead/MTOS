@@ -1,4 +1,4 @@
-export function drawPhaseSpace(id, weather){
+export function drawPhaseSpace(id, weather, selectedKin){
 
     const root = document.getElementById(id)
     root.innerHTML = ""
