@@ -88,7 +88,6 @@ export function drawNetwork(id, users, onSelect){
 
                 }
             }
-        }
 
         ctx.globalAlpha = 1
 
