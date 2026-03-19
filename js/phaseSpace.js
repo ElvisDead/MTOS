@@ -183,81 +183,6 @@ export function drawPhaseSpace(id, weather){
         let prevPattern = null
         let patternHistory = []
             
-        function interpretTransition(current){
-            
-            patternHistory.push(current)
-                
-            if(patternHistory.length > 20){
-                patternHistory.shift()
-            }
-
-            const chaosCount = patternHistory.filter(p => p === "Chaos").length
-                
-            if(chaosCount > 15){
-                prevPattern = current
-                return "Deep chaotic regime"
-            }
-
-            // ===== STABILITY =====
-            const staticCount = patternHistory.filter(p => p === "Static").length
-            if(staticCount > 15){
-                prevPattern = current
-                return "Deep stability"
-            }
-            
-            // ===== EMERGING CYCLE =====
-            const cycleCount = patternHistory.filter(p => p === "Cycle").length
-            if(cycleCount > 15){
-                prevPattern = current
-                return "Stable cyclic attractor"
-            }
-
-            if(cycleCount > 8 && cycleCount <= 15){
-                prevPattern = current
-                return "Emerging cycle"
-            }
-            
-            // ===== BASE LOGIC =====
-            
-            if(!prevPattern){
-                prevPattern = current
-                    return "Initializing..."
-            }
-
-            if(cycleCount > 15){
-                return "Stable cyclic attractor"
-            }
-            
-            if(!prevPattern){
-                prevPattern = current
-                return "Initializing..."
-            }
-            
-            let result = current
-                
-            if(prevPattern === "Chaos" && current === "Cycle"){
-                result = "Stabilizing (chaos → order)"
-            }
-            else if(prevPattern === "Cycle" && current === "Chaos"){
-                result = "Entering chaos"
-            }
-            else if(current === "Trend"){
-                result = "Directional drift"
-            }
-            else if(current === "Static"){
-                result = "System stabilized"
-            }
-            else if(current === "Cycle"){
-                result = "Oscillating / cyclic behavior"
-            }
-            else if(current === "Chaos"){
-                result = "Chaotic exploration"
-            }
-            
-            prevPattern = current
-            return result
-        }
-
         variance /= points.length
 
         if(variance < 2) return "Static"
@@ -271,6 +196,81 @@ export function drawPhaseSpace(id, weather){
         if(dist < 100) return "Cycle"
 
         return "Chaos"
+    }
+
+    function interpretTransition(current){
+            
+        patternHistory.push(current)
+                
+        if(patternHistory.length > 20){
+            patternHistory.shift()
+        }
+
+        const chaosCount = patternHistory.filter(p => p === "Chaos").length
+                
+        if(chaosCount > 15){
+            prevPattern = current
+            return "Deep chaotic regime"
+        }
+
+        // ===== STABILITY =====
+        const staticCount = patternHistory.filter(p => p === "Static").length
+        if(staticCount > 15){
+            prevPattern = current
+            return "Deep stability"
+        }
+            
+        // ===== EMERGING CYCLE =====
+        const cycleCount = patternHistory.filter(p => p === "Cycle").length
+        if(cycleCount > 15){
+            prevPattern = current
+            return "Stable cyclic attractor"
+        }
+
+        if(cycleCount > 8 && cycleCount <= 15){
+            prevPattern = current
+            return "Emerging cycle"
+        }
+            
+        // ===== BASE LOGIC =====
+            
+        if(!prevPattern){
+            prevPattern = current
+            return "Initializing..."
+        }
+
+        if(cycleCount > 15){
+            return "Stable cyclic attractor"
+        }
+            
+        if(!prevPattern){
+            prevPattern = current
+            return "Initializing..."
+        }
+            
+        let result = current
+                
+        if(prevPattern === "Chaos" && current === "Cycle"){
+            result = "Stabilizing (chaos → order)"
+        }
+        else if(prevPattern === "Cycle" && current === "Chaos"){
+            result = "Entering chaos"
+        }
+        else if(current === "Trend"){
+            result = "Directional drift"
+        }
+        else if(current === "Static"){
+            result = "System stabilized"
+        }
+        else if(current === "Cycle"){
+            result = "Oscillating / cyclic behavior"
+        }
+        else if(current === "Chaos"){
+            result = "Chaotic exploration"
+        }
+            
+        prevPattern = current
+        return result
     }
 
     // ===== PREDICTION =====
@@ -325,62 +325,76 @@ export function drawPhaseSpace(id, weather){
     
     function draw(){
 
-        ctx.beginPath()
+    ctx.clearRect(0,0,SIZE,SIZE)
 
-        ctx.clearRect(0,0,SIZE,SIZE)
+    const points = []
 
-        const points = []
-
-        for(let i=1;i<t;i++){
-            const p = getPoint(i)
-            points.push(p)
-
-            const val = weather[i][axisColor] || 0
-
-            ctx.fillStyle = stateColor
-            ctx.fillRect(p.x,p.y,2,2)
-        }
-
-        const pattern = detectPattern(points)
-        const interpretation = interpretTransition(pattern)
-        const stateColor = getStateColor(interpretation)
-
-        drawHeatmap(points)
-
-        // clusters
-        if(points.length > 20){
-            const centers = kmeans(points,3)
-
-            clusterHistory.push(centers)
-
-            ctx.fillStyle="white"
-            centers.forEach(c=>{
-                ctx.beginPath()
-                ctx.arc(c.x,c.y,5,0,Math.PI*2)
-                ctx.fill()
-            })
-        }
-
-        // prediction
-        const pred = predictNext(points)
-        if(pred){
-            ctx.fillStyle="cyan"
-            ctx.beginPath()
-            ctx.arc(pred.x, pred.y, 4, 0, Math.PI*2)
-            ctx.fill()
-        }
-
-        // detect
-        const pattern = detectPattern(points)
-        const interpretation = interpretTransition(pattern)
-
-        info.innerHTML = `
-        Pattern: <b>${pattern}</b><br>
-        State: <b>${interpretation}</b><br>
-        Points: ${points.length}<br>
-        Clusters memory: ${clusterHistory.length}
-        `
+    // ===== 1. собираем точки =====
+    for(let i=1;i<t;i++){
+        const p = getPoint(i)
+        points.push(p)
     }
+
+    // ===== 2. считаем состояние (ВАЖНО — ДО РИСОВАНИЯ) =====
+    const pattern = detectPattern(points)
+    const interpretation = interpretTransition(pattern)
+    const stateColor = getStateColor(interpretation)
+
+    // ===== 3. рисуем =====
+    ctx.beginPath()
+
+    for(let i=1;i<t;i++){
+        const p = getPoint(i)
+
+        ctx.fillStyle = stateColor
+        ctx.fillRect(p.x, p.y, 2, 2)
+
+        if(i === 1){
+            ctx.moveTo(p.x, p.y)
+        } else {
+            ctx.lineTo(p.x, p.y)
+        }
+    }
+
+    ctx.strokeStyle = stateColor
+    ctx.globalAlpha = 0.5
+    ctx.stroke()
+    ctx.globalAlpha = 1
+
+    // ===== 4. heatmap =====
+    drawHeatmap(points)
+
+    // ===== 5. clusters =====
+    if(points.length > 20){
+        const centers = kmeans(points,3)
+
+        clusterHistory.push(centers)
+
+        ctx.fillStyle="white"
+        centers.forEach(c=>{
+            ctx.beginPath()
+            ctx.arc(c.x,c.y,5,0,Math.PI*2)
+            ctx.fill()
+        })
+    }
+
+    // ===== 6. prediction =====
+    const pred = predictNext(points)
+    if(pred){
+        ctx.fillStyle="cyan"
+        ctx.beginPath()
+        ctx.arc(pred.x, pred.y, 4, 0, Math.PI*2)
+        ctx.fill()
+    }
+
+    // ===== 7. UI =====
+    info.innerHTML = `
+    Pattern: <b>${pattern}</b><br>
+    State: <b>${interpretation}</b><br>
+    Points: ${points.length}<br>
+    Clusters memory: ${clusterHistory.length}
+    `
+}
 
     function animate(){
         if(!playing) return
