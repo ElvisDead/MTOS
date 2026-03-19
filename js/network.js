@@ -6,7 +6,7 @@ export function drawNetwork(id, users, onSelect){
     root.innerHTML = ""
 
     const canvas = document.createElement("canvas")
-    const size = Math.min(window.innerWidth * 0.9, 900)
+    const size = Math.min(window.innerWidth * 0.7, 700)
         
     canvas.width = size
     canvas.height = size
@@ -222,8 +222,8 @@ export function drawNetwork(id, users, onSelect){
 
         const rect = canvas.getBoundingClientRect()
 
-        const mx = e.clientX - rect.left
-        const my = e.clientY - rect.top
+        const mx = (e.clientX - rect.left - offsetX) / scale
+        const my = (e.clientY - rect.top - offsetY) / scale
 
         for(let i=0;i<N;i++){
 
@@ -273,8 +273,8 @@ export function drawNetwork(id, users, onSelect){
 
     const rect = canvas.getBoundingClientRect()
 
-    const mx = e.clientX - rect.left
-    const my = e.clientY - rect.top
+    const mx = (e.clientX - rect.left - offsetX) / scale
+    const my = (e.clientY - rect.top - offsetY) / scale
 
     // 👉 DRAG
     if(isDragging){
