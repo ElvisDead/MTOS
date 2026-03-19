@@ -30,23 +30,17 @@ export function drawAttractor(id, participants = [], relations = []) {
     })
     
     // 2. связи → распространение сигнала
+    let relField = [...field]
+        
     relations.forEach(r => {
         const from = ((r.from % N) + N) % N
         const to = ((r.to % N) + N) % N
         const s = r.strength !== undefined ? r.strength : 1
             
-        let relField = [...field]
-            
-        relations.forEach(r => {
-            const from = ((r.from % N) + N) % N
-            const to = ((r.to % N) + N) % N
-            const s = r.strength ?? 1
-                
-            relField[to] += field[from] * s
-        })
-            
-        field = relField
+        relField[to] += field[from] * s
     })
+        
+    field = relField
     
     // 3. нормализация (чтобы не взрывалось)
     const maxVal = Math.max(...field.map(v => Math.abs(v)), 1)
@@ -54,73 +48,6 @@ export function drawAttractor(id, participants = [], relations = []) {
     for (let i = 0; i < N; i++) {
         field[i] = field[i] / maxVal
     }
-
-    // =========================
-    // LOCAL DIFFUSION (±1 kin)
-    // =========================
-    
-    const diffusion = 0.25
-        
-    let spreadField = new Array(N).fill(0)
-        
-    for (let i = 0; i < N; i++) {
-        const left = field[(i - 1 + N) % N]
-        const right = field[(i + 1) % N]
-        const self = field[i]
-            
-        spreadField[i] =
-            self * (1 - diffusion) +
-            (left + right) * 0.5 * diffusion
-    }
-    
-    field = spreadField
-
-    // =========================
-    // DISTANCE DECAY (global influence)
-    // =========================
-    const decayStrength = 0.15
-    let decayField = new Array(N).fill(0)
-        
-    for (let i = 0; i < N; i++) {
-        let sum = 0
-            
-        for (let j = 0; j < N; j++) {
-            let dist = Math.abs(i - j)
-            dist = Math.min(dist, N - dist) // циклическое расстояние
-            
-            const influence = field[j] * Math.exp(-dist / 20)
-                
-            sum += influence
-        }
-        
-        decayField[i] = field[i] * (1 - decayStrength) + sum * decayStrength / N
-    }
-    
-    field = decayField
-
-    // =========================
-    // CLUSTERING (peak formation)
-    // =========================
-    const clusterStrength = 0.4
-        
-    let clusterField = new Array(N).fill(0)
-        
-    for (let i = 0; i < N; i++) {
-        const left = field[(i - 1 + N) % N]
-        const right = field[(i + 1) % N]
-        const self = field[i]
-            
-        const localAvg = (left + self + right) / 3
-        
-        // усиливаем пики выше среднего
-        if (self > localAvg) {
-            clusterField[i] = self + (self - localAvg) * clusterStrength
-        } else {
-            clusterField[i] = self * (1 - clusterStrength * 0.5)
-        }
-    }
-    
-    field = clusterField
 
     let pressure = 0.5      // P
     let temperature = 0.5   // T
