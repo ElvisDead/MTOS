@@ -315,7 +315,12 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
 
     drawSeries("seriesMap", weather, year, month, day)
     drawPhaseSpace("phaseMap", weather, selectedKin)
-    drawAttractor("attractorMap", fieldState)
+    drawAttractor(
+        "attractorMap",
+        users,
+        [], // relations пока пусто
+        selectedKin
+    )
     drawCollective("collectiveMap", users)
     drawActivity("activityMap", weather)
 }
