@@ -35,9 +35,9 @@ export function drawWeatherMap(
 
     root.innerHTML = ""
     root.style.display = "block"
-    root.style.textAlign = "center"
 
     const grid = document.createElement("div")
+    grid.style.width = "fit-content"
 
     grid.style.display = "grid"
     grid.style.gridTemplateColumns = "14px repeat(20, 18px)"
@@ -255,7 +255,13 @@ Click any cell to inspect its state.
 </div>
 `
 
-root.appendChild(grid)
+const wrapper = document.createElement("div")
+wrapper.style.display = "flex"
+wrapper.style.justifyContent = "center"
+
+wrapper.appendChild(grid)
+
+root.appendChild(wrapper)
 root.appendChild(legend)
 
 }
