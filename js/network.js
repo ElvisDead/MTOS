@@ -11,6 +11,22 @@ export function drawNetwork(id, users, onSelect){
 
     root.appendChild(canvas)
 
+    const desc = document.createElement("div")
+        
+    desc.innerText =
+        "Nodes represent participants.\n" +
+        "Lines represent relationships.\n" +
+        "Green = support, Red = conflict.\n" +
+        "Thicker lines = stronger connections.\n" +
+        "Only significant relationships are shown."
+        
+    desc.style.whiteSpace = "pre-line"
+    desc.style.color = "#888"
+    desc.style.textAlign = "center"
+    desc.style.marginTop = "10px"
+        
+    root.appendChild(desc)
+
     const ctx = canvas.getContext("2d")
 
     const cx = 210
@@ -19,6 +35,10 @@ export function drawNetwork(id, users, onSelect){
 
     let selected = null
     let hover = null
+
+    let selected = null
+    let hover = null
+    let tooltip = null
 
     const N = users.length
 
@@ -43,7 +63,15 @@ export function drawNetwork(id, users, onSelect){
                 const u1 = users[i]
                 const u2 = users[j]
 
-                const w = u1.weight * u2.weight
+                const key1 = u1.name + "->" + u2.name
+                const key2 = u2.name + "->" + u1.name
+                    
+                const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
+                    
+                const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+                
+                // ❗ ФИЛЬТР
+                if(Math.abs(score) < 0.3) continue
 
                 let sign = (u1.weight > 1 && u2.weight > 1) ? 1 : -1
 
@@ -51,15 +79,15 @@ export function drawNetwork(id, users, onSelect){
                 if(selected !== null && i !== selected && j !== selected){
                     ctx.globalAlpha = 0.05
                 }else{
-                    ctx.globalAlpha = 0.9
+                    ctx.globalAlpha = 0.2 + Math.abs(score) * 0.8
                 }
 
                 ctx.beginPath()
                 ctx.moveTo(positions[i].x, positions[i].y)
                 ctx.lineTo(positions[j].x, positions[j].y)
 
-                ctx.strokeStyle = sign > 0 ? "#00ff88" : "#ff0044"
-                ctx.lineWidth = Math.max(1, w * 4)
+                ctx.strokeStyle = score > 0 ? "#00ff88" : "#ff4444"
+                ctx.lineWidth = Math.max(1, Math.abs(score) * 5)
 
                 ctx.stroke()
             }
@@ -125,7 +153,19 @@ export function drawNetwork(id, users, onSelect){
                     onSelect(selected !== null ? users[selected] : null)
                 }
 
+                // если навели на узел — подсветить только его связи
+                if(hover !== null && i !== hover && j !== hover){
+                    ctx.globalAlpha *= 0.1
+                }
+
                 draw()
+
+                if(tooltip){
+                    ctx.fillStyle = "#fff"
+                    ctx.font = "14px Arial"
+                    ctx.textAlign = "center"
+                    ctx.fillText(tooltip, cx, 20)
+                }
                 return
             }
         }
@@ -151,6 +191,12 @@ export function drawNetwork(id, users, onSelect){
             if(Math.sqrt(dx*dx + dy*dy) < 15){
                 hover = i
                 break
+
+                tooltip = null
+                    
+                if(hover !== null){
+                    tooltip = users[hover].name
+                }
             }
         }
 
