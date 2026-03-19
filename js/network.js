@@ -31,7 +31,7 @@ export function drawNetwork(id, users, onSelect){
 
     const cx = 210
     const cy = 210
-    const R = 140
+    const R = 210
 
     let selected = null
     let hover = null
@@ -138,7 +138,7 @@ export function drawNetwork(id, users, onSelect){
 
             const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
-            if(Math.abs(score) < 0.3) continue
+            if(Math.abs(score) < 0.5) continue
 
             if(selected !== null && i !== selected && j !== selected){
                 ctx.globalAlpha = 0.05
