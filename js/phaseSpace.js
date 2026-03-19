@@ -163,6 +163,8 @@ export function drawPhaseSpace(id, weather){
 
     // ===== MEMORY =====
     const clusterHistory = []
+    let prevPattern = null
+    let patternHistory = []
 
     // ===== AUTO-DETECT =====
     function detectPattern(points){
@@ -179,9 +181,6 @@ export function drawPhaseSpace(id, weather){
             dySum += dy
             variance += dx*dx + dy*dy
         }
-
-        let prevPattern = null
-        let patternHistory = []
             
         variance /= points.length
 
@@ -237,10 +236,6 @@ export function drawPhaseSpace(id, weather){
         if(!prevPattern){
             prevPattern = current
             return "Initializing..."
-        }
-
-        if(cycleCount > 15){
-            return "Stable cyclic attractor"
         }
             
         if(!prevPattern){
