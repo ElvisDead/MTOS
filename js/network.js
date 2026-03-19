@@ -6,7 +6,7 @@ export function drawNetwork(id, users, onSelect){
     root.innerHTML = ""
 
     const canvas = document.createElement("canvas")
-    const size = Math.min(window.innerWidth * 0.7, 700)
+    const size = Math.min(window.innerWidth * 0.7, 500)
         
     canvas.width = size
     canvas.height = size
