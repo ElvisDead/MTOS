@@ -253,44 +253,59 @@ export function drawNetwork(id, users, onSelect){
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
 
+    // 👉 DRAG
+    if(isDragging){
+        const dx = e.clientX - dragStartX
+        const dy = e.clientY - dragStartY
+
+        offsetX += dx
+        offsetY += dy
+
+        dragStartX = e.clientX
+        dragStartY = e.clientY
+
+        return
+    }
+
+    // 👉 HOVER
     hover = null
     tooltip = null
     hoverEdge = null
 
     for(let i=0;i<N;i++){
         for(let j=i+1;j<N;j++){
-            
+
             const x1 = positions[i].x
             const y1 = positions[i].y
             const x2 = positions[j].x
             const y2 = positions[j].y
-                
+
             const A = mx - x1
             const B = my - y1
             const C = x2 - x1
             const D = y2 - y1
-                
+
             const dot = A*C + B*D
             const len_sq = C*C + D*D
             const param = dot / len_sq
-                
+
             if(param >= 0 && param <= 1){
                 const xx = x1 + param * C
                 const yy = y1 + param * D
-                    
+
                 const dx = mx - xx
                 const dy = my - yy
-                    
+
                 if(Math.sqrt(dx*dx + dy*dy) < 6){
-                    
+
                     const u1 = users[i]
                     const u2 = users[j]
-                        
+
                     const key1 = u1.name + "->" + u2.name
                     const key2 = u2.name + "->" + u1.name
-                        
+
                     const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
-                        
+
                     hoverEdge = {
                         text: `${u1.name} ↔ ${u2.name}: ${score.toFixed(2)}`
                     }
@@ -298,59 +313,6 @@ export function drawNetwork(id, users, onSelect){
             }
         }
     }
-
-    canvas.onwheel = (e)=>{
-
-        e.preventDefault()
-
-        const zoom = e.deltaY < 0 ? 1.1 : 0.9
-
-        const mx = e.offsetX
-        const my = e.offsetY
-
-        // зум относительно курсора
-        offsetX = mx - (mx - offsetX) * zoom
-        offsetY = my - (my - offsetY) * zoom
-
-        scale *= zoom
-    }
-
-    canvas.onmousedown = (e)=>{
-        isDragging = true
-        dragStartX = e.clientX
-        dragStartY = e.clientY
-    }
-        
-        canvas.onmouseup = ()=>{
-        isDragging = false    
-    }
-        
-        canvas.onmouseleave = ()=>{
-        isDragging = false
-    }
-        
-        canvas.onmousemove = (e)=>{
-            
-        const rect = canvas.getBoundingClientRect()
-            
-        const mx = e.clientX - rect.left
-        const my = e.clientY - rect.top
-            
-        // 👉 ЕСЛИ ТАЩИМ — ДВИГАЕМ КАМЕРУ
-        if(isDragging){
-            const dx = e.clientX - dragStartX
-            const dy = e.clientY - dragStartY
-                
-            offsetX += dx
-            offsetY += dy
-                
-            dragStartX = e.clientX    
-            dragStartY = e.clientY
-                
-            return
-        }
-
-    // ====== ТВОЙ СТАРЫЙ HOVER КОД НИЖЕ ======
 
     for(let i=0;i<N;i++){
 
@@ -363,6 +325,29 @@ export function drawNetwork(id, users, onSelect){
             break
         }
     }
+
+    canvas.onwheel = (e)=>{
+        e.preventDefault()
+        
+        const zoom = e.deltaY < 0 ? 1.1 : 0.9
+            
+        const mx = e.offsetX
+        const my = e.offsetY
+            
+        offsetX = mx - (mx - offsetX) * zoom
+        offsetY = my - (my - offsetY) * zoom
+            
+        scale *= zoom
+    }
+        
+    canvas.onmousedown = (e)=>{
+        isDragging = true
+        dragStartX = e.clientX
+        dragStartY = e.clientY
+    }
+        
+    canvas.onmouseup = ()=> isDragging = false
+    canvas.onmouseleave = ()=> isDragging = false
 
     draw()
 
