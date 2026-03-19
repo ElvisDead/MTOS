@@ -708,15 +708,56 @@ def lyapunov(series):
 
 def predictability(series):
 
-    diffs=np.abs(np.diff(series))
+    import numpy as np
 
-    for i,d in enumerate(diffs):
+    if len(series) < 5:
+        return len(series)
 
-        if d>0.12:
+    # ===============================
+    # 1. локальные изменения
+    # ===============================
+    diffs = np.abs(np.diff(series))
 
-            return i+1
+    # сглаживание
+    window = 5
+    smooth = np.convolve(diffs, np.ones(window)/window, mode='valid')
 
-    return len(series)
+    # ===============================
+    # 2. энтропия (структура сигнала)
+    # ===============================
+    hist, _ = np.histogram(series, bins=20, range=(0,1))
+    p = hist / np.sum(hist)
+
+    p = p[p > 0]
+    entropy = -np.sum(p * np.log(p))
+
+    # нормализация (примерно 0–3)
+    entropy_norm = entropy / 3.0
+
+    # ===============================
+    # 3. накопление нестабильности
+    # ===============================
+    instability = 0
+    threshold = 0.015   # чувствительный порог
+
+    for i, d in enumerate(smooth):
+
+        # чем больше скачок — тем больше вклад
+        instability += max(0, d - threshold)
+
+        # если накопилось достаточно — предел предсказуемости
+        if instability > 0.25:
+            return i + window
+
+    # ===============================
+    # 4. fallback: через энтропию
+    # ===============================
+    # чем выше энтропия — тем меньше предсказуемость
+    length = len(series)
+
+    predict = int(length * (1 - entropy_norm))
+
+    return max(5, min(length, predict))
 
 def phase_space(series):
 
