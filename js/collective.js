@@ -190,42 +190,22 @@ memory[key] = Number(score.toFixed(4))
 
         row.onclick = (e) => {
             
+            const key = r.a + "->" + r.b
+                
             let impact = 0
                 
             if(e.shiftKey){
-                impact = -memory[key] * 0.1
+                // тянем к нейтрали
+                impact = -(memory[key] || 0) * 0.1
             }else{
+                // поддержка
                 impact = 0.3
             }
             
-            const key = r.a + "->" + r.b
-                
             memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
-
+                
             propagateImpact(memory, users, r.a, r.b, impact)
                 
-            temperature += Math.abs(impact) * 0.1
-            temperature = Math.max(0, Math.min(1, temperature))
-                
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
-            localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
-                
-            drawCollective(id, users)
-        }
-                
-            if(e.shiftKey){
-                // нейтральное действие
-                impact = 0
-            }else if(e.button === 0){
-                // поддержка (левый клик)
-                impact = 0.3
-            }
-            
-            const key = r.a + "->" + r.b
-                
-            memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
-            
-            // влияние на температуру
             temperature += Math.abs(impact) * 0.1
             temperature = Math.max(0, Math.min(1, temperature))
                 
