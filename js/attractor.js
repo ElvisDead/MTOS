@@ -192,7 +192,7 @@ export function drawAttractor(id, participants = [], relations = []) {
 
         // обновление параметров
         pressure = 0.3 + Math.abs(average(field)) * 0.7
-        temperature = 0.2 + variance(field)
+        temperature = 0.3 + variance(field) * 1.5
 
         // переход фаз
         phase = (phase + 1) % 13
@@ -246,11 +246,77 @@ export function drawAttractor(id, participants = [], relations = []) {
     // LOOP
     // =========================
 
+    let isPaused = false
+    let speedMultiplier = 1
+
     function loop() {
-        updateField()
+
+        if (!isPaused) {
+
+            // управление скоростью
+            const steps = Math.floor(speedMultiplier)
+
+            for (let i = 0; i < steps; i++) {
+                updateField()
+            }
+
+            // если медленный режим (дробный)
+            if (speedMultiplier < 1) {
+                if (Math.random() < speedMultiplier) {
+                    updateField()
+                }
+            }
+        }
+
         draw()
         requestAnimationFrame(loop)
     }
+
+    const controls = document.createElement("div")
+    controls.style.marginBottom = "10px"
+    
+    // кнопка pause
+    const pauseBtn = document.createElement("button")
+    pauseBtn.innerText = "Pause"
+    pauseBtn.onclick = () => {
+        isPaused = !isPaused
+        pauseBtn.innerText = isPaused ? "Resume" : "Pause"
+    }
+    
+    // slow
+    const slowBtn = document.createElement("button")
+    slowBtn.innerText = "Slow"
+    slowBtn.onclick = () => {
+        speedMultiplier = 0.3
+    }
+    
+    // normal
+    const normalBtn = document.createElement("button")
+    normalBtn.innerText = "Normal"
+    normalBtn.onclick = () => {
+        speedMultiplier = 1
+    }
+    
+    // boost
+    const boostBtn = document.createElement("button")
+    boostBtn.innerText = "Boost"
+    boostBtn.onclick = () => {
+        speedMultiplier = 5
+    }
+        
+    // стили
+    ;[pauseBtn, slowBtn, normalBtn, boostBtn].forEach(btn => {
+        btn.style.marginRight = "5px"
+        btn.style.cursor = "pointer"
+    })
+    
+    // добавляем
+    controls.appendChild(pauseBtn)
+    controls.appendChild(slowBtn)
+    controls.appendChild(normalBtn)
+    controls.appendChild(boostBtn)
+        
+    root.appendChild(controls)
 
     root.appendChild(canvas)
 
@@ -263,6 +329,9 @@ export function drawAttractor(id, participants = [], relations = []) {
     description.style.fontSize = "12px"
     description.style.marginTop = "10px"
     description.style.fontFamily = "monospace"
+    description.style.whiteSpace = "pre-line"
+    description.style.lineHeight = "1.5"
+    description.style.maxWidth = "600px"
 
     description.innerHTML = `
 MTOS Attractor — Dynamic Cognitive Field Visualization
