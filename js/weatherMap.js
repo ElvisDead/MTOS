@@ -43,17 +43,18 @@ export function drawWeatherMap(
     let pMax = Math.max(...pressureData)
 
     for(let tone=1;tone<=13;tone++){
-        for(let seal=1;seal<=20;seal++){
 
             // === LEFT TONE NUMBER ===
-           const toneCell = document.createElement("div")
-           toneCell.innerText = tone
-           toneCell.style.fontSize = "10px"
-           toneCell.style.color = "#aaa"
-           toneCell.style.display = "flex"
-           toneCell.style.alignItems = "center"
-           toneCell.style.justifyContent = "flex-end"
-           grid.appendChild(toneCell)
+            const toneCell = document.createElement("div")
+            toneCell.innerText = tone
+            toneCell.style.fontSize = "10px"
+            toneCell.style.color = "#aaa"
+            toneCell.style.display = "flex"
+            toneCell.style.alignItems = "center"
+            toneCell.style.justifyContent = "flex-end"
+            grid.appendChild(toneCell)
+
+            for(let seal=1;seal<=20;seal++){
 
             // ===============================
             // KIN
@@ -148,6 +149,9 @@ export function drawWeatherMap(
 
             const cell = document.createElement("div")
 
+            cell.addEventListener("click", ()=>onCellClick(kin))
+            cell.addEventListener("touchstart", ()=>onCellClick(kin))
+
             cell.style.width = "18px"
             cell.style.height = "18px"
             cell.style.background = `rgb(${r},${g},${b})`
@@ -194,6 +198,7 @@ legend.innerHTML = `
 <div>🔴 High field</div>
 `
 
+root.appendChild(grid)
 root.appendChild(legend)
 
 return
