@@ -138,6 +138,8 @@ memory[key] = score
         box.appendChild(row)
     })
 
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+
     root.appendChild(box)
 }
 
