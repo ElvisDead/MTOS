@@ -1809,8 +1809,8 @@ def mtos_field_step_from_array(source_array, prev_field, prev_state):
             field.append(new2D[t][s])
             state.append(newState2D[t][s])
 
-    # 🔥 СТАБИЛИЗАЦИЯ ПОЛЯ
-    field = [0.5 if np.isnan(v) or np.isinf(v) else v for v in field]
-    field = [max(0.0, min(v, 1.0)) for v in field]
+    # === STABILIZE FIELD ===
+    field = [safe_value(v, 0.5) for v in field]
+    field = [clamp01(v) for v in field]
 
     return field, state
