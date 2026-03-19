@@ -37,16 +37,8 @@ export function drawNetwork(id, users, onSelect){
     let hover = null
     let tooltip = null
 
-    for(let i=0;i<N;i++){
-        
-        const dx = mx - positions[i].x
-        const dy = my - positions[i].y
-            
-        if(Math.sqrt(dx*dx + dy*dy) < 15){
-            hover = i
-                tooltip = users[i].name
-                    break
-        }
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
+
     }
 
     const N = users.length
@@ -98,11 +90,6 @@ export function drawNetwork(id, users, onSelect){
 
                 ctx.stroke()
 
-                if(tooltip){
-                    ctx.fillStyle = "#fff"
-                    ctx.font = "14px Arial"
-                    ctx.textAlign = "center"
-                    ctx.fillText(tooltip, cx, 20)
                 }
             }
         }
@@ -142,6 +129,14 @@ export function drawNetwork(id, users, onSelect){
 
             ctx.fillText(u.name, p.x, p.y + 4)
         }
+
+        if(tooltip){
+            ctx.fillStyle = "#fff"
+            ctx.font = "14px Arial"
+            ctx.textAlign = "center"
+            ctx.fillText(tooltip, cx, 20)
+        }
+
     }
 
     // ===============================
@@ -191,19 +186,21 @@ export function drawNetwork(id, users, onSelect){
             const dx = mx - positions[i].x
             const dy = my - positions[i].y
 
-            if(Math.sqrt(dx*dx + dy*dy) < 15){
-                hover = i
-                break
-
-                tooltip = null
+            hover = null
+            tooltip = null
+                
+            for(let i=0;i<N;i++){
+                
+                const dx = mx - positions[i].x
+                const dy = my - positions[i].y
                     
-                if(hover !== null){
-                    tooltip = users[hover].name
+                if(Math.sqrt(dx*dx + dy*dy) < 15){
+                    hover = i
+                    tooltip = users[i].name
+                    break
                 }
             }
         }
-
-        const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
 
         draw()
     }
