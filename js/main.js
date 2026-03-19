@@ -284,6 +284,12 @@ json.dumps([f,s,u])
         console.error(e)
         status.innerText = "ERROR"
     }
+
+    window.onKinSelect = (kin) => {
+        selectedKin = kin
+            
+        renderAll(weather, pressure, kin, todayKin, year, month, day)
+    }
 }
 
 // ===============================
@@ -306,7 +312,7 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
     })
 
     drawSeries("seriesMap", weather, year, month, day)
-    drawPhaseSpace("phaseMap", weather)
+    drawPhaseSpace("phaseMap", weather, selectedKin)
     drawAttractor("attractorMap", fieldState)
     drawCollective("collectiveMap", users)
     drawActivity("activityMap", weather)
