@@ -1,4 +1,12 @@
 export function drawCollective(id, users){
+    const STORAGE_KEY = "collective_relations_memory"
+
+    let memory = {}
+    try {
+        memory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
+    } catch(e){
+        memory = {}
+    }
 
     const root = document.getElementById(id)
     root.innerHTML = ""
@@ -35,6 +43,8 @@ Not enough participants"
         empty.style.textAlign = "center"
         box.appendChild(empty)
 
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+
         root.appendChild(box)
         return
     }
@@ -49,9 +59,20 @@ Not enough participants"
             const b = users[j]
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
-            const base = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
-            const noise = (Math.random() - 0.5) * 0.8
-            const score = Math.max(-1, Math.min(1, base + noise))
+            const key = [a.name, b.name].sort().join("_")
+                let score
+                    
+            if(memory[key] !== undefined){
+                // плавное изменение (живая система)
+                const drift = (Math.random() - 0.5) * 0.1
+                score = Math.max(-1, Math.min(1, memory[key] + drift))
+            }else{
+                const base = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
+                const noise = (Math.random() - 0.5) * 0.8
+                score = Math.max(-1, Math.min(1, base + noise))
+            }
+
+memory[key] = score
 
             relations.push({
                 a: a.name,
@@ -78,6 +99,16 @@ Not enough participants"
         row.style.borderBottom = "1px solid #111"
         row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
         row.style.fontSize = "13px"
+
+        row.title = "Score: " + r.score.toFixed(3)
+        row.style.cursor = "pointer"
+        row.onmouseenter = () => {
+            row.style.background = "rgba(255,255,255,0.15)"
+        }
+        
+        row.onmouseleave = () => {
+            row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
+        }
 
         const left = document.createElement("div")
         left.innerText = r.a
