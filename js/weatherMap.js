@@ -158,6 +158,8 @@ export function drawWeatherMap(
             // ===============================
             const fieldNorm = (phi - fMin)/(fMax - fMin || 1)
 
+            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
+
             // ===============================
             // СМЕШИВАНИЕ СЛОЁВ
             // ===============================
@@ -183,8 +185,6 @@ export function drawWeatherMap(
                     0.25 * latticeNorm +
                     0.25 * waveNorm
             }
-
-            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
 
             // ===============================
             // ЦВЕТ (НАУЧНЫЙ ГРАДИЕНТ)
