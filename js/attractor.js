@@ -1,4 +1,4 @@
-export function drawAttractor(id, inputField = []) {
+export function drawAttractor(id, participants = [], relations = []) {
 
     const root = document.getElementById(id)
     root.innerHTML = ""
@@ -18,10 +18,99 @@ export function drawAttractor(id, inputField = []) {
     let field = new Array(N).fill(0)
     let memory = new Array(N).fill(0)
 
-    // если есть вход — используем
-    for (let i = 0; i < Math.min(N, inputField.length); i++) {
-        field[i] = inputField[i]
+    // =========================
+    // MTOS REAL DATA INPUT
+    // =========================
+    
+    // 1. участники → базовое поле
+    participants.forEach(p => {
+        const i = ((p.kin % N) + N) % N
+        const w = p.weight !== undefined ? p.weight : 1
+        field[i] += w
+    })
+    
+    // 2. связи → распространение сигнала
+    relations.forEach(r => {
+        const from = ((r.from % N) + N) % N
+        const to = ((r.to % N) + N) % N
+        const s = r.strength !== undefined ? r.strength : 1
+            
+        field[to] += field[from] * s
+    })
+    
+    // 3. нормализация (чтобы не взрывалось)
+    const maxVal = Math.max(...field.map(v => Math.abs(v)), 1)
+        
+    for (let i = 0; i < N; i++) {
+        field[i] = field[i] / maxVal
     }
+
+    // =========================
+    // LOCAL DIFFUSION (±1 kin)
+    // =========================
+    
+    const diffusion = 0.25
+        
+    let spreadField = new Array(N).fill(0)
+        
+    for (let i = 0; i < N; i++) {
+        const left = field[(i - 1 + N) % N]
+        const right = field[(i + 1) % N]
+        const self = field[i]
+            
+        spreadField[i] =
+            self * (1 - diffusion) +
+            (left + right) * 0.5 * diffusion
+    }
+    
+    field = spreadField
+
+    // =========================
+    // DISTANCE DECAY (global influence)
+    // =========================
+    const decayStrength = 0.15
+    let decayField = new Array(N).fill(0)
+        
+    for (let i = 0; i < N; i++) {
+        let sum = 0
+            
+        for (let j = 0; j < N; j++) {
+            let dist = Math.abs(i - j)
+            dist = Math.min(dist, N - dist) // циклическое расстояние
+            
+            const influence = field[j] * Math.exp(-dist / 20)
+                
+            sum += influence
+        }
+        
+        decayField[i] = field[i] * (1 - decayStrength) + sum * decayStrength / N
+    }
+    
+    field = decayField
+
+    // =========================
+    // CLUSTERING (peak formation)
+    // =========================
+    const clusterStrength = 0.4
+        
+    let clusterField = new Array(N).fill(0)
+        
+    for (let i = 0; i < N; i++) {
+        const left = field[(i - 1 + N) % N]
+        const right = field[(i + 1) % N]
+        const self = field[i]
+            
+        const localAvg = (left + self + right) / 3
+        
+        // усиливаем пики выше среднего
+        if (self > localAvg) {
+            clusterField[i] = self + (self - localAvg) * clusterStrength
+        } else {
+            clusterField[i] = self * (1 - clusterStrength * 0.5)
+        }
+    }
+    
+    field = clusterField
 
     let pressure = 0.5      // P
     let temperature = 0.5   // T
