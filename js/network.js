@@ -300,6 +300,7 @@ export function drawNetwork(id, users, onSelect){
 
     draw()
 }
+    draw()
 
     function loop(){
         draw()
