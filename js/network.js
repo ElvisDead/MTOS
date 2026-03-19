@@ -53,18 +53,6 @@ export function drawNetwork(id, users, onSelect){
 
     const velocities = users.map(()=>({x:0, y:0}))
 
-            function loop(){
-            
-            draw()
-                
-            requestAnimationFrame(loop)
-        }
-        
-        loop()
-    
-    }
-                                })
-
     function applyClustering(){
 
         for(let i=0;i<N;i++){
@@ -95,27 +83,27 @@ export function drawNetwork(id, users, onSelect){
 
     function applyForces(){
                     
-                    // отталкивание
-                    for(let i=0;i<N;i++){
-                        for(let j=i+1;j<N;j++){
-                            
-                            const dx = positions[j].x - positions[i].x
-                            const dy = positions[j].y - positions[i].y
+        // отталкивание
+        for(let i=0;i<N;i++){
+            for(let j=i+1;j<N;j++){
+                
+                const dx = positions[j].x - positions[i].x
+                const dy = positions[j].y - positions[i].y
                                 
-                            const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
-                            const force = 50 / dist
+                const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
+                const force = 50 / dist
                                 
-                            const fx = force * dx / dist
-                            const fy = force * dy / dist
+                const fx = force * dx / dist
+                const fy = force * dy / dist
                                 
-                            velocities[i].x -= fx
-                            velocities[i].y -= fy
+                velocities[i].x -= fx
+                velocities[i].y -= fy
                                 
-                            velocities[j].x += fx
-                            velocities[j].y += fy
-                        }
+                velocities[j].x += fx
+                velocities[j].y += fy
+            }
 
-                        function draw(){
+    function draw(){
 
         ctx.clearRect(0,0,420,420)
 
@@ -327,10 +315,10 @@ export function drawNetwork(id, users, onSelect){
     draw()
 }
 
-function loop(){
-    draw()
-    requestAnimationFrame(loop)
-}
-
-loop()
+    function loop(){
+        draw()
+        requestAnimationFrame(loop)
+    }
+    
+    loop()
 }
