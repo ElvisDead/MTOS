@@ -37,8 +37,7 @@ export function drawCollective(id, users){
     // ===== ПРОВЕРКА =====
     if(!users || users.length < 2){
         const empty = document.createElement("div")
-        empty.innerText = "
-Not enough participants"
+        empty.innerText = "Not enough participants"
         empty.style.color = "#888"
         empty.style.textAlign = "center"
         box.appendChild(empty)
@@ -60,7 +59,7 @@ Not enough participants"
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
             const key = [a.name, b.name].sort().join("_")
-                let score
+            let score
                     
             if(memory[key] !== undefined){
                 // плавное изменение (живая система)
