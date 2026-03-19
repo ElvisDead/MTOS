@@ -215,32 +215,11 @@ export function drawNetwork(id, users, onSelect){
         ctx.font = "14px Arial"
         ctx.textAlign = "center"
         ctx.fillText(tooltip, cx, 20)
+
+        ctx.restore()
     }
 }
     canvas.onclick = (e)=>{
-
-        canvas.onwheel = (e)=>{
-            e.preventDefault()
-                
-            const zoom = e.deltaY < 0 ? 1.1 : 0.9
-            
-            const mx = e.offsetX
-            const my = e.offsetY
-            
-            offsetX = mx - (mx - offsetX) * zoom
-            offsetY = my - (my - offsetY) * zoom
-            
-            scale *= zoom
-        }
-            
-        canvas.onmousedown = (e)=>{
-            isDragging = true
-            dragStartX = e.clientX
-            dragStartY = e.clientY
-        }
-        
-        canvas.onmouseup = ()=> isDragging = false
-        canvas.onmouseleave = ()=> isDragging = false
 
         const rect = canvas.getBoundingClientRect()
 
@@ -259,6 +238,28 @@ export function drawNetwork(id, users, onSelect){
                 if(onSelect){
                     onSelect(selected !== null ? users[selected] : null)
                 }
+
+                canvas.onwheel = (e)=>{
+                    e.preventDefault()
+                
+                    const zoom = e.deltaY < 0 ? 1.1 : 0.9
+        
+                    const mx = e.offsetX
+                    const my = e.offsetY
+                    
+                    offsetX = mx - (mx - offsetX) * zoom
+                    offsetY = my - (my - offsetY) * zoom
+                    scale *= zoom
+                }
+            
+                canvas.onmousedown = (e)=>{
+                    isDragging = true
+                    dragStartX = e.clientX
+                    dragStartY = e.clientY
+                }
+                
+                canvas.onmouseup = ()=> isDragging = false
+                canvas.onmouseleave = ()=> isDragging = false
 
                 draw()
                 return
@@ -350,8 +351,6 @@ export function drawNetwork(id, users, onSelect){
     }
 
     draw()
-
-    ctx.restore()
 }
     draw()
 
