@@ -6,8 +6,10 @@ export function drawNetwork(id, users, onSelect){
     root.innerHTML = ""
 
     const canvas = document.createElement("canvas")
-    canvas.width = 420
-    canvas.height = 420
+    const size = Math.min(window.innerWidth * 0.9, 900)
+        
+    canvas.width = size
+    canvas.height = size
 
     root.appendChild(canvas)
 
@@ -29,9 +31,9 @@ export function drawNetwork(id, users, onSelect){
 
     const ctx = canvas.getContext("2d")
 
-    const cx = 210
-    const cy = 210
-    const R = 60
+    const cx = canvas.width / 2
+    const cy = canvas.width / 2
+    const R = canvas.width * 0.4
 
     let selected = null
     let hover = null
@@ -119,7 +121,7 @@ export function drawNetwork(id, users, onSelect){
 
     function draw(){
 
-    ctx.clearRect(0,0,420,420)
+    ctx.clearRect(0,0,canvas.width,canvas.height)
 
     applyClustering()
     applyForces()
