@@ -22,9 +22,20 @@ export function drawWeatherMap(
     grid.style.gridTemplateRows = "14px repeat(13, 18px)"
     grid.style.gap = "2px"
     // === HEADER (SEAL NUMBERS) ===
+
+    // пустая верхняя левая ячейка
+    const empty = document.createElement("div")
+    grid.appendChild(empty)
+
     for(let s=1; s<=20; s++){
         const cell = document.createElement("div")
-        cell.addEventListener("click", ()=>onCellClick(kin))
+        cell.innerText = s
+        cell.style.fontSize = "10px"
+        cell.style.color = "#aaa"
+        cell.style.textAlign = "center"
+        cell.style.height = "12px"
+        grid.appendChild(cell)
+     }
         cell.addEventListener("touchstart", ()=>onCellClick(kin))
         cell.innerText = s
         cell.style.fontSize = "10px"
@@ -202,8 +213,7 @@ root.appendChild(grid)
 root.appendChild(legend)
 
 return
-    
-    root.appendChild(grid)
+
 }
 
 function onCellClick(kin){
