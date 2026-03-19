@@ -288,7 +288,7 @@ json.dumps([f,s,u])
     window.onKinSelect = (kin) => {
         selectedKin = kin
             
-        renderAll(weather, pressure, kin, todayKin, year, month, day)
+        renderAll(weather, pressure, userKin, todayKin, year, month, day)
     }
 }
 
