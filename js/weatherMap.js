@@ -184,6 +184,8 @@ export function drawWeatherMap(
                     0.25 * waveNorm
             }
 
+            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
+
             // ===============================
             // ЦВЕТ (НАУЧНЫЙ ГРАДИЕНТ)
             // ===============================
@@ -194,8 +196,7 @@ export function drawWeatherMap(
             // ===============================
             // ДАВЛЕНИЕ (оверлей)
             // ===============================
-            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
-
+            
             r += p * 40
             b += p * 60
 
