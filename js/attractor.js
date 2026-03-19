@@ -203,6 +203,7 @@ export function drawAttractor(id, participants = [], relations = [], selectedKin
         }
         
         field = clusterField
+        window._attractorField = field
 
         // обновление параметров
         pressure = 0.3 + Math.abs(average(field)) * 0.7
