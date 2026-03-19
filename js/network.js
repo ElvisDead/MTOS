@@ -36,12 +36,14 @@ export function drawNetwork(id, users, onSelect){
     let selected = null
     let hover = null
     let tooltip = null
+    let hoverEdge = null
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
 
     const N = users.length
 
     const positions = users.map((u, i)=>{
+        const velocities = users.map(()=>({x:0,y:0}))
         const angle = (i / N) * Math.PI * 2
         return {
             x: cx + R * Math.cos(angle),
@@ -49,9 +51,41 @@ export function drawNetwork(id, users, onSelect){
         }
     })
 
+    function applyClustering(){
+
+        for(let i=0;i<N;i++){
+            for(let j=i+1;j<N;j++){
+
+                const u1 = users[i]
+                const u2 = users[j]
+
+                const key1 = u1.name + "->" + u2.name
+                const key2 = u2.name + "->" + u1.name
+
+                const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+
+                if(score > 0.3){
+
+                    const dx = positions[j].x - positions[i].x
+                    const dy = positions[j].y - positions[i].y
+
+                    positions[i].x += dx * 0.01 * score
+                    positions[i].y += dy * 0.01 * score
+
+                    positions[j].x -= dx * 0.01 * score
+                    positions[j].y -= dy * 0.01 * score
+                }
+            }
+        }
+    }
+
     function draw(){
 
         ctx.clearRect(0,0,420,420)
+
+        applyClustering()
+
+        applyForces()
 
         // ===============================
         // СВЯЗИ
@@ -125,7 +159,13 @@ export function drawNetwork(id, users, onSelect){
             ctx.fillText(u.name, p.x, p.y + 4)
         }
 
-        if(tooltip){
+        if(hoverEdge){
+            ctx.fillStyle = "#fff"
+            ctx.font = "14px Arial"
+            ctx.textAlign = "center"
+            ctx.fillText(hoverEdge.text, cx, 20)
+        }
+        else if(tooltip){
             ctx.fillStyle = "#fff"
             ctx.font = "14px Arial"
             ctx.textAlign = "center"
@@ -157,6 +197,45 @@ export function drawNetwork(id, users, onSelect){
                     onSelect(selected !== null ? users[selected] : null)
                 }
 
+                function applyForces(){
+                    
+                    // отталкивание
+                    for(let i=0;i<N;i++){
+                        for(let j=i+1;j<N;j++){
+                            
+                            const dx = positions[j].x - positions[i].x
+                            const dy = positions[j].y - positions[i].y
+                                
+                            const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
+                            const force = 50 / dist
+                                
+                            const fx = force * dx / dist
+                            const fy = force * dy / dist
+                                
+                            velocities[i].x -= fx
+                            velocities[i].y -= fy
+                                
+                            velocities[j].x += fx
+                            velocities[j].y += fy
+                        }
+                    }
+
+    // притяжение к центру
+    for(let i=0;i<N;i++){
+        velocities[i].x += (cx - positions[i].x) * 0.001
+        velocities[i].y += (cy - positions[i].y) * 0.001
+    }
+
+    // применение
+    for(let i=0;i<N;i++){
+        positions[i].x += velocities[i].x
+        positions[i].y += velocities[i].y
+
+        velocities[i].x *= 0.85
+        velocities[i].y *= 0.85
+    }
+}
+                
                 draw()
                 
                 return
@@ -176,6 +255,49 @@ export function drawNetwork(id, users, onSelect){
 
     hover = null
     tooltip = null
+    hoverEdge = null
+
+    for(let i=0;i<N;i++){
+        for(let j=i+1;j<N;j++){
+            
+            const x1 = positions[i].x
+            const y1 = positions[i].y
+            const x2 = positions[j].x
+            const y2 = positions[j].y
+                
+            const A = mx - x1
+            const B = my - y1
+            const C = x2 - x1
+            const D = y2 - y1
+                
+            const dot = A*C + B*D
+            const len_sq = C*C + D*D
+            const param = dot / len_sq
+                
+            if(param >= 0 && param <= 1){
+                const xx = x1 + param * C
+                const yy = y1 + param * D
+                    
+                const dx = mx - xx
+                const dy = my - yy
+                    
+                if(Math.sqrt(dx*dx + dy*dy) < 6){
+                    
+                    const u1 = users[i]
+                    const u2 = users[j]
+                        
+                    const key1 = u1.name + "->" + u2.name
+                    const key2 = u2.name + "->" + u1.name
+                        
+                    const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+                        
+                    hoverEdge = {
+                        text: `${u1.name} ↔ ${u2.name}: ${score.toFixed(2)}`
+                    }
+                }
+            }
+        }
+    }
 
     for(let i=0;i<N;i++){
 
@@ -192,3 +314,10 @@ export function drawNetwork(id, users, onSelect){
     draw()
 }
 }
+
+function loop(){
+    draw()
+    requestAnimationFrame(loop)
+}
+
+loop()
