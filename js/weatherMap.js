@@ -51,6 +51,7 @@ export function drawWeatherMap(
 
     for(let s=1; s<=20; s++){
         const cell = document.createElement("div")
+        cell.dataset.kin = kin
         cell.innerText = s
         cell.style.fontSize = "10px"
         cell.style.color = "#aaa"
@@ -67,8 +68,11 @@ export function drawWeatherMap(
     window._lastFieldData = fieldData
     window._lastPressureData = pressureData
 
-    let fMin = Math.min(...fieldData)
-    let fMax = Math.max(...fieldData)
+    let fMin = fieldData?.length ? Math.min(...fieldData) : 0
+    let fMax = fieldData?.length ? Math.max(...fieldData) : 1
+
+    let pMin = pressureData?.length ? Math.min(...pressureData) : 0
+    let pMax = pressureData?.length ? Math.max(...pressureData) : 1
 
     let pMin = Math.min(...pressureData)
     let pMax = Math.max(...pressureData)
@@ -268,7 +272,9 @@ function onCellClick(kin, e){
     const popup = document.getElementById("kinPopup")
     if(!popup) return
 
-    if(!popup.contains(e.target)){
+    const isCell = e.target.closest("[data-kin]")
+
+    if(!popup.contains(e.target) && !isCell){
         popup.style.display = "none"
     }
 })
