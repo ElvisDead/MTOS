@@ -52,26 +52,31 @@ export function drawCollective(id, users){
     const relations = []
 
     for(let i = 0; i < users.length; i++){
-        for(let j = i + 1; j < users.length; j++){
+        for(let j = 0; j < users.length; j++){
+            if(i === j) continue
 
             const a = users[i]
             const b = users[j]
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
-            const key = [a.name, b.name].sort().join("_")
+            const key = a.name + "->" + b.name
             let score
                     
             if(memory[key] !== undefined){
-                // плавное изменение (живая система)
                 const drift = (Math.random() - 0.5) * 0.1
-                score = Math.max(-1, Math.min(1, memory[key] + drift))
-            }else{
-                const base = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
-                const noise = (Math.random() - 0.5) * 0.8
-                score = Math.max(-1, Math.min(1, base + noise))
+                const decay = -0.02 // постоянное затухание
+                
+                score = memory[key] + drift + decay
+                score = Math.max(-1, Math.min(1, score))
             }
 
 memory[key] = score
+
+            // случайные события
+            if(Math.random() < 0.05){
+                const eventImpact = (Math.random() - 0.5) * 1.5
+                memory[key] = Math.max(-1, Math.min(1, memory[key] + eventImpact))
+            }
 
             relations.push({
                 a: a.name,
@@ -124,7 +129,7 @@ memory[key] = score
         right.style.color = "#fff"
 
         const status = document.createElement("div")
-        status.innerText = label
+        status.innerText = label + " (" + r.score.toFixed(2) + ")"
         status.style.color = color
         status.style.fontWeight = "bold"
         status.style.gridColumn = "1 / span 3"
@@ -141,6 +146,16 @@ memory[key] = score
     localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
 
     root.appendChild(box)
+
+    const description = document.createElement("div")
+    description.style.color = "#888"
+    description.style.fontSize = "12px"
+    description.style.textAlign = "center"
+    description.style.marginTop = "10px"
+        
+    description.innerText = "Система показывает динамические отношения между участниками. Связи изменяются со временем, могут усиливаться, ослабевать и подвергаться случайным событиям."
+        
+    root.appendChild(description)
 }
 
 
