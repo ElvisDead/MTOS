@@ -82,142 +82,121 @@ export function drawNetwork(id, users, onSelect){
     }
 
     function applyForces(){
-                    
-        // отталкивание
-        for(let i=0;i<N;i++){
-            for(let j=i+1;j<N;j++){
-                
-                const dx = positions[j].x - positions[i].x
-                const dy = positions[j].y - positions[i].y
-                                
-                const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
-                const force = 50 / dist
-                                
-                const fx = force * dx / dist
-                const fy = force * dy / dist
-                                
-                velocities[i].x -= fx
-                velocities[i].y -= fy
-                                
-                velocities[j].x += fx
-                velocities[j].y += fy
-            }
 
-    function draw(){
+    for(let i=0;i<N;i++){
+        for(let j=i+1;j<N;j++){
 
-        ctx.clearRect(0,0,420,420)
+            const dx = positions[j].x - positions[i].x
+            const dy = positions[j].y - positions[i].y
 
-        applyClustering()
+            const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
+            const force = 50 / dist
 
-        applyForces()
+            const fx = force * dx / dist
+            const fy = force * dy / dist
 
-        // ===============================
-        // СВЯЗИ
-        // ===============================
-        for(let i=0;i<N;i++){
-            for(let j=i+1;j<N;j++){
+            velocities[i].x -= fx
+            velocities[i].y -= fy
 
-                const u1 = users[i]
-                const u2 = users[j]
-
-                const key1 = u1.name + "->" + u2.name
-                const key2 = u2.name + "->" + u1.name
-                    
-                const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
-                
-                // ❗ ФИЛЬТР
-                if(Math.abs(score) < 0.3) continue
-
-                // фильтр по выбранному
-                if(selected !== null && i !== selected && j !== selected){
-                    ctx.globalAlpha = 0.05
-                }else{
-                    ctx.globalAlpha = 0.2 + Math.abs(score) * 0.8
-                }
-
-                ctx.beginPath()
-                ctx.moveTo(positions[i].x, positions[i].y)
-                ctx.lineTo(positions[j].x, positions[j].y)
-
-                ctx.strokeStyle = score > 0 ? "#00ff88" : "#ff4444"
-                ctx.lineWidth = Math.max(1, Math.abs(score) * 5)
-
-                ctx.stroke()
-
-                }
-            }
-
-        ctx.globalAlpha = 1
-                    }
-        
-        // притяжение к центру
-        for(let i=0;i<N;i++){
-            velocities[i].x += (cx - positions[i].x) * 0.001
-            velocities[i].y += (cy - positions[i].y) * 0.001
-        }
-        
-        // применение
-        for(let i=0;i<N;i++){
-            positions[i].x += velocities[i].x
-            positions[i].y += velocities[i].y
-                
-            velocities[i].x *= 0.85
-            velocities[i].y *= 0.85
+            velocities[j].x += fx
+            velocities[j].y += fy
         }
     }
 
-        // ===============================
-        // УЗЛЫ
-        // ===============================
-        for(let i=0;i<N;i++){
+    for(let i=0;i<N;i++){
+        velocities[i].x += (cx - positions[i].x) * 0.001
+        velocities[i].y += (cy - positions[i].y) * 0.001
+    }
 
-            const u = users[i]
-            const p = positions[i]
+    for(let i=0;i<N;i++){
+        positions[i].x += velocities[i].x
+        positions[i].y += velocities[i].y
 
-            let radius = 10 + u.weight * 6
+        velocities[i].x *= 0.85
+        velocities[i].y *= 0.85
+    }
+}
 
-            if(i === selected) radius += 6
-            if(i === hover) radius += 3
+
+function draw(){
+
+    ctx.clearRect(0,0,420,420)
+
+    applyClustering()
+    applyForces()
+
+    // СВЯЗИ
+    for(let i=0;i<N;i++){
+        for(let j=i+1;j<N;j++){
+
+            const u1 = users[i]
+            const u2 = users[j]
+
+            const key1 = u1.name + "->" + u2.name
+            const key2 = u2.name + "->" + u1.name
+
+            const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+
+            if(Math.abs(score) < 0.3) continue
+
+            ctx.globalAlpha = 0.2 + Math.abs(score) * 0.8
 
             ctx.beginPath()
-            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
+            ctx.moveTo(positions[i].x, positions[i].y)
+            ctx.lineTo(positions[j].x, positions[j].y)
 
-            ctx.fillStyle = "#111"
-            ctx.fill()
+            ctx.strokeStyle = score > 0 ? "#00ff88" : "#ff4444"
+            ctx.lineWidth = Math.max(1, Math.abs(score) * 5)
 
-            // рамка
-            if(i === selected){
-                ctx.strokeStyle = "yellow"
-                ctx.lineWidth = 3
-                ctx.stroke()
-            }
-
-            // текст
-            ctx.fillStyle = "#fff"
-            ctx.font = "11px monospace"
-            ctx.textAlign = "center"
-
-            ctx.fillText(u.name, p.x, p.y + 4)
+            ctx.stroke()
         }
-
-        if(hoverEdge){
-            ctx.fillStyle = "#fff"
-            ctx.font = "14px Arial"
-            ctx.textAlign = "center"
-            ctx.fillText(hoverEdge.text, cx, 20)
-        }
-        else if(tooltip){
-            ctx.fillStyle = "#fff"
-            ctx.font = "14px Arial"
-            ctx.textAlign = "center"
-            ctx.fillText(tooltip, cx, 20)
-        }
-
     }
 
-    // ===============================
-    // CLICK
-    // ===============================
+    ctx.globalAlpha = 1
+
+    // УЗЛЫ
+    for(let i=0;i<N;i++){
+
+        const u = users[i]
+        const p = positions[i]
+
+        let radius = 10 + u.weight * 6
+
+        if(i === selected) radius += 6
+        if(i === hover) radius += 3
+
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
+
+        ctx.fillStyle = "#111"
+        ctx.fill()
+
+        if(i === selected){
+            ctx.strokeStyle = "yellow"
+            ctx.lineWidth = 3
+            ctx.stroke()
+        }
+
+        ctx.fillStyle = "#fff"
+        ctx.font = "11px monospace"
+        ctx.textAlign = "center"
+
+        ctx.fillText(u.name, p.x, p.y + 4)
+    }
+
+    if(hoverEdge){
+        ctx.fillStyle = "#fff"
+        ctx.font = "14px Arial"
+        ctx.textAlign = "center"
+        ctx.fillText(hoverEdge.text, cx, 20)
+    }
+    else if(tooltip){
+        ctx.fillStyle = "#fff"
+        ctx.font = "14px Arial"
+        ctx.textAlign = "center"
+        ctx.fillText(tooltip, cx, 20)
+    }
+}
     canvas.onclick = (e)=>{
 
         const rect = canvas.getBoundingClientRect()
