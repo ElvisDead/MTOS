@@ -35,7 +35,17 @@ export function drawAttractor(id, participants = [], relations = []) {
         const to = ((r.to % N) + N) % N
         const s = r.strength !== undefined ? r.strength : 1
             
-        field[to] += field[from] * s
+        let relField = [...field]
+            
+        relations.forEach(r => {
+            const from = ((r.from % N) + N) % N
+            const to = ((r.to % N) + N) % N
+            const s = r.strength ?? 1
+                
+            relField[to] += field[from] * s
+        })
+            
+        field = relField
     })
     
     // 3. нормализация (чтобы не взрывалось)
@@ -191,6 +201,67 @@ export function drawAttractor(id, participants = [], relations = []) {
         }
 
         field = newField
+
+        // =========================
+        // POST-PROCESS FIELD (MTOS PHYSICS)
+        // =========================
+        
+        // 1. diffusion
+        const diffusion = 0.25
+        let spreadField = new Array(N).fill(0)
+            
+        for (let i = 0; i < N; i++) {
+            const left = field[(i - 1 + N) % N]
+            const right = field[(i + 1) % N]
+            const self = field[i]
+                
+            spreadField[i] =
+                self * (1 - diffusion) +
+                (left + right) * 0.5 * diffusion
+        }
+        
+        field = spreadField
+        
+        // 2. decay
+        const decayStrength = 0.15
+        let decayField = new Array(N).fill(0)
+            
+        for (let i = 0; i < N; i++) {
+            let sum = 0
+                
+            for (let j = 0; j < N; j++) {
+                let dist = Math.abs(i - j)
+                dist = Math.min(dist, N - dist)
+                    
+                sum += field[j] * Math.exp(-dist / 20)
+            }
+            
+            decayField[i] =
+                field[i] * (1 - decayStrength) +
+                sum * decayStrength / N
+        }
+        
+        field = decayField
+        
+        // 3. clustering
+        const clusterStrength = 0.4
+        let clusterField = new Array(N).fill(0)
+            
+        for (let i = 0; i < N; i++) {
+            const left = field[(i - 1 + N) % N]
+            const right = field[(i + 1) % N]
+            const self = field[i]
+                
+            const localAvg = (left + self + right) / 3
+                
+            if (self > localAvg) {
+                clusterField[i] = self + (self - localAvg) * clusterStrength
+            } else {
+                clusterField[i] = self * (1 - clusterStrength * 0.5)
+            }
+        }
+        
+        field = clusterField
 
         // обновление параметров
         pressure = 0.3 + Math.abs(average(field)) * 0.7
