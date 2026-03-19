@@ -220,6 +220,15 @@ Lattice: ${latticeNorm.toFixed(3)}
         }
     }
 
+const legend = document.createElement("div")
+legend.style.marginTop = "15px"
+legend.style.fontSize = "12px"
+legend.style.color = "#aaa"
+legend.style.maxWidth = "500px"
+legend.style.marginLeft = "auto"
+legend.style.marginRight = "auto"
+legend.style.textAlign = "left"    
+    
 legend.innerHTML = `
 <div style="margin-bottom:6px;"><b>Legend:</b></div>
 
