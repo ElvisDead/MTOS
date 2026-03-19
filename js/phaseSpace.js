@@ -180,6 +180,84 @@ export function drawPhaseSpace(id, weather){
             variance += dx*dx + dy*dy
         }
 
+        let prevPattern = null
+        let patternHistory = []
+            
+        function interpretTransition(current){
+            
+            patternHistory.push(current)
+                
+            if(patternHistory.length > 20){
+                patternHistory.shift()
+            }
+
+            const chaosCount = patternHistory.filter(p => p === "Chaos").length
+                
+            if(chaosCount > 15){
+                prevPattern = current
+                return "Deep chaotic regime"
+            }
+
+            // ===== STABILITY =====
+            const staticCount = patternHistory.filter(p => p === "Static").length
+            if(staticCount > 15){
+                prevPattern = current
+                return "Deep stability"
+            }
+            
+            // ===== EMERGING CYCLE =====
+            const cycleCount = patternHistory.filter(p => p === "Cycle").length
+            if(cycleCount > 15){
+                prevPattern = current
+                return "Stable cyclic attractor"
+            }
+
+            if(cycleCount > 8 && cycleCount <= 15){
+                prevPattern = current
+                return "Emerging cycle"
+            }
+            
+            // ===== BASE LOGIC =====
+            
+            if(!prevPattern){
+                prevPattern = current
+                    return "Initializing..."
+            }
+
+            if(cycleCount > 15){
+                return "Stable cyclic attractor"
+            }
+            
+            if(!prevPattern){
+                prevPattern = current
+                return "Initializing..."
+            }
+            
+            let result = current
+                
+            if(prevPattern === "Chaos" && current === "Cycle"){
+                result = "Stabilizing (chaos → order)"
+            }
+            else if(prevPattern === "Cycle" && current === "Chaos"){
+                result = "Entering chaos"
+            }
+            else if(current === "Trend"){
+                result = "Directional drift"
+            }
+            else if(current === "Static"){
+                result = "System stabilized"
+            }
+            else if(current === "Cycle"){
+                result = "Oscillating / cyclic behavior"
+            }
+            else if(current === "Chaos"){
+                result = "Chaotic exploration"
+            }
+            
+            prevPattern = current
+            return result
+        }
+
         variance /= points.length
 
         if(variance < 2) return "Static"
@@ -274,12 +352,14 @@ export function drawPhaseSpace(id, weather){
 
         // detect
         const pattern = detectPattern(points)
+        const interpretation = interpretTransition(pattern)
 
         info.innerHTML = `
-Pattern: <b>${pattern}</b><br>
-Points: ${points.length}<br>
-Clusters memory: ${clusterHistory.length}
-`
+        Pattern: <b>${pattern}</b><br>
+        State: <b>${interpretation}</b><br>
+        Points: ${points.length}<br>
+        Clusters memory: ${clusterHistory.length}
+        `
     }
 
     function animate(){
