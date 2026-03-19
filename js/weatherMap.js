@@ -348,6 +348,9 @@ function onCellClick(kin, e){
     `
 
     popup.style.display = "block"
+    if(window.onKinSelect){
+        window.onKinSelect(kin)
+    }
 }
 
     document.addEventListener("click", (e)=>{
