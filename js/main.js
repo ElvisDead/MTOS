@@ -314,19 +314,21 @@ function renderAll(weather, pressure, userKin, todayKin){
 // ===============================
 // UI STATE
 // ===============================
-renderCognitiveState(
+function renderCognitiveState(
     userKin,
     todayKin,
-    result.attention,
-    result.noise,
-    result.lyapunov,
-    result.prediction,
-    result.predictability
+    attention,
+    noise,
+    lyapunov,
+    prediction,
+    predictability
 ){
 
     const el = document.getElementById("mtosSummary")
 
     if(!el) return
+
+    const daysLabel = predictability === 1 ? "day" : "days"
 
     el.innerHTML = `
     <div style="font-weight:bold; font-size:16px;">
