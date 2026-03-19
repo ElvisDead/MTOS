@@ -252,6 +252,9 @@ function onCellClick(kin, e){
         y = e.clientY
     }
 
+    x = Math.min(x, window.innerWidth - 220)
+    y = Math.min(y, window.innerHeight - 120)
+
     popup.style.left = (x + 10) + "px"
     popup.style.top  = (y + 10) + "px"
 
