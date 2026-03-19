@@ -330,6 +330,16 @@ function renderCognitiveState(
 
     const daysLabel = predictability === 1 ? "day" : "days"
 
+    let color = "#888" // базовый
+
+    if(predictability < 5){
+        color = "#ff4d4d"      // красный (хаос)
+    }else if(predictability < 20){
+        color = "#ffaa00"      // оранжевый (нестабильно)
+    }else{
+        color = "#00cc66"      // зелёный (стабильно)
+    }
+
     el.innerHTML = `
     <div style="font-weight:bold; font-size:16px;">
         Current Cognitive State
@@ -348,7 +358,7 @@ function renderCognitiveState(
         Prediction: ${prediction.toFixed(3)}
     </div>
 
-    <div>
+    <div style="color:${color}; font-weight:bold;">
         Predictability: ${predictability} ${daysLabel}
     </div>
     `
