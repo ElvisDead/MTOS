@@ -1,4 +1,4 @@
-function drawNetwork(id, users, onSelect){
+export function drawNetwork(id, users, onSelect){
 
     const root = document.getElementById(id)
     if(!root) return
