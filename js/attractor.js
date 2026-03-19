@@ -1,4 +1,4 @@
-export function drawAttractor(id, participants = [], relations = []) {
+export function drawAttractor(id, participants = [], relations = [], selectedKin = null){
 
     const root = document.getElementById(id)
     root.innerHTML = ""
@@ -117,6 +117,20 @@ export function drawAttractor(id, participants = [], relations = []) {
                 memoryEffect * 0.3 +
                 pressureEffect +
                 noise
+
+            // =========================
+            // SELECTED KIN ATTRACTOR
+            // =========================
+            let pull = 0
+                
+            if(selectedKin !== null){
+                let dist = Math.abs(i - (selectedKin - 1))
+                dist = Math.min(dist, N - dist)
+                    
+                pull = Math.exp(-dist / 15) * 0.15
+            }
+            
+            value += pull
 
             // фазовая модуляция
             value *= phaseFactor * k
