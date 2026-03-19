@@ -332,6 +332,7 @@ export function drawAttractor(id, participants = [], relations = []) {
     description.style.whiteSpace = "pre-line"
     description.style.lineHeight = "1.5"
     description.style.maxWidth = "600px"
+    description.style.margin = "10px auto"
 
     description.innerHTML = `
 MTOS Attractor — Dynamic Cognitive Field Visualization
