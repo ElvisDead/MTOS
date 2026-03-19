@@ -48,6 +48,9 @@ export function drawNetwork(id, users, onSelect){
             x: cx + R * Math.cos(angle),
             y: cy + R * Math.sin(angle)
 
+        }
+    })
+
     const velocities = users.map(()=>({x:0, y:0}))
 
             function loop(){
@@ -111,32 +114,8 @@ export function drawNetwork(id, users, onSelect){
                             velocities[j].x += fx
                             velocities[j].y += fy
                         }
-                    }
-        
-        // притяжение к центру
-        for(let i=0;i<N;i++){
-            velocities[i].x += (cx - positions[i].x) * 0.001
-            velocities[i].y += (cy - positions[i].y) * 0.001
-        }
-        
-        // применение
-        for(let i=0;i<N;i++){
-            positions[i].x += velocities[i].x
-            positions[i].y += velocities[i].y
-                
-            velocities[i].x *= 0.85
-            velocities[i].y *= 0.85
-        }
-    }
-    
-    draw()
-        
-    return
-}
-}
-}
 
-    function draw(){
+                        function draw(){
 
         ctx.clearRect(0,0,420,420)
 
@@ -181,6 +160,23 @@ export function drawNetwork(id, users, onSelect){
             }
 
         ctx.globalAlpha = 1
+                    }
+        
+        // притяжение к центру
+        for(let i=0;i<N;i++){
+            velocities[i].x += (cx - positions[i].x) * 0.001
+            velocities[i].y += (cy - positions[i].y) * 0.001
+        }
+        
+        // применение
+        for(let i=0;i<N;i++){
+            positions[i].x += velocities[i].x
+            positions[i].y += velocities[i].y
+                
+            velocities[i].x *= 0.85
+            velocities[i].y *= 0.85
+        }
+    }
 
         // ===============================
         // УЗЛЫ
@@ -254,7 +250,11 @@ export function drawNetwork(id, users, onSelect){
                     onSelect(selected !== null ? users[selected] : null)
                 }
 
-                
+                draw()
+                return
+            }
+        }
+    }
 
     // ===============================
     // HOVER
@@ -326,4 +326,11 @@ export function drawNetwork(id, users, onSelect){
 
     draw()
 }
+
+function loop(){
+    draw()
+    requestAnimationFrame(loop)
+}
+
+loop()
 }
