@@ -241,8 +241,16 @@ function onCellClick(kin, e){
     const popup = document.getElementById("kinPopup")
     if(!popup) return
 
-    const x = e?.clientX || (e.touches && e.touches[0].clientX)
-    const y = e?.clientY || (e.touches && e.touches[0].clientY)
+    let x = 0
+    let y = 0
+
+    if(e.touches && e.touches[0]){
+        x = e.touches[0].clientX
+        y = e.touches[0].clientY
+    }else{
+        x = e.clientX
+        y = e.clientY
+    }
 
     popup.style.left = (x + 10) + "px"
     popup.style.top  = (y + 10) + "px"
