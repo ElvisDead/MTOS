@@ -90,7 +90,7 @@ export function drawNetwork(id, users, onSelect){
             const dy = positions[j].y - positions[i].y
 
             const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
-            const force = 50 / dist
+            const force = 20 / dist
 
             const fx = force * dx / dist
             const fy = force * dy / dist
