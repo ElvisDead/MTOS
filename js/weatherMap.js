@@ -254,16 +254,45 @@ legend.style.textAlign = "left"
 legend.innerHTML = `
 <div style="margin-bottom:8px;"><b>Mode:</b></div>
 
-<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-<button onclick="setWeatherMode('full')">Full</button>
-<button onclick="setWeatherMode('field')">Field</button>
-<button onclick="setWeatherMode('lattice')">Lattice</button>
-<button onclick="setWeatherMode('wave')">Wave</button>
-<button onclick="setWeatherMode('pressure')">Pressure</button>
+<div id="modeButtons" style="
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+">
+<button data-mode="full" onclick="setWeatherMode('full')">Full</button>
+<button data-mode="field" onclick="setWeatherMode('field')">Field</button>
+<button data-mode="lattice" onclick="setWeatherMode('lattice')">Lattice</button>
+<button data-mode="wave" onclick="setWeatherMode('wave')">Wave</button>
+<button data-mode="pressure" onclick="setWeatherMode('pressure')">Pressure</button>
 </div>
 
-<div style="font-size:11px;">
+<div style="font-size:11px; margin-bottom:10px;">
 Switch layers to explore system structure.
+</div>
+
+<div style="margin-top:10px;"><b>Legend:</b></div>
+
+<div>🔵 Low field — low Φ value (low activity)</div>
+<div>🟣 Medium — balanced state</div>
+<div>🔴 High field — high Φ value (strong concentration)</div>
+
+<div style="margin-top:10px;"><b>About this map:</b></div>
+
+<div style="font-size:11px;">
+13×20 cognitive field (260 states).<br><br>
+
+Horizontal → Seal (1–20)<br>
+Vertical → Tone (1–13)<br><br>
+
+Layers:<br>
+• Field (Φ)<br>
+• Lattice (structure)<br>
+• Wave (agents)<br>
+• Pressure (stress)<br><br>
+
+Click any cell to inspect.
 </div>
 `
 
@@ -275,6 +304,8 @@ wrapper.appendChild(grid)
 
 root.appendChild(wrapper)
 root.appendChild(legend)
+
+setTimeout(updateModeButtons, 0)
 
 }
 
@@ -336,4 +367,20 @@ window.setWeatherMode = function(mode){
     if(window._lastWeatherArgs){
         drawWeatherMap(...window._lastWeatherArgs)
     }
+
+    setTimeout(updateModeButtons, 0)
+}
+
+function updateModeButtons(){
+    const mode = window._weatherMode
+
+    document.querySelectorAll("#modeButtons button").forEach(btn=>{
+        if(btn.dataset.mode === mode){
+            btn.style.background = "#00ffff"
+            btn.style.color = "#000"
+        }else{
+            btn.style.background = "#ddd"
+            btn.style.color = "#000"
+        }
+    })
 }
