@@ -117,15 +117,16 @@ export function drawNetwork(id, users, onSelect){
     }
 }
 
-
-function draw(){
+    function draw(){
 
     ctx.clearRect(0,0,420,420)
 
     applyClustering()
     applyForces()
 
+    // ===============================
     // СВЯЗИ
+    // ===============================
     for(let i=0;i<N;i++){
         for(let j=i+1;j<N;j++){
 
@@ -139,7 +140,11 @@ function draw(){
 
             if(Math.abs(score) < 0.3) continue
 
-            ctx.globalAlpha = 0.2 + Math.abs(score) * 0.8
+            if(selected !== null && i !== selected && j !== selected){
+                ctx.globalAlpha = 0.05
+            }else{
+                ctx.globalAlpha = 0.2 + Math.abs(score) * 0.8
+            }
 
             ctx.beginPath()
             ctx.moveTo(positions[i].x, positions[i].y)
@@ -154,7 +159,9 @@ function draw(){
 
     ctx.globalAlpha = 1
 
+    // ===============================
     // УЗЛЫ
+    // ===============================
     for(let i=0;i<N;i++){
 
         const u = users[i]
