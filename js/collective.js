@@ -138,15 +138,41 @@ memory[key] = Number(score.toFixed(4))
             row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
         }
         
-        // 👇 ВСТАВЛЯЕШЬ ПРЯМО ЗДЕСЬ
-        row.onclick = () => {
-            const impact = (Math.random() - 0.5) * 0.8
+        row.onclick = (e) => {
+            row.oncontextmenu = (e) => {
+                e.preventDefault()
+                    
+                const impact = -0.4 // конфликт
                 
+                const key = r.a + "->" + r.b
+                    
+                memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
+                    
+                temperature += Math.abs(impact) * 0.1
+                temperature = Math.max(0, Math.min(1, temperature))
+                    
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+                localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
+                    
+                drawCollective(id, users)
+            }
+            
+            let impact = 0
+                
+            if(e.shiftKey){
+                // нейтральное действие
+                impact = 0
+            }else if(e.button === 0){
+                // поддержка (левый клик)
+                impact = 0.3
+            }
+            
             const key = r.a + "->" + r.b
+                
             memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
             
-            // событие влияет на температуру
-            temperature += Math.abs(impact) * 0.2
+            // влияние на температуру
+            temperature += Math.abs(impact) * 0.1
             temperature = Math.max(0, Math.min(1, temperature))
                 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
@@ -195,7 +221,14 @@ memory[key] = Number(score.toFixed(4))
     description.style.textAlign = "center"
     description.style.marginTop = "10px"
         
-    description.innerText = "Система показывает динамические отношения между участниками. Связи изменяются со временем, могут усиливаться, ослабевать и подвергаться случайным событиям."
+    description.innerText = 
+        "Left click → Support (+)\n" +
+        "Right click → Conflict (−)\n" +
+        "Shift + Click → Neutral (0)\n\n" +
+        "The system reveals dynamic relationships between participants.\n" +
+        "Connections evolve over time, influenced by user actions, internal dynamics, and random events."
+        
+    description.style.whiteSpace = "pre-line"
         
     root.appendChild(description)
 }
