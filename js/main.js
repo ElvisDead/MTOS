@@ -304,7 +304,7 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
         todayKin,
         pressure,
         fieldState,
-        selectedAgent
+        selectedAgent,
         window._attractorField
     )
 
