@@ -304,7 +304,7 @@ function renderAll(weather, pressure, userKin, todayKin){
         selectedAgent = agent
     })
 
-    drawSeries("seriesMap", weather)
+    drawSeries("seriesMap", weather, year, month, day)
     drawPhaseSpace("phaseMap", weather)
     drawAttractor("attractorMap", fieldState)
     drawCollective("collectiveMap", users)
