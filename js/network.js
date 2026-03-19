@@ -194,5 +194,3 @@ export function drawNetwork(id, users, onSelect){
 }
 
 draw()
-
-}
