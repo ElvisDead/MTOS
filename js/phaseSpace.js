@@ -238,11 +238,6 @@ export function drawPhaseSpace(id, weather){
             return "Initializing..."
         }
             
-        if(!prevPattern){
-            prevPattern = current
-            return "Initializing..."
-        }
-            
         let result = current
                 
         if(prevPattern === "Chaos" && current === "Cycle"){
