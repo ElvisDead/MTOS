@@ -33,17 +33,12 @@ export function drawWeatherMap(
         cell.style.fontSize = "10px"
         cell.style.color = "#aaa"
         cell.style.textAlign = "center"
-        cell.style.height = "12px"
+        cell.style.height = "14px"
+        cell.style.display = "flex"
+        cell.style.alignItems = "center"
+        cell.style.justifyContent = "center"
         grid.appendChild(cell)
      }
-        cell.addEventListener("touchstart", ()=>onCellClick(kin))
-        cell.innerText = s
-        cell.style.fontSize = "10px"
-        cell.style.color = "#aaa"
-        cell.style.textAlign = "center"
-        cell.style.height = "12px"
-        grid.appendChild(cell)
-    }
 
     const users = window.currentUsers || []
 
@@ -211,8 +206,6 @@ legend.innerHTML = `
 
 root.appendChild(grid)
 root.appendChild(legend)
-
-return
 
 }
 
