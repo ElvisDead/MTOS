@@ -1,4 +1,34 @@
 export function drawCollective(id, users){
+    function propagateImpact(memory, users, sourceA, sourceB, impact){
+
+    const spreadFactor = 0.15 // сила распространения
+
+    users.forEach(u => {
+
+        if(u.name === sourceA || u.name === sourceB) return
+
+        // A влияет на остальных
+        const key1 = sourceA + "->" + u.name
+        if(memory[key1] !== undefined){
+            memory[key1] += impact * spreadFactor
+        }
+
+        // остальные влияют на B
+        const key2 = u.name + "->" + sourceB
+        if(memory[key2] !== undefined){
+            memory[key2] += impact * spreadFactor
+        }
+
+        // нормализация
+        if(memory[key1] !== undefined){
+            memory[key1] = Math.max(-1, Math.min(1, memory[key1]))
+        }
+
+        if(memory[key2] !== undefined){
+            memory[key2] = Math.max(-1, Math.min(1, memory[key2]))
+        }
+    })
+}
     const STORAGE_KEY = "collective_relations_memory"
 
     const TEMP_KEY = "collective_temperature"
@@ -138,26 +168,50 @@ memory[key] = Number(score.toFixed(4))
             row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
         }
         
-        row.onclick = (e) => {
-            row.oncontextmenu = (e) => {
-                e.preventDefault()
-                    
-                const impact = -0.4 // конфликт
+        row.oncontextmenu = (e) => {
+            e.preventDefault()
                 
-                const key = r.a + "->" + r.b
-                    
-                memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
-                    
-                temperature += Math.abs(impact) * 0.1
-                temperature = Math.max(0, Math.min(1, temperature))
-                    
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
-                localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
-                    
-                drawCollective(id, users)
-            }
+            const impact = -0.4
+                
+            const key = r.a + "->" + r.b
+                
+            memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
+
+            propagateImpact(memory, users, r.a, r.b, impact)
+                
+            temperature += Math.abs(impact) * 0.1
+            temperature = Math.max(0, Math.min(1, temperature))
+                
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+            localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
+                
+            drawCollective(id, users)
+        }
+
+        row.onclick = (e) => {
             
             let impact = 0
+                
+            if(e.shiftKey){
+                impact = -memory[key] * 0.1
+            }else{
+                impact = 0.3
+            }
+            
+            const key = r.a + "->" + r.b
+                
+            memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
+
+            propagateImpact(memory, users, r.a, r.b, impact)
+                
+            temperature += Math.abs(impact) * 0.1
+            temperature = Math.max(0, Math.min(1, temperature))
+                
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+            localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
+                
+            drawCollective(id, users)
+        }
                 
             if(e.shiftKey){
                 // нейтральное действие
