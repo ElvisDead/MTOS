@@ -178,7 +178,8 @@ json.dumps([f,s,u])
             result.attention,
             result.noise,
             result.lyapunov,
-            result.prediction
+            result.prediction,
+            result.predictability
         )
 
         // ===============================
