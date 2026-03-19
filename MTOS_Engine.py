@@ -696,7 +696,9 @@ def lyapunov(series):
     safe = diffs / max(diffs[0], 1e-9)
     safe = np.clip(safe, 1e-9, 1e9)
 
-    v = np.mean(np.log(safe))
+    v = np.mean(safe_log(safe))
+    if np.isnan(v) or np.isinf(v):
+        return 0
 
     if np.isnan(v):
 
@@ -1598,6 +1600,10 @@ def mtos_field_step(name, year, month, day, prev_field=None, prev_state=None):
             field.append(new2D[t][s])
             state.append(newState2D[t][s])
 
+    # === STABILIZE FIELD ===
+    field = [safe_value(v, 0.5) for v in field]
+    field = [clamp01(v) for v in field]
+
     return field, state
 
 # ===============================
@@ -1723,9 +1729,9 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     for i in range(len(users)):
         users[i]["weight"] = new_weights[i]
 
-    # 🔥 СТАБИЛИЗАЦИЯ ПОЛЯ
-    field = [0.5 if np.isnan(v) or np.isinf(v) else v for v in field]
-    field = [max(0.0, min(v, 1.0)) for v in field]
+    # === STABILIZE FIELD ===
+    field = [safe_value(v, 0.5) for v in field]
+    field = [clamp01(v) for v in field]
 
     return field, state, users
 
