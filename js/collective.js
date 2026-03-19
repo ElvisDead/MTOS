@@ -1,7 +1,7 @@
 export function drawCollective(id, users){
     function propagateImpact(memory, users, sourceA, sourceB, impact){
 
-    const spreadFactor = 0.15 // сила распространения
+    const spreadFactor = 0.1 + temperature * 0.4 // сила распространения
 
     users.forEach(u => {
 
