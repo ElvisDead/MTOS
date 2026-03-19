@@ -39,8 +39,6 @@ export function drawNetwork(id, users, onSelect){
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
 
-    }
-
     const N = users.length
 
     const positions = users.map((u, i)=>{
@@ -71,8 +69,6 @@ export function drawNetwork(id, users, onSelect){
                 
                 // ❗ ФИЛЬТР
                 if(Math.abs(score) < 0.3) continue
-
-                let sign = (u1.weight > 1 && u2.weight > 1) ? 1 : -1
 
                 // фильтр по выбранному
                 if(selected !== null && i !== selected && j !== selected){
@@ -174,35 +170,24 @@ export function drawNetwork(id, users, onSelect){
     // ===============================
     canvas.onmousemove = (e)=>{
 
-        const rect = canvas.getBoundingClientRect()
+    const rect = canvas.getBoundingClientRect()
 
-        const mx = e.clientX - rect.left
-        const my = e.clientY - rect.top
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
 
-        hover = null
+    hover = null
+    tooltip = null
 
-        for(let i=0;i<N;i++){
+    for(let i=0;i<N;i++){
 
-            const dx = mx - positions[i].x
-            const dy = my - positions[i].y
+        const dx = mx - positions[i].x
+        const dy = my - positions[i].y
 
-            hover = null
-            tooltip = null
-                
-            for(let i=0;i<N;i++){
-                
-                const dx = mx - positions[i].x
-                const dy = my - positions[i].y
-                    
-                if(Math.sqrt(dx*dx + dy*dy) < 15){
-                    hover = i
-                    tooltip = users[i].name
-                    break
-                }
-            }
+        if(Math.sqrt(dx*dx + dy*dy) < 15){
+            hover = i
+            tooltip = users[i].name
+            break
         }
-
-        draw()
     }
 
     draw()
