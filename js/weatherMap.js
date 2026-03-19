@@ -51,7 +51,6 @@ export function drawWeatherMap(
 
     for(let s=1; s<=20; s++){
         const cell = document.createElement("div")
-        cell.dataset.kin = kin
         cell.innerText = s
         cell.style.fontSize = "10px"
         cell.style.color = "#aaa"
@@ -180,6 +179,8 @@ export function drawWeatherMap(
             b += p * 60
 
             const cell = document.createElement("div")
+
+            cell.dataset.kin = kin
 
             cell.addEventListener("click", (e)=>onCellClick(kin, e))
             cell.addEventListener("touchstart", (e)=>onCellClick(kin, e))
