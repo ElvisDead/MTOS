@@ -64,6 +64,9 @@ export function drawWeatherMap(
 
     const users = window.currentUsers || []
 
+    window._lastFieldData = fieldData
+    window._lastPressureData = pressureData
+
     let fMin = Math.min(...fieldData)
     let fMax = Math.max(...fieldData)
 
@@ -242,15 +245,19 @@ function onCellClick(kin, e){
     popup.style.left = (x + 10) + "px"
     popup.style.top  = (y + 10) + "px"
 
+    const phi = window._lastFieldData?.[kin-1] ?? 0
+    const pressure = window._lastPressureData?.[kin-1] ?? 0
+
     popup.innerHTML = `
     <div style="font-weight:bold; margin-bottom:4px;">
-        const phi = fieldData[kin-1]
-        const pressure = pressureData[kin-1]
+        Kin ${kin}
     </div>
 
-    <div>Click interaction</div>
+    <div>Φ: ${phi.toFixed(3)}</div>
+    <div>P: ${pressure.toFixed(3)}</div>
+
     <div style="margin-top:6px; color:#aaa;">
-        (можно расширить данными)
+        Tone: ${((kin-1)%13)+1} | Seal: ${((kin-1)%20)+1}
     </div>
     `
 
@@ -258,13 +265,10 @@ function onCellClick(kin, e){
 }
 
     document.addEventListener("click", (e)=>{
-        const popup = document.getElementById("kinPopup")
-        if(!popup) return
+    const popup = document.getElementById("kinPopup")
+    if(!popup) return
 
-        if(!popup.contains(e.target)){
-            popup.style.display = "none"
-                
-            <div>Φ: ${phi.toFixed(3)}</div>
-            <div>P: ${pressure.toFixed(3)}</div>
+    if(!popup.contains(e.target)){
+        popup.style.display = "none"
     }
 })
