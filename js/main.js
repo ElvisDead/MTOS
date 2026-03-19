@@ -309,6 +309,8 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
 
     drawNetwork("networkMap", users, (agent)=>{
         selectedAgent = agent
+        
+        renderAll(weather, pressure, userKin, todayKin, year, month, day)
     })
 
     drawSeries("seriesMap", weather, year, month, day)
