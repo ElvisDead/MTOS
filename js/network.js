@@ -35,10 +35,19 @@ export function drawNetwork(id, users, onSelect){
 
     let selected = null
     let hover = null
-
-    let selected = null
-    let hover = null
     let tooltip = null
+
+    for(let i=0;i<N;i++){
+        
+        const dx = mx - positions[i].x
+        const dy = my - positions[i].y
+            
+        if(Math.sqrt(dx*dx + dy*dy) < 15){
+            hover = i
+                tooltip = users[i].name
+                    break
+        }
+    }
 
     const N = users.length
 
@@ -66,8 +75,6 @@ export function drawNetwork(id, users, onSelect){
                 const key1 = u1.name + "->" + u2.name
                 const key2 = u2.name + "->" + u1.name
                     
-                const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
-                    
                 const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
                 
                 // ❗ ФИЛЬТР
@@ -90,6 +97,13 @@ export function drawNetwork(id, users, onSelect){
                 ctx.lineWidth = Math.max(1, Math.abs(score) * 5)
 
                 ctx.stroke()
+
+                if(tooltip){
+                    ctx.fillStyle = "#fff"
+                    ctx.font = "14px Arial"
+                    ctx.textAlign = "center"
+                    ctx.fillText(tooltip, cx, 20)
+                }
             }
         }
 
@@ -153,19 +167,8 @@ export function drawNetwork(id, users, onSelect){
                     onSelect(selected !== null ? users[selected] : null)
                 }
 
-                // если навели на узел — подсветить только его связи
-                if(hover !== null && i !== hover && j !== hover){
-                    ctx.globalAlpha *= 0.1
-                }
-
                 draw()
-
-                if(tooltip){
-                    ctx.fillStyle = "#fff"
-                    ctx.font = "14px Arial"
-                    ctx.textAlign = "center"
-                    ctx.fillText(tooltip, cx, 20)
-                }
+                
                 return
             }
         }
@@ -199,6 +202,8 @@ export function drawNetwork(id, users, onSelect){
                 }
             }
         }
+
+        const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
 
         draw()
     }
