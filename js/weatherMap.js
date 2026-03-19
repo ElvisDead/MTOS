@@ -18,9 +18,21 @@ export function drawWeatherMap(
     const grid = document.createElement("div")
 
     grid.style.display = "grid"
-    grid.style.gridTemplateColumns = "repeat(20, 18px)"
-    grid.style.gridTemplateRows = "repeat(13, 18px)"
+    grid.style.gridTemplateColumns = "14px repeat(20, 18px)"
+    grid.style.gridTemplateRows = "14px repeat(13, 18px)"
     grid.style.gap = "2px"
+    // === HEADER (SEAL NUMBERS) ===
+    for(let s=1; s<=20; s++){
+        const cell = document.createElement("div")
+        cell.addEventListener("click", ()=>onCellClick(kin))
+        cell.addEventListener("touchstart", ()=>onCellClick(kin))
+        cell.innerText = s
+        cell.style.fontSize = "10px"
+        cell.style.color = "#aaa"
+        cell.style.textAlign = "center"
+        cell.style.height = "12px"
+        grid.appendChild(cell)
+    }
 
     const users = window.currentUsers || []
 
@@ -32,6 +44,16 @@ export function drawWeatherMap(
 
     for(let tone=1;tone<=13;tone++){
         for(let seal=1;seal<=20;seal++){
+
+            // === LEFT TONE NUMBER ===
+           const toneCell = document.createElement("div")
+           toneCell.innerText = tone
+           toneCell.style.fontSize = "10px"
+           toneCell.style.color = "#aaa"
+           toneCell.style.display = "flex"
+           toneCell.style.alignItems = "center"
+           toneCell.style.justifyContent = "flex-end"
+           grid.appendChild(toneCell)
 
             // ===============================
             // KIN
@@ -129,21 +151,22 @@ export function drawWeatherMap(
             cell.style.width = "18px"
             cell.style.height = "18px"
             cell.style.background = `rgb(${r},${g},${b})`
-            cell.style.border = "1px solid #111"
+            cell.style.boxSizing = "border-box"
+            cell.style.border = "1px solid #222"
 
             // ===============================
             // ВЫДЕЛЕНИЯ
             // ===============================
             if(kin === highlightKin){
-                cell.style.outline = "3px solid yellow"
+                cell.style.boxShadow = "0 0 0 2px yellow inset"
             }
 
             if(kin === userKin){
-                cell.style.outline = "3px solid white"
+                cell.style.boxShadow = "0 0 0 3px white inset"
             }
 
             if(selectedAgent && kin === selectedAgent.kin){
-                cell.style.outline = "3px solid cyan"
+                cell.style.boxShadow = "0 0 0 3px cyan inset"
             }
 
             // ===============================
@@ -160,5 +183,26 @@ Lattice: ${latticeNorm.toFixed(3)}
         }
     }
 
+const legend = document.createElement("div")
+legend.style.marginTop = "10px"
+legend.style.fontSize = "12px"
+legend.style.color = "#aaa"
+
+legend.innerHTML = `
+<div>🔵 Low field</div>
+<div>🟣 Medium</div>
+<div>🔴 High field</div>
+`
+
+root.appendChild(legend)
+
+return
+    
     root.appendChild(grid)
+}
+
+function onCellClick(kin){
+    console.log("KIN:", kin)
+
+    // можно потом popup сделать
 }
