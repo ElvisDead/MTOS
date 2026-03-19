@@ -173,7 +173,7 @@ json.dumps([f,s,u])
         // UI STATE
         // ===============================
         renderCognitiveState(
-            userKin,
+            currentKin,
             todayKin,
             result.attention,
             result.noise,
@@ -343,9 +343,27 @@ function renderCognitiveState(
         Noise: ${noise.toFixed(3)}
     </div>
 
+    el.innerHTML = `
+    <div style="font-weight:bold; font-size:16px;">
+        Current Cognitive State
+    </div>
+
+    <div>Today Kin: ${todayKin}</div>
+    <div>Your Kin: ${userKin}</div>
+
+    <div style="margin-top:6px;">
+        Attention: ${attention.toFixed(3)} |
+        Noise: ${noise.toFixed(3)}
+    </div>
+
     <div>
         Lyapunov: ${lyapunov.toFixed(3)} |
         Prediction: ${prediction.toFixed(3)}
     </div>
+
+    <div>
+        Predictability: ${predictability} ${daysLabel}
+    </div>
+    `
     `
 }
