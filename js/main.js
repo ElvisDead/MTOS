@@ -185,7 +185,7 @@ json.dumps([f,s,u])
         // ===============================
         // RENDER ВСЕГО
         // ===============================
-        renderAll(weather, pressure, userKin, todayKin)
+        renderAll(weather, pressure, userKin, todayKin, year, month, day)
 
         status.innerText = "Done"
 
@@ -274,7 +274,7 @@ json.dumps([f,s,u])
                 result.predictability
             )
 
-            renderAll(weather, pressure, currentKin, todayKin)
+            renderAll(weather, pressure, currentKin, todayKin, y, m, dd)
         }
 
         initTimeControls(step)
@@ -288,7 +288,7 @@ json.dumps([f,s,u])
 // ===============================
 // RENDER ALL
 // ===============================
-function renderAll(weather, pressure, userKin, todayKin){
+function renderAll(weather, pressure, userKin, todayKin, year, month, day){
 
     drawWeatherMap(
         "weatherMap",
