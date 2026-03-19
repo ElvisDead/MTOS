@@ -50,6 +50,27 @@ import json
 import os
 import time
 
+# ===============================
+# NUMERICAL STABILITY CORE
+# ===============================
+
+def safe_exp(x):
+    import numpy as np
+    return np.exp(np.clip(x, -50, 50))
+
+def safe_log(x):
+    import numpy as np
+    return np.log(np.clip(x, 1e-9, 1e9))
+
+def safe_value(x, default=0.5):
+    import numpy as np
+    if np.isnan(x) or np.isinf(x):
+        return default
+    return x
+
+def clamp01(x):
+    return max(0.0, min(float(x), 1.0))
+
 USE_CACHE = True
 GLOBAL_USERS = load_global_users()
 GLOBAL_KIN_DISTRIBUTION = [0.5]*260
@@ -279,8 +300,16 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
     f = f + df
 
     # nonlinear normalization
-    a = 1/(1+np.exp(-1.2*(a-0.5)))
-    f = max(0,min(f,1))
+    a = 1/(1+safe_exp(-1.2*(a-0.5)))
+
+    if np.isnan(a) or np.isinf(a):
+        a = 0.5
+
+    if np.isnan(f) or np.isinf(f):
+        f = 0.2
+
+    a = clamp01(a)
+    f = clamp01(f)
 
     return a,f
 
@@ -602,7 +631,7 @@ def simulate(user_i,user_tone,start,days,user_name=None):
         env_noise = np.random.normal(0,0.01)
         a = a + env_noise
 
-        a = 1/(1+np.exp(-1.5*(a-0.5)))
+        a = 1/(1+safe_exp(-1.5*(a-0.5)))
 
         field = global_attention(date)
 
@@ -612,11 +641,8 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
         a = a + learning
         
-        if np.isnan(a):
-            a = 0.5
-        a = max(0, min(a, 1))
-        if np.isnan(a):
-            a = 0.5
+        a = safe_value(a, 0.5)
+        a = clamp01(a)
         series.append(a)
 
     return np.array(series)
@@ -664,7 +690,13 @@ def lyapunov(series):
 
         return 0
 
-    v = np.mean(np.log(diffs / diffs[0]))
+    if diffs[0] <= 1e-9:
+        return 0
+
+    safe = diffs / max(diffs[0], 1e-9)
+    safe = np.clip(safe, 1e-9, 1e9)
+
+    v = np.mean(np.log(safe))
 
     if np.isnan(v):
 
@@ -1691,6 +1723,10 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     for i in range(len(users)):
         users[i]["weight"] = new_weights[i]
 
+    # 🔥 СТАБИЛИЗАЦИЯ ПОЛЯ
+    field = [0.5 if np.isnan(v) or np.isinf(v) else v for v in field]
+    field = [max(0.0, min(v, 1.0)) for v in field]
+
     return field, state, users
 
 def mtos_field_step_from_array(source_array, prev_field, prev_state):
@@ -1766,5 +1802,9 @@ def mtos_field_step_from_array(source_array, prev_field, prev_state):
         for s in range(20):
             field.append(new2D[t][s])
             state.append(newState2D[t][s])
+
+    # 🔥 СТАБИЛИЗАЦИЯ ПОЛЯ
+    field = [0.5 if np.isnan(v) or np.isinf(v) else v for v in field]
+    field = [max(0.0, min(v, 1.0)) for v in field]
 
     return field, state
