@@ -219,6 +219,29 @@ export function drawNetwork(id, users, onSelect){
 }
     canvas.onclick = (e)=>{
 
+        canvas.onwheel = (e)=>{
+            e.preventDefault()
+                
+            const zoom = e.deltaY < 0 ? 1.1 : 0.9
+            
+            const mx = e.offsetX
+            const my = e.offsetY
+            
+            offsetX = mx - (mx - offsetX) * zoom
+            offsetY = my - (my - offsetY) * zoom
+            
+            scale *= zoom
+        }
+            
+        canvas.onmousedown = (e)=>{
+            isDragging = true
+            dragStartX = e.clientX
+            dragStartY = e.clientY
+        }
+        
+        canvas.onmouseup = ()=> isDragging = false
+        canvas.onmouseleave = ()=> isDragging = false
+
         const rect = canvas.getBoundingClientRect()
 
         const mx = e.clientX - rect.left
@@ -325,29 +348,6 @@ export function drawNetwork(id, users, onSelect){
             break
         }
     }
-
-    canvas.onwheel = (e)=>{
-        e.preventDefault()
-        
-        const zoom = e.deltaY < 0 ? 1.1 : 0.9
-            
-        const mx = e.offsetX
-        const my = e.offsetY
-            
-        offsetX = mx - (mx - offsetX) * zoom
-        offsetY = my - (my - offsetY) * zoom
-            
-        scale *= zoom
-    }
-        
-    canvas.onmousedown = (e)=>{
-        isDragging = true
-        dragStartX = e.clientX
-        dragStartY = e.clientY
-    }
-        
-    canvas.onmouseup = ()=> isDragging = false
-    canvas.onmouseleave = ()=> isDragging = false
 
     draw()
 
