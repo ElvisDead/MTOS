@@ -150,9 +150,26 @@ export function drawPhaseSpace(id, weather, selectedKin){
     })
 
     // ===== HELPERS =====
+    function getIndex(i){
+        if(selectedKin === null) return i
+        // центрируем окно вокруг selectedKin
+        const center = selectedKin - 1
+            
+        const offset = i - Math.floor(t / 2)
+            
+        let idx = center + offset
+            
+        while(idx < 0) idx += weather.length
+        while(idx >= weather.length) idx -= weather.length
+            
+        return idx
+    }
     function getPoint(i){
-        const prev = weather[i-1]
-        const curr = weather[i]
+        const i0 = getIndex(i-1)
+        const i1 = getIndex(i)
+            
+        const prev = weather[i0]
+        const curr = weather[i1]
 
         return {
             x: (prev[axisX] || 0) * SIZE * scale + offsetX,
