@@ -96,7 +96,28 @@ export function drawPhaseSpace(id, weather){
     // ===== ZOOM =====
     canvas.addEventListener("wheel", e => {
         e.preventDefault()
-        scale *= e.deltaY > 0 ? 0.9 : 1.1
+            
+        const rect = canvas.getBoundingClientRect()
+        
+        // позиция курсора относительно canvas
+        const mouseX = e.clientX - rect.left
+        const mouseY = e.clientY - rect.top
+        
+        // мировые координаты ДО зума
+        const worldX = (mouseX - offsetX) / scale
+        const worldY = (mouseY - offsetY) / scale
+        
+        // масштаб
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
+        scale *= zoomFactor
+
+        scale = Math.max(0.2, Math.min(scale, 10))
+        
+        // корректировка offset, чтобы точка под курсором осталась на месте
+        offsetX = mouseX - worldX * scale
+        offsetY = mouseY - worldY * scale
+            
+        draw()
     })
 
     // ===== PAN =====
@@ -110,14 +131,21 @@ export function drawPhaseSpace(id, weather){
         lastY = e.clientY
     })
 
+    window.addEventListener("mouseup", () => {
+        dragging = false
+        canvas.style.cursor = "grab"
+    })
+
     window.addEventListener("mouseup", () => dragging = false)
 
-    window.addEventListener("mousemove", e => {
+    canvas.addEventListener("mousemove", e => {
         if(dragging){
             offsetX += e.clientX - lastX
             offsetY += e.clientY - lastY
             lastX = e.clientX
             lastY = e.clientY
+
+            draw()
         }
     })
 
