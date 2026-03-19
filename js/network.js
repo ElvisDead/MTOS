@@ -31,7 +31,7 @@ export function drawNetwork(id, users, onSelect){
 
     const cx = 210
     const cy = 210
-    const R = 210
+    const R = 60
 
     let selected = null
     let hover = null
