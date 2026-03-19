@@ -309,7 +309,23 @@ export function drawPhaseSpace(id, weather){
     }
 
     // ===== DRAW =====
+    function getStateColor(state){
+        
+        if(!state) return "lime"
+            
+        if(state.includes("Deep stability")) return "#3399ff"
+        if(state.includes("Stable cyclic attractor")) return "#cc66ff"
+        if(state.includes("Emerging cycle")) return "#66ffff"
+        if(state.includes("Deep chaotic regime")) return "#8b0000"
+        if(state.includes("Chaos")) return "#ff3333"
+        if(state.includes("Trend")) return "#ffff33"
+            
+        return "lime"
+    }
+    
     function draw(){
+
+        ctx.beginPath()
 
         ctx.clearRect(0,0,SIZE,SIZE)
 
@@ -321,9 +337,13 @@ export function drawPhaseSpace(id, weather){
 
             const val = weather[i][axisColor] || 0
 
-            ctx.fillStyle = `rgb(${255*val},${255*(1-val)},80)`
+            ctx.fillStyle = stateColor
             ctx.fillRect(p.x,p.y,2,2)
         }
+
+        const pattern = detectPattern(points)
+        const interpretation = interpretTransition(pattern)
+        const stateColor = getStateColor(interpretation)
 
         drawHeatmap(points)
 
