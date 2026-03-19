@@ -96,7 +96,7 @@ memory[key] = Number(score.toFixed(4))
 
             // случайные события
             if(Math.random() < 0.05){
-                const eventImpact = (Math.random() - 0.5) * 1.5
+                const eventImpact = (Math.random() - 0.5) * 0.8
                 memory[key] = Math.max(-1, Math.min(1, memory[key] + eventImpact))
             }
 
@@ -149,6 +149,9 @@ memory[key] = Number(score.toFixed(4))
             temperature += Math.abs(impact) * 0.2
             temperature = Math.max(0, Math.min(1, temperature))
                 
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+            localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
+                
             drawCollective(id, users)
         }
 
@@ -182,6 +185,7 @@ memory[key] = Number(score.toFixed(4))
     })
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+    localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
 
     root.appendChild(box)
 
