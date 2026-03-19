@@ -7,7 +7,7 @@ export function drawWeatherMap(
     highlightKin,
     pressureData,
     fieldData,
-    selectedAgent
+    selectedAgent,
     attractorField = null
 ){
 
