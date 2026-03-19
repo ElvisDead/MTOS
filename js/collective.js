@@ -1,6 +1,14 @@
 export function drawCollective(id, users){
     const STORAGE_KEY = "collective_relations_memory"
 
+    const TEMP_KEY = "collective_temperature"
+        
+    let temperature = Number(localStorage.getItem(TEMP_KEY)) || 0.5
+    
+    // плавное изменение температуры
+    temperature += (Math.random() - 0.5) * 0.1
+    temperature = Math.max(0, Math.min(1, temperature))
+
     let memory = {}
     try {
         memory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
@@ -34,6 +42,14 @@ export function drawCollective(id, users){
 
     box.appendChild(title)
 
+    const tempEl = document.createElement("div")
+    tempEl.innerText = "System Temperature: " + temperature.toFixed(2)
+    tempEl.style.color = "#888"
+    tempEl.style.textAlign = "center"
+    tempEl.style.marginBottom = "8px"
+        
+    box.appendChild(tempEl)
+
     // ===== ПРОВЕРКА =====
     if(!users || users.length < 2){
         const empty = document.createElement("div")
@@ -43,6 +59,7 @@ export function drawCollective(id, users){
         box.appendChild(empty)
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+        localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
 
         root.appendChild(box)
         return
@@ -63,20 +80,27 @@ export function drawCollective(id, users){
             let score
                     
             if(memory[key] !== undefined){
-                const drift = (Math.random() - 0.5) * 0.1
-                const decay = -0.02 // постоянное затухание
-                
+                const drift = (Math.random() - 0.5) * (0.05 + temperature * 0.2)
+                const decay = -0.01 - (1 - temperature) * 0.03
+                    
                 score = memory[key] + drift + decay
                 score = Math.max(-1, Math.min(1, score))
+            }else{
+                const base = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
+                const noise = (Math.random() - 0.5) * 0.8
+                    
+                score = Math.max(-1, Math.min(1, base + noise))
             }
 
-memory[key] = score
+memory[key] = Number(score.toFixed(4))
 
             // случайные события
             if(Math.random() < 0.05){
                 const eventImpact = (Math.random() - 0.5) * 1.5
                 memory[key] = Math.max(-1, Math.min(1, memory[key] + eventImpact))
             }
+
+            score = memory[key]
 
             relations.push({
                 a: a.name,
@@ -109,9 +133,23 @@ memory[key] = score
         row.onmouseenter = () => {
             row.style.background = "rgba(255,255,255,0.15)"
         }
-        
+
         row.onmouseleave = () => {
             row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
+        }
+        
+        // 👇 ВСТАВЛЯЕШЬ ПРЯМО ЗДЕСЬ
+        row.onclick = () => {
+            const impact = (Math.random() - 0.5) * 0.8
+                
+            const key = r.a + "->" + r.b
+            memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
+            
+            // событие влияет на температуру
+            temperature += Math.abs(impact) * 0.2
+            temperature = Math.max(0, Math.min(1, temperature))
+                
+            drawCollective(id, users)
         }
 
         const left = document.createElement("div")
