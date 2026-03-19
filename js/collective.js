@@ -12,6 +12,8 @@ export function drawCollective(id, users){
     box.style.overflowY = "auto"
     box.style.background = "#000"
     box.style.fontFamily = "Arial"
+    box.style.maxWidth = "600px"
+    box.style.margin = "0 auto"
 
     // ===== ЗАГОЛОВОК =====
     const title = document.createElement("div")
@@ -27,7 +29,8 @@ export function drawCollective(id, users){
     // ===== ПРОВЕРКА =====
     if(!users || users.length < 2){
         const empty = document.createElement("div")
-        empty.innerText = "Недостаточно участников"
+        empty.innerText = "
+Not enough participants"
         empty.style.color = "#888"
         empty.style.textAlign = "center"
         box.appendChild(empty)
@@ -46,7 +49,9 @@ export function drawCollective(id, users){
             const b = users[j]
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
-            const score = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
+            const base = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
+            const noise = (Math.random() - 0.5) * 0.8
+            const score = Math.max(-1, Math.min(1, base + noise))
 
             relations.push({
                 a: a.name,
@@ -65,23 +70,39 @@ export function drawCollective(id, users){
         const {label, color} = getRelationLabel(r.score)
 
         const row = document.createElement("div")
-        row.style.display = "flex"
-        row.style.justifyContent = "space-between"
+        row.style.display = "grid"
+        row.style.gridTemplateColumns = "1fr auto 1fr"
         row.style.alignItems = "center"
+        row.style.textAlign = "center"
         row.style.padding = "6px 8px"
         row.style.borderBottom = "1px solid #111"
+        row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
         row.style.fontSize = "13px"
 
-        const names = document.createElement("span")
-        names.innerText = `${r.a} ↔ ${r.b}`
-        names.style.color = "#fff"
+        const left = document.createElement("div")
+        left.innerText = r.a
+        left.style.textAlign = "right"
+        left.style.color = "#fff"
 
-        const status = document.createElement("span")
+        const center = document.createElement("div")
+        center.innerText = "↔"
+        center.style.color = "#555"
+
+        const right = document.createElement("div")
+        right.innerText = r.b
+        right.style.textAlign = "left"
+        right.style.color = "#fff"
+
+        const status = document.createElement("div")
         status.innerText = label
         status.style.color = color
         status.style.fontWeight = "bold"
+        status.style.gridColumn = "1 / span 3"
+        status.style.marginTop = "2px"
 
-        row.appendChild(names)
+        row.appendChild(left)
+        row.appendChild(center)
+        row.appendChild(right)
         row.appendChild(status)
 
         box.appendChild(row)
