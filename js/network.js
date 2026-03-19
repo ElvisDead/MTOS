@@ -43,13 +43,24 @@ export function drawNetwork(id, users, onSelect){
     const N = users.length
 
     const positions = users.map((u, i)=>{
-        const velocities = users.map(()=>({x:0,y:0}))
         const angle = (i / N) * Math.PI * 2
         return {
             x: cx + R * Math.cos(angle),
             y: cy + R * Math.sin(angle)
+
+    const velocities = users.map(()=>({x:0, y:0}))
+
+            function loop(){
+            
+            draw()
+                
+            requestAnimationFrame(loop)
         }
-    })
+        
+        loop()
+    
+    }
+                                })
 
     function applyClustering(){
 
@@ -78,6 +89,52 @@ export function drawNetwork(id, users, onSelect){
             }
         }
     }
+
+    function applyForces(){
+                    
+                    // отталкивание
+                    for(let i=0;i<N;i++){
+                        for(let j=i+1;j<N;j++){
+                            
+                            const dx = positions[j].x - positions[i].x
+                            const dy = positions[j].y - positions[i].y
+                                
+                            const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
+                            const force = 50 / dist
+                                
+                            const fx = force * dx / dist
+                            const fy = force * dy / dist
+                                
+                            velocities[i].x -= fx
+                            velocities[i].y -= fy
+                                
+                            velocities[j].x += fx
+                            velocities[j].y += fy
+                        }
+                    }
+        
+        // притяжение к центру
+        for(let i=0;i<N;i++){
+            velocities[i].x += (cx - positions[i].x) * 0.001
+            velocities[i].y += (cy - positions[i].y) * 0.001
+        }
+        
+        // применение
+        for(let i=0;i<N;i++){
+            positions[i].x += velocities[i].x
+            positions[i].y += velocities[i].y
+                
+            velocities[i].x *= 0.85
+            velocities[i].y *= 0.85
+        }
+    }
+    
+    draw()
+        
+    return
+}
+}
+}
 
     function draw(){
 
@@ -197,51 +254,7 @@ export function drawNetwork(id, users, onSelect){
                     onSelect(selected !== null ? users[selected] : null)
                 }
 
-                function applyForces(){
-                    
-                    // отталкивание
-                    for(let i=0;i<N;i++){
-                        for(let j=i+1;j<N;j++){
-                            
-                            const dx = positions[j].x - positions[i].x
-                            const dy = positions[j].y - positions[i].y
-                                
-                            const dist = Math.sqrt(dx*dx + dy*dy) + 0.01
-                            const force = 50 / dist
-                                
-                            const fx = force * dx / dist
-                            const fy = force * dy / dist
-                                
-                            velocities[i].x -= fx
-                            velocities[i].y -= fy
-                                
-                            velocities[j].x += fx
-                            velocities[j].y += fy
-                        }
-                    }
-
-    // притяжение к центру
-    for(let i=0;i<N;i++){
-        velocities[i].x += (cx - positions[i].x) * 0.001
-        velocities[i].y += (cy - positions[i].y) * 0.001
-    }
-
-    // применение
-    for(let i=0;i<N;i++){
-        positions[i].x += velocities[i].x
-        positions[i].y += velocities[i].y
-
-        velocities[i].x *= 0.85
-        velocities[i].y *= 0.85
-    }
-}
                 
-                draw()
-                
-                return
-            }
-        }
-    }
 
     // ===============================
     // HOVER
@@ -314,10 +327,3 @@ export function drawNetwork(id, users, onSelect){
     draw()
 }
 }
-
-function loop(){
-    draw()
-    requestAnimationFrame(loop)
-}
-
-loop()
