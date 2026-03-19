@@ -116,7 +116,8 @@ json.dumps({
  "attention": attention,
  "noise": noise,
  "lyapunov": lyapunov,
- "prediction": prediction
+ "prediction": prediction,
+ "predictability": predictability([w["attention"] for w in weather])
 })
 `))
 
@@ -222,7 +223,8 @@ json.dumps({
  "attention": attention,
  "noise": noise,
  "lyapunov": lyapunov,
- "prediction": prediction
+ "prediction": prediction,
+ "predictability": predictability([w["attention"] for w in weather])
 })
 `))
 
@@ -262,12 +264,13 @@ json.dumps([f,s,u])
             window.currentUsers = users
 
             renderCognitiveState(
-                currentKin,
+                userKin,
                 todayKin,
                 result.attention,
                 result.noise,
                 result.lyapunov,
-                result.prediction
+                result.prediction,
+                result.predictability
             )
 
             renderAll(weather, pressure, currentKin, todayKin)
@@ -310,13 +313,14 @@ function renderAll(weather, pressure, userKin, todayKin){
 // ===============================
 // UI STATE
 // ===============================
-function renderCognitiveState(
+renderCognitiveState(
     userKin,
     todayKin,
-    attention,
-    noise,
-    lyapunov,
-    prediction
+    result.attention,
+    result.noise,
+    result.lyapunov,
+    result.prediction,
+    result.predictability
 ){
 
     const el = document.getElementById("mtosSummary")
