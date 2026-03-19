@@ -305,6 +305,7 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
         pressure,
         fieldState,
         selectedAgent
+        window._attractorField
     )
 
     drawNetwork("networkMap", users, (agent)=>{
