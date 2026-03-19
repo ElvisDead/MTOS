@@ -34,8 +34,8 @@ export function drawWeatherMap(
     }
 
     root.innerHTML = ""
-    root.style.display = "flex"
-    root.style.justifyContent = "center"
+    root.style.display = "block"
+    root.style.textAlign = "center"
 
     const grid = document.createElement("div")
 
@@ -220,15 +220,30 @@ Lattice: ${latticeNorm.toFixed(3)}
         }
     }
 
-const legend = document.createElement("div")
-legend.style.marginTop = "10px"
-legend.style.fontSize = "12px"
-legend.style.color = "#aaa"
-
 legend.innerHTML = `
-<div>🔵 Low field</div>
-<div>🟣 Medium</div>
-<div>🔴 High field</div>
+<div style="margin-bottom:6px;"><b>Legend:</b></div>
+
+<div>🔵 Low field — low Φ value (low field activity)</div>
+<div>🟣 Medium — balanced state (structure vs noise)</div>
+<div>🔴 High field — high Φ value (strong concentration)</div>
+
+<div style="margin-top:10px;"><b>About this map:</b></div>
+
+<div>
+This is a 13×20 cognitive field map (260 states).<br>
+Each cell represents a Kin position in the system.<br><br>
+
+Horizontal axis → Seal (1–20)<br>
+Vertical axis → Tone (1–13)<br><br>
+
+Color is a combination of:<br>
+• Field intensity (Φ)<br>
+• Structural lattice (sinusoidal pattern)<br>
+• Agent interference (wave dynamics)<br>
+• Pressure overlay (external stress)<br><br>
+
+Click any cell to inspect its state.
+</div>
 `
 
 root.appendChild(grid)
