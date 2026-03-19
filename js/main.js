@@ -13,6 +13,7 @@ let fieldState = null
 let fieldMode = null
 let users = []
 let selectedAgent = null
+let selectedKin = null
 
 // ===============================
 // INIT
