@@ -74,9 +74,6 @@ export function drawWeatherMap(
     let pMin = pressureData?.length ? Math.min(...pressureData) : 0
     let pMax = pressureData?.length ? Math.max(...pressureData) : 1
 
-    let pMin = Math.min(...pressureData)
-    let pMax = Math.max(...pressureData)
-
     for(let tone=1;tone<=13;tone++){
 
             // === LEFT TONE NUMBER ===
