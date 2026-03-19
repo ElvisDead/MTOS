@@ -8,6 +8,7 @@ export function drawWeatherMap(
     pressureData,
     fieldData,
     selectedAgent
+    attractorField = null
 ){
 
     const root = document.getElementById(id)
@@ -97,6 +98,16 @@ export function drawWeatherMap(
             while(kin>260) kin-=260
 
             let phi = fieldData[kin-1]
+
+            // ===============================
+            // ATTRACTOR FEEDBACK
+            // ===============================
+            if(attractorField){
+                const a = attractorField[kin-1] || 0
+                
+                // мягкое влияние
+                phi = phi * 0.7 + a * 0.3
+            }
 
             // ===============================
             // LATTICE (СТРУКТУРА)
