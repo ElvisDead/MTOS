@@ -39,6 +39,13 @@ export function drawNetwork(id, users, onSelect){
     let hover = null
     let tooltip = null
     let hoverEdge = null
+    let scale = 1
+    let offsetX = 0
+    let offsetY = 0
+        
+    let isDragging = false
+    let dragStartX = 0
+    let dragStartY = 0
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
 
@@ -122,6 +129,10 @@ export function drawNetwork(id, users, onSelect){
     function draw(){
 
     ctx.clearRect(0,0,canvas.width,canvas.height)
+    ctx.save()
+        
+    ctx.translate(offsetX, offsetY)
+    ctx.scale(scale, scale)
 
     applyClustering()
     applyForces()
@@ -288,6 +299,59 @@ export function drawNetwork(id, users, onSelect){
         }
     }
 
+    canvas.onwheel = (e)=>{
+
+        e.preventDefault()
+
+        const zoom = e.deltaY < 0 ? 1.1 : 0.9
+
+        const mx = e.offsetX
+        const my = e.offsetY
+
+        // зум относительно курсора
+        offsetX = mx - (mx - offsetX) * zoom
+        offsetY = my - (my - offsetY) * zoom
+
+        scale *= zoom
+    }
+
+    canvas.onmousedown = (e)=>{
+        isDragging = true
+        dragStartX = e.clientX
+        dragStartY = e.clientY
+    }
+        
+        canvas.onmouseup = ()=>{
+        isDragging = false    
+    }
+        
+        canvas.onmouseleave = ()=>{
+        isDragging = false
+    }
+        
+        canvas.onmousemove = (e)=>{
+            
+        const rect = canvas.getBoundingClientRect()
+            
+        const mx = e.clientX - rect.left
+        const my = e.clientY - rect.top
+            
+        // 👉 ЕСЛИ ТАЩИМ — ДВИГАЕМ КАМЕРУ
+        if(isDragging){
+            const dx = e.clientX - dragStartX
+            const dy = e.clientY - dragStartY
+                
+            offsetX += dx
+            offsetY += dy
+                
+            dragStartX = e.clientX    
+            dragStartY = e.clientY
+                
+            return
+        }
+
+    // ====== ТВОЙ СТАРЫЙ HOVER КОД НИЖЕ ======
+
     for(let i=0;i<N;i++){
 
         const dx = mx - positions[i].x
@@ -301,6 +365,8 @@ export function drawNetwork(id, users, onSelect){
     }
 
     draw()
+
+    ctx.restore()
 }
     draw()
 
