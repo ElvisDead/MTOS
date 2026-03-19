@@ -1,3 +1,5 @@
+window._weatherMode = "full"
+
 export function drawWeatherMap(
     id,
     data,
@@ -10,6 +12,7 @@ export function drawWeatherMap(
 
     const root = document.getElementById(id)
     if(!root) return
+    window._lastWeatherArgs = arguments
 
     // === POPUP ELEMENT ===
     let popup = document.getElementById("kinPopup")
@@ -158,10 +161,28 @@ export function drawWeatherMap(
             // ===============================
             // СМЕШИВАНИЕ СЛОЁВ
             // ===============================
-            const combined =
-                0.5 * fieldNorm +
-                0.25 * latticeNorm +
-                0.25 * waveNorm
+            let combined = 0
+
+            const mode = window._weatherMode || "full"
+
+            if(mode === "field"){
+                combined = fieldNorm
+            }
+            else if(mode === "lattice"){
+                combined = latticeNorm
+            }
+            else if(mode === "wave"){
+                combined = waveNorm
+            }
+            else if(mode === "pressure"){
+                combined = p
+            }
+            else{
+                combined =
+                    0.5 * fieldNorm +
+                    0.25 * latticeNorm +
+                    0.25 * waveNorm
+            }
 
             // ===============================
             // ЦВЕТ (НАУЧНЫЙ ГРАДИЕНТ)
@@ -230,28 +251,18 @@ legend.style.marginRight = "auto"
 legend.style.textAlign = "left"    
     
 legend.innerHTML = `
-<div style="margin-bottom:6px;"><b>Legend:</b></div>
+<div style="margin-bottom:8px;"><b>Mode:</b></div>
 
-<div>🔵 Low field — low Φ value (low field activity)</div>
-<div>🟣 Medium — balanced state (structure vs noise)</div>
-<div>🔴 High field — high Φ value (strong concentration)</div>
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+<button onclick="setWeatherMode('full')">Full</button>
+<button onclick="setWeatherMode('field')">Field</button>
+<button onclick="setWeatherMode('lattice')">Lattice</button>
+<button onclick="setWeatherMode('wave')">Wave</button>
+<button onclick="setWeatherMode('pressure')">Pressure</button>
+</div>
 
-<div style="margin-top:10px;"><b>About this map:</b></div>
-
-<div>
-This is a 13×20 cognitive field map (260 states).<br>
-Each cell represents a Kin position in the system.<br><br>
-
-Horizontal axis → Seal (1–20)<br>
-Vertical axis → Tone (1–13)<br><br>
-
-Color is a combination of:<br>
-• Field intensity (Φ)<br>
-• Structural lattice (sinusoidal pattern)<br>
-• Agent interference (wave dynamics)<br>
-• Pressure overlay (external stress)<br><br>
-
-Click any cell to inspect its state.
+<div style="font-size:11px;">
+Switch layers to explore system structure.
 </div>
 `
 
@@ -317,3 +328,11 @@ function onCellClick(kin, e){
         popup.style.display = "none"
     }
 })
+
+window.setWeatherMode = function(mode){
+    window._weatherMode = mode
+
+    if(window._lastWeatherArgs){
+        drawWeatherMap(...window._lastWeatherArgs)
+    }
+}
