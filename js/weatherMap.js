@@ -11,6 +11,28 @@ export function drawWeatherMap(
     const root = document.getElementById(id)
     if(!root) return
 
+    // === POPUP ELEMENT ===
+    let popup = document.getElementById("kinPopup")
+
+    if(!popup){
+        popup = document.createElement("div")
+        popup.id = "kinPopup"
+
+        popup.style.position = "fixed"
+        popup.style.background = "#111"
+        popup.style.color = "#fff"
+        popup.style.padding = "10px"
+        popup.style.border = "1px solid #444"
+        popup.style.borderRadius = "6px"
+        popup.style.fontSize = "12px"
+        popup.style.zIndex = "9999"
+        popup.style.display = "none"
+        popup.style.maxWidth = "200px"
+        popup.style.pointerEvents = "auto"
+
+        document.body.appendChild(popup)
+    }
+
     root.innerHTML = ""
     root.style.display = "flex"
     root.style.justifyContent = "center"
@@ -155,8 +177,8 @@ export function drawWeatherMap(
 
             const cell = document.createElement("div")
 
-            cell.addEventListener("click", ()=>onCellClick(kin))
-            cell.addEventListener("touchstart", ()=>onCellClick(kin))
+            cell.addEventListener("click", (e)=>onCellClick(kin, e))
+            cell.addEventListener("touchstart", (e)=>onCellClick(kin, e))
 
             cell.style.width = "18px"
             cell.style.height = "18px"
@@ -209,8 +231,40 @@ root.appendChild(legend)
 
 }
 
-function onCellClick(kin){
-    console.log("KIN:", kin)
+function onCellClick(kin, e){
 
-    // можно потом popup сделать
+    const popup = document.getElementById("kinPopup")
+    if(!popup) return
+
+    const x = e?.clientX || (e.touches && e.touches[0].clientX)
+    const y = e?.clientY || (e.touches && e.touches[0].clientY)
+
+    popup.style.left = (x + 10) + "px"
+    popup.style.top  = (y + 10) + "px"
+
+    popup.innerHTML = `
+    <div style="font-weight:bold; margin-bottom:4px;">
+        const phi = fieldData[kin-1]
+        const pressure = pressureData[kin-1]
+    </div>
+
+    <div>Click interaction</div>
+    <div style="margin-top:6px; color:#aaa;">
+        (можно расширить данными)
+    </div>
+    `
+
+    popup.style.display = "block"
 }
+
+    document.addEventListener("click", (e)=>{
+        const popup = document.getElementById("kinPopup")
+        if(!popup) return
+
+        if(!popup.contains(e.target)){
+            popup.style.display = "none"
+                
+            <div>Φ: ${phi.toFixed(3)}</div>
+            <div>P: ${pressure.toFixed(3)}</div>
+    }
+})
