@@ -579,7 +579,7 @@ json.dumps([f,s,u])
         window.selectionMemory = selectionMemory
         selectedKin = kin
             
-        renderAll(weather, pressure, userKin, todayKin, year, month, day)
+        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
     }
 }
 
@@ -602,7 +602,7 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
     drawNetwork("networkMap", users, (agent)=>{
         selectedAgent = agent
         
-        renderAll(weather, pressure, userKin, todayKin, year, month, day)
+        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
     })
 
     const now = new Date()
