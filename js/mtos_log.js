@@ -1,4 +1,4 @@
-let MTOS_LOG = []
+export let MTOS_LOG = []
 
 // ===============================
 // LOAD FROM STORAGE
@@ -20,8 +20,6 @@ try {
 // делаем глобально доступным
 window.MTOS_LOG = MTOS_LOG
 
-export const MTOS_LOG = []
-
 export function logEvent(type, payload = {}) {
 
     const entry = {
@@ -31,6 +29,11 @@ export function logEvent(type, payload = {}) {
     }
 
     MTOS_LOG.push(entry)
+
+    // ограничение размера
+    if(MTOS_LOG.length > 1000){
+        MTOS_LOG.shift()
+    }
 
     try {
         localStorage.setItem("mtos_log", JSON.stringify(MTOS_LOG))
@@ -42,19 +45,11 @@ export function logEvent(type, payload = {}) {
         window.initReplay()
     }
 
-    // ограничение размера
-    if(MTOS_LOG.length > 5000){
-        MTOS_LOG.shift()
-    }
-
     // обновление UI
     if(window._logListener){
         window._logListener(entry, MTOS_LOG)
     }
     
-    if(window.initReplay){
-        window.initReplay()
-    }
 }
 
 // доступ снаружи
