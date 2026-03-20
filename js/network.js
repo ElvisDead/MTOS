@@ -48,6 +48,7 @@ export function drawNetwork(id, users, onSelect){
     let dragStartY = 0
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
 
     const N = users.length
 
@@ -72,8 +73,6 @@ export function drawNetwork(id, users, onSelect){
 
                 const key1 = u1.name + "->" + u2.name
                 const key2 = u2.name + "->" + u1.name
-
-                const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
 
                 if(locked[key1] || locked[key2]){
                     continue
@@ -154,6 +153,10 @@ export function drawNetwork(id, users, onSelect){
 
             const key1 = u1.name + "->" + u2.name
             const key2 = u2.name + "->" + u1.name
+
+            if(locked[key1] || locked[key2]){
+                continue
+            }
 
             const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
