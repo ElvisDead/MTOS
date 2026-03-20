@@ -257,10 +257,8 @@ return {
 
         window.currentUsers = users
         logEvent("agents_update", {
-            count: users.length,
-            sample: users.slice(0,3).map(u => ({
-                name: u.name,
-                kin: u.kin
+            count: users,
+            fieldState: fieldState
             }))
         })
 
@@ -405,6 +403,12 @@ json.dumps([f,s,u])
             }
 
             window.currentUsers = users
+
+            logEvent("agents_update", {
+                count: users,
+                fieldState: fieldState
+            }))
+        })
 
             renderCognitiveState(
                 currentKin,
