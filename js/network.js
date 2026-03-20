@@ -220,10 +220,38 @@ export function drawNetwork(id, users, onSelect){
 }
     canvas.onclick = (e)=>{
 
+        const currentMode = window.networkMode || "interaction"
+
         const rect = canvas.getBoundingClientRect()
 
         const mx = (e.clientX - rect.left - offsetX) / scale
         const my = (e.clientY - rect.top - offsetY) / scale
+
+        if(currentMode === "edit"){
+
+            const rect = canvas.getBoundingClientRect()
+            const mx = e.clientX - rect.left
+            const my = e.clientY - rect.top
+
+            for(let i=0;i<N;i++){
+
+                const dx = mx - positions[i].x
+                const dy = my - positions[i].y
+
+                if(Math.sqrt(dx*dx + dy*dy) < 15){
+
+                    const name = users[i].name
+
+                    if(confirm("Удалить " + name + "?")){
+                        if(window.removeUser){
+                            window.removeUser(name)
+                        }
+                    }
+
+                    return
+                }
+            }
+        }
 
         for(let i=0;i<N;i++){
 
