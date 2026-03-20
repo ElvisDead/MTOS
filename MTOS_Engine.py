@@ -1457,7 +1457,7 @@ def mtos_summary(name, year, month, day):
     pressure = mtos_pressure_map()
 
     # текущий kin
-    kin = mtos_current_kin(name, year, month, day) - 1
+    kin = mtos_current_kin_NEW(name, year, month, day) - 1
 
     w = weather[kin]
 
@@ -1669,7 +1669,7 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
         weight = user.get("weight", 1.0)
 
         weather = mtos_260_weather(name, year, month, day)
-        kin = mtos_current_kin(name, year, month, day) - 1
+        kin = mtos_current_kin_NEW(name, year, month, day) - 1
 
         kin_list.append(kin)
 
