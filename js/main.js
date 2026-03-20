@@ -61,8 +61,9 @@ export async function initMTOS(){
         el.removeChild(el.lastChild)
     }
 }
+    window.removeUser = removeUser
+    
     window.toggleEditMode = () => {
-        window.removeUser = removeUser
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
         console.log("Mode:", window.networkMode)
     }
