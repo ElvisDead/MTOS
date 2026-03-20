@@ -168,13 +168,18 @@ def verify_correlation():
 
 def kin_from_date(date):
 
-    delta=(date-BASE_DATE).days
-    kin=((BASE_KIN+delta-1)%260)+1
+    # --- Gregorian → Julian Day Number ---
+    jdn = date.toordinal() + 1721424.5
 
-    tone=((kin-1)%13)+1
-    seal_index=(kin-1)%20
+    # --- GMT correlation ---
+    GMT = 584283
 
-    return kin,tone,seals[seal_index],seal_index
+    kin = int((jdn - GMT) % 260) + 1
+
+    tone = ((kin - 1) % 13) + 1
+    seal_index = (kin - 1) % 20
+
+    return kin, tone, seals[seal_index], seal_index
 
 # ==========================================================
 # RESONANCE FIELD
