@@ -1721,6 +1721,10 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             state_j = state_list[j]
 
             dist = min(abs(kin_i - kin_j), 260 - abs(kin_i - kin_j))
+
+            if dist > 30:
+                continue
+                
             strength = math.exp(-dist / 10.0)
 
             # ===============================
