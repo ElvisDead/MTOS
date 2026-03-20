@@ -303,7 +303,6 @@ json.dumps(weather)
         // ===============================
         // TODAY
         // ===============================
-        const now = new Date()
 
         const todayKin = Number(pyodide.runPython(`
         mtos_current_kin_NEW("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
