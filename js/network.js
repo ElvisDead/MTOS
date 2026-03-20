@@ -229,9 +229,8 @@ export function drawNetwork(id, users, onSelect){
 
         if(currentMode === "edit"){
 
-            const rect = canvas.getBoundingClientRect()
-            const mx = e.clientX - rect.left
-            const my = e.clientY - rect.top
+            const mx = (e.clientX - rect.left - offsetX) / scale
+            const my = (e.clientY - rect.top - offsetY) / scale
 
             for(let i=0;i<N;i++){
 
