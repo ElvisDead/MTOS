@@ -189,10 +189,25 @@ json.dumps([f,s,u])
                     }
                 }
                 
-                return {
-                    ...u,
-                    kin: bestKin
+                let newKin = u.kin
+
+                if(bestKin !== u.kin){
+
+                    if((bestKin - u.kin + 260) % 260 < 130){
+                        newKin = u.kin + 1
+                    }else{
+                        newKin = u.kin - 1
+                    }
                 }
+
+// нормализация
+if(newKin < 1) newKin += 260
+if(newKin > 260) newKin -= 260
+
+return {
+    ...u,
+    kin: newKin
+}
             })
         }
 
@@ -345,6 +360,7 @@ json.dumps([f,s,u])
         // MEMORY UPDATE
         // ===============================
         selectionMemory[kin-1] += 1
+        window.selectionMemory = selectionMemory
 
         // затухание памяти
         selectionMemory = selectionMemory.map(v => v * 0.98)
