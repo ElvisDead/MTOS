@@ -220,6 +220,13 @@ export function drawNetwork(id, users, onSelect){
 }
     canvas.onclick = (e)=>{
 
+        const currentMode = window.networkMode || "interaction"
+
+        const rect = canvas.getBoundingClientRect()
+
+        const mx = (e.clientX - rect.left - offsetX) / scale
+        const my = (e.clientY - rect.top - offsetY) / scale
+
         // ===============================
         // DELETE EDGE (в edit режиме)
         // ===============================
@@ -256,26 +263,16 @@ export function drawNetwork(id, users, onSelect){
                             const u2 = users[j].name
 
                             if(confirm(`Удалить связь ${u1} ↔ ${u2}?`)){
-
                                 if(window.removeConnection){
                                     window.removeConnection(u1, u2)
                                 }
                             }
-
                             return
-
                         }
                     }
                 }
             }
         }
-
-        const currentMode = window.networkMode || "interaction"
-
-        const rect = canvas.getBoundingClientRect()
-
-        const mx = (e.clientX - rect.left - offsetX) / scale
-        const my = (e.clientY - rect.top - offsetY) / scale
 
         if(currentMode === "edit"){
 
