@@ -1,3 +1,8 @@
+import { drawNetwork } from "./network.js"
+import { drawAttractor } from "./attractor.js"
+import { drawCollective } from "./collective.js"
+import { drawPhaseSpace } from "./phaseSpace.js"
+
 let replayIndex = 0
 let replayTimer = null
 
@@ -11,16 +16,15 @@ function getLog(){
 function applyEntry(entry){
 
     if(entry.type === "agents_update"){
-        window.currentUsers = entry.sample.map(u => ({
-            ...u
-        }))
+
+        window.currentUsers = entry.users
+
+        window._replayField = entry.fieldState
     }
 
     if(entry.type === "python_result"){
         window._replayMeta = entry
     }
-
-    // можно расширять дальше
 }
 
 // ===============================
@@ -35,10 +39,25 @@ function renderReplay(){
 
     applyEntry(entry)
 
-    // обновляем UI лог подсветкой
-    const el = document.getElementById("logStream")
-    if(el && el.children[replayIndex]){
-        el.children[replayIndex].style.color = "#0ff"
+    const users = window.currentUsers
+    const fieldState = window._replayField
+
+    if(!users) return
+
+    // 🔥 ВОССТАНАВЛИВАЕМ РЕНДЕР
+    drawNetwork("networkMap", users, ()=>{})
+
+    drawAttractor(
+        "attractorMap",
+        users,
+        [],
+        null
+    )
+
+    drawCollective("collectiveMap", users)
+
+    if(fieldState){
+        drawPhaseSpace("phaseMap", fieldState, null)
     }
 }
 
