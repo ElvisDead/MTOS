@@ -129,6 +129,18 @@ canvas{
         Export Log
     </button>
 
+    <div style="margin-bottom:10px;">
+
+        <button onclick="replayPlay()">▶</button>
+        <button onclick="replayPause()">⏸</button>
+        <button onclick="replayStep(-1)">⏮</button>
+        <button onclick="replayStep(1)">⏭</button>
+
+        <input id="replaySlider" type="range" min="0" max="0" value="0"
+            style="width:200px;"
+            oninput="replaySeek(this.value)">
+    </div>
+
     <div id="logStream" style="
         max-height:200px;
         overflow:auto;
