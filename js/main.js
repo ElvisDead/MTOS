@@ -183,6 +183,27 @@ function removeConnection(a, b){
     runMTOS()
 }
 
+function addConnection(a, b, value = 1){
+
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
+
+    memory[a + "->" + b] = value
+    memory[b + "->" + a] = value
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    delete locked[a + "->" + b]
+    delete locked[b + "->" + a]
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
+
+    runMTOS()
+}
+
+window.addConnection = addConnection
+
 function lockConnection(a, b){
 
     const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
