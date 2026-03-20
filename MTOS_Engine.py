@@ -1440,16 +1440,9 @@ def mtos_current_kin(name, year, month, day):
 
     import datetime
 
-    # Python ordinal → JDN
     date = datetime.date(year, month, day)
 
-    # корректный JDN
-    jdn = date.toordinal() + 1721424.5
-
-    # GMT корреляция
-    GMT = 584283
-
-    kin = int((jdn - GMT) % 260) + 1
+    kin, _, _, _ = kin_from_date(date)
 
     return kin
 
