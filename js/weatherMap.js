@@ -100,6 +100,16 @@ export function drawWeatherMap(
             let phi = fieldData[kin-1]
 
             // ===============================
+            // USER MEMORY INFLUENCE
+            // ===============================
+            if(window.selectionMemory){
+
+                const m = window.selectionMemory[kin-1] || 0
+
+                phi += m * 0.05
+            }
+
+            // ===============================
             // ATTRACTOR FEEDBACK
             // ===============================
             if(attractorField){
