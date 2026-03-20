@@ -257,7 +257,7 @@ return {
 
         window.currentUsers = users
         logEvent("agents_update", {
-            count: users,
+            users: users,
             fieldState: fieldState
             }))
         })
@@ -405,7 +405,7 @@ json.dumps([f,s,u])
             window.currentUsers = users
 
             logEvent("agents_update", {
-                count: users,
+                users: users,
                 fieldState: fieldState
             }))
         })
