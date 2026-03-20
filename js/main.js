@@ -7,6 +7,7 @@ import { drawCollective } from "./collective.js"
 import { drawActivity } from "./activity.js"
 import { initTimeControls } from "./timeController.js"
 import { logEvent } from "./mtos_log.js"
+import { exportLog } from "./exportExperiment.js"
 
 let pyodide = null
 
