@@ -333,7 +333,15 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
         const fieldResult = JSON.parse(pyodide.runPython(`
 import json
 users = ${JSON.stringify(users)}
-f,s,u = mtos_multi_agents_field(users,${year},${month},${day})
+f,s,u = mtos_multi_agents_field(
+    users,
+    ${year},
+    ${month},
+    ${day},
+    null,
+    null,
+    ${JSON.stringify(locked)}
+)
 json.dumps([f,s,u])
 `))
 
