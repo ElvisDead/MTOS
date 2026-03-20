@@ -10,6 +10,10 @@ export function logEvent(type, payload = {}) {
 
     MTOS_LOG.push(entry)
 
+    if(window.initReplay){
+        window.initReplay()
+    }
+
     // ограничение размера
     if(MTOS_LOG.length > 5000){
         MTOS_LOG.shift()
