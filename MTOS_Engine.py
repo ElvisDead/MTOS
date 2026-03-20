@@ -1704,6 +1704,12 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     for i in range(len(users)):
         for j in range(i+1, len(users)):
 
+            key1 = f"{u1['name']}->{u2['name']}"
+            key2 = f"{u2['name']}->{u1['name']}"
+            
+            if locked and (locked.get(key1) or locked.get(key2)):
+                continue
+
             kin_i = kin_list[i]
             kin_j = kin_list[j]
 
