@@ -139,25 +139,16 @@ export async function runMTOS(){
         // ===============================
         const result = JSON.parse(pyodide.runPython(`
 import json
+import datetime
 
-weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
-kin = mtos_current_kin_NEW(${JSON.stringify(name)},${year},${month},${day})
-pressure = mtos_pressure_map()
+date = datetime.date(${year}, ${month}, ${day})
 
-attention = sum([w["attention"] for w in weather]) / 260
-noise = sum([abs(w["attention"]-0.5) for w in weather]) / 260
-lyapunov = noise * 2.5
-prediction = attention * (1 - noise)
+kin, tone, seal, idx = kin_from_date(date)
 
 json.dumps({
- "weather": weather,
- "pressure": pressure,
- "kin": kin,
- "attention": attention,
- "noise": noise,
- "lyapunov": lyapunov,
- "prediction": prediction,
- "predictability": predictability([w["attention"] for w in weather])
+  "kin": kin,
+  "tone": tone,
+  "seal": seal
 })
 `))
 
