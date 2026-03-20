@@ -176,7 +176,11 @@ def kin_from_date(date):
     # --- GMT correlation ---
     GMT = 584283
 
+    print("DEBUG:", jdn, GMT)
+
     kin = int((jdn - GMT) % 260) + 1
+
+    print("KIN RESULT:", kin)
 
     tone = ((kin - 1) % 13) + 1
     seal_index = (kin - 1) % 20
