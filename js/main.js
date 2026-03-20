@@ -63,6 +63,7 @@ export async function initMTOS(){
 }
     window.removeUser = removeUser
     window.removeConnection = removeConnection
+    window.addConnection = addConnection
     
     window.toggleEditMode = () => {
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
