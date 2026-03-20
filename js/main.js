@@ -260,7 +260,7 @@ return {
             users: users,
             fieldState: fieldState
             })
-        })
+        }
 
         // ===============================
         // UI STATE
@@ -407,8 +407,8 @@ json.dumps([f,s,u])
             logEvent("agents_update", {
                 users: users,
                 fieldState: fieldState
-            }))
-        })
+            })
+        }
 
             renderCognitiveState(
                 currentKin,
