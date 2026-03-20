@@ -181,6 +181,8 @@ function removeConnection(a, b){
 
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
+    window._lockedCache = null
+
     runMTOS()
 }
 
