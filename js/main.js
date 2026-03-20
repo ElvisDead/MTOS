@@ -6,6 +6,7 @@ import { drawAttractor } from "./attractor.js"
 import { drawCollective } from "./collective.js"
 import { drawActivity } from "./activity.js"
 import { initTimeControls } from "./timeController.js"
+import { logEvent } from "./mtos_log.js"
 
 let pyodide = null
 
@@ -30,6 +31,27 @@ export async function initMTOS(){
     pyodide.runPython(code)
 
     status.innerText = "Ready"
+    window._logListener = (entry) => {
+
+    const el = document.getElementById("logStream")
+    if(!el) return
+
+    const row = document.createElement("div")
+
+    row.textContent =
+        new Date(entry.t).toLocaleTimeString() +
+        " | " +
+        entry.type +
+        " | " +
+        JSON.stringify(entry)
+
+    el.prepend(row)
+
+    // ограничение UI
+    if(el.children.length > 200){
+        el.removeChild(el.lastChild)
+    }
+}
 }
 
 // ===============================
@@ -88,6 +110,7 @@ export async function runMTOS(){
     try{
 
         status.innerText = "Running..."
+        logEvent("run_start", { name, year, month, day })
 
         // ===============================
         // USERS MEMORY
@@ -124,6 +147,12 @@ json.dumps({
 `))
 
         const weather = result.weather
+        logEvent("python_result", {
+            kin: result.kin,
+            attention: result.attention,
+            noise: result.noise,
+            predictability: result.predictability
+        })
         const pressure = result.pressure
         const userKin = result.kin
 
@@ -210,6 +239,10 @@ return {
 }
             })
         }
+        logEvent("agents_update", {
+            count: users.length,
+            sample: users.slice(0,3)
+        })
 
         window.currentUsers = users
 
@@ -276,6 +309,12 @@ json.dumps({
             const weather = result.weather
             const pressure = result.pressure
             const currentKin = result.kin
+            logEvent("time_step", {
+                year: y,
+                month: m,
+                day: dd,
+                kin: currentKin
+            })
 
             users = users.map(u=>{
 
@@ -356,6 +395,10 @@ json.dumps([f,s,u])
     }
 
     window.onKinSelect = (kin) => {
+        logEvent("kin_select", {
+            kin,
+            memory: selectionMemory[kin-1]
+        })
         // ===============================
         // MEMORY UPDATE
         // ===============================
