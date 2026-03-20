@@ -258,7 +258,11 @@ return {
         window.currentUsers = users
         logEvent("agents_update", {
             users: users,
-            fieldState: fieldState
+            fieldState: fieldState,
+            weather: weather,
+            pressure: pressure,
+            userKin: userKin,
+            todayKin: todayKin
             })
 
         // ===============================
@@ -405,7 +409,11 @@ json.dumps([f,s,u])
 
             logEvent("agents_update", {
                 users: users,
-                fieldState: fieldState
+                fieldState: fieldState,
+                weather: weather,
+                pressure: pressure,
+                userKin: userKin,
+                todayKin: todayKin
             })
 
             renderCognitiveState(
