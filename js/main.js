@@ -8,6 +8,13 @@ import { drawActivity } from "./activity.js"
 import { initTimeControls } from "./timeController.js"
 import { logEvent } from "./mtos_log.js"
 import { exportLog } from "./exportExperiment.js"
+import {
+    replayPlay,
+    replayPause,
+    replayStep,
+    replaySeek,
+    initReplay
+} from "./replay.js"
 
 let pyodide = null
 
@@ -54,6 +61,12 @@ export async function initMTOS(){
         el.removeChild(el.lastChild)
     }
 }
+    window.replayPlay = replayPlay
+    window.replayPause = replayPause
+    window.replayStep = replayStep
+    window.replaySeek = replaySeek
+
+    initReplay()
 }
 
 // ===============================
