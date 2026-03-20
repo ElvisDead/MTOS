@@ -284,6 +284,13 @@ json.dumps({
 `))
 
         const weather = result.weather
+        const now = new Date()
+        
+        const weatherToday = JSON.parse(pyodide.runPython(`
+import json
+weather = mtos_260_weather("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
+json.dumps(weather)
+`))
         logEvent("python_result", {
             kin: result.kin,
             attention: result.attention,
@@ -599,7 +606,7 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
         renderAll(weather, pressure, userKin, todayKin, year, month, day)
     })
 
-    drawSeries("seriesMap", weather, year, month, day)
+    drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
     drawPhaseSpace("phaseMap", weather, selectedKin)
     drawAttractor(
         "attractorMap",
