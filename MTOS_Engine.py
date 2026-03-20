@@ -1651,8 +1651,7 @@ def mtos_field_step(name, year, month, day, prev_field=None, prev_state=None):
 # ===============================
 # MULTI-AGENT FIELD
 # ===============================
-def mtos_multi_agents_field(users, year, month, day, null, null, locked):
-
+def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state=None, locked=None):
     if locked is None:
         locked = {}
 
@@ -1702,15 +1701,6 @@ def mtos_multi_agents_field(users, year, month, day, null, null, locked):
     # ===============================
     for i in range(len(users)):
         for j in range(i+1, len(users)):
-
-            u1 = users[i]
-            u2 = users[j]
-            
-            key1 = f"{u1['name']}->{u2['name']}"
-            key2 = f"{u2['name']}->{u1['name']}"
-            
-            if locked and (locked.get(key1) or locked.get(key2)):
-                continue
 
             kin_i = kin_list[i]
             kin_j = kin_list[j]
