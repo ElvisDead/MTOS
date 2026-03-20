@@ -260,7 +260,6 @@ return {
             users: users,
             fieldState: fieldState
             })
-        }
 
         // ===============================
         // UI STATE
@@ -408,7 +407,6 @@ json.dumps([f,s,u])
                 users: users,
                 fieldState: fieldState
             })
-        }
 
             renderCognitiveState(
                 currentKin,
