@@ -259,7 +259,7 @@ return {
         logEvent("agents_update", {
             users: users,
             fieldState: fieldState
-            }))
+            })
         })
 
         // ===============================
