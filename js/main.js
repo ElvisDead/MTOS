@@ -17,7 +17,7 @@ import {
 } from "./replay.js"
 
 let pyodide = null
-
+let historyStack = []
 let fieldState = null
 let fieldMode = null
 let users = []
@@ -62,6 +62,7 @@ export async function initMTOS(){
     }
 }
     window.removeUser = removeUser
+    window.removeConnection = removeConnection
     
     window.toggleEditMode = () => {
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
@@ -119,6 +120,11 @@ function addUser(list, name){
 
 function removeUser(name){
 
+    historyStack.push({
+        users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
+        memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    })
+
     // 1. удаляем из списка
     let list = loadUsers()
     list = list.filter(u => u !== name)
@@ -151,6 +157,36 @@ function removeUser(name){
     // 4. обновление UI
     runMTOS()
 }
+
+function removeConnection(a, b){
+
+    historyStack.push({
+        users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
+        memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    })
+
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
+
+    delete memory[a + "->" + b]
+    delete memory[b + "->" + a]
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+
+    runMTOS()
+}
+
+function undo(){
+
+    const last = historyStack.pop()
+    if(!last) return
+
+    localStorage.setItem("mtos_users", JSON.stringify(last.users))
+    localStorage.setItem("collective_relations_memory", JSON.stringify(last.memory))
+
+    runMTOS()
+}
+
+window.undoMTOS = undo
 
 // ===============================
 // RUN
