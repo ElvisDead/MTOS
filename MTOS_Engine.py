@@ -168,6 +168,8 @@ def verify_correlation():
 
 def kin_from_date(date):
 
+    print("GMT ACTIVE")
+
     # --- Gregorian → Julian Day Number ---
     jdn = date.toordinal() + 1721424.5
 
