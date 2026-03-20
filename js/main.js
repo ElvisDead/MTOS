@@ -239,12 +239,16 @@ return {
 }
             })
         }
-        sample: users.slice(0,3).map(u => ({
-            name: u.name,
-            kin: u.kin
-        }))
+        )
 
         window.currentUsers = users
+        logEvent("agents_update", {
+            count: users.length,
+            sample: users.slice(0,3).map(u => ({
+                name: u.name,
+                kin: u.kin
+            }))
+        })
 
         // ===============================
         // UI STATE
