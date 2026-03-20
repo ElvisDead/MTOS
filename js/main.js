@@ -349,7 +349,7 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
             ${day},
             None,
             None,
-            ${JSON.stringify(locked)}
+            ${toPython(locked)}
         )
         json.dumps([f,s,u])
         `))
