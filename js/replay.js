@@ -48,9 +48,6 @@ function renderReplay(){
 
     if(!users) return
 
-    const users = window.currentUsers
-    const fieldState = window._replayField
-
     const weather = window._replayWeather
     const pressure = window._replayPressure
     const userKin = window._replayUserKin
