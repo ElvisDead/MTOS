@@ -202,6 +202,8 @@ function addConnection(a, b, value = 1){
 
     localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
 
+    window._lockedCache = null
+
     runMTOS()
 }
 
