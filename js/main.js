@@ -66,6 +66,12 @@ export async function initMTOS(){
     
     window.toggleEditMode = () => {
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
+    
+        const btn = document.getElementById("editBtn")
+        if(btn){
+            btn.innerText = window.networkMode === "edit" ? "EDIT ON" : "EDIT OFF"
+        }
+
         console.log("Mode:", window.networkMode)
     }
     
