@@ -409,7 +409,7 @@ return {
         // ===============================
         // RENDER ВСЕГО
         // ===============================
-        renderAll(weather, pressure, userKin, todayKin, year, month, day)
+        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
 
         status.innerText = "Done"
 
@@ -586,7 +586,7 @@ json.dumps([f,s,u])
 // ===============================
 // RENDER ALL
 // ===============================
-function renderAll(weather, pressure, userKin, todayKin, year, month, day){
+function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day){
 
     drawWeatherMap(
         "weatherMap",
@@ -604,6 +604,8 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
         
         renderAll(weather, pressure, userKin, todayKin, year, month, day)
     })
+
+    const now = new Date()
 
     drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
     drawPhaseSpace("phaseMap", weather, selectedKin)
