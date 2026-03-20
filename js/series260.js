@@ -5,7 +5,7 @@ export function drawSeries(id, weather, year, month, day){
 
     root.innerHTML = ""
 
-    const startDate = new Date(year, month - 1, day)
+    const startDate = new Date()
 
     function formatDate(d){
         return d.toLocaleDateString("en-GB", {
