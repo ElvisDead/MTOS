@@ -501,8 +501,8 @@ f,s,u = mtos_multi_agents_field(
  ${y},
  ${m},
  ${dd},
- ${fieldState ? JSON.stringify(fieldState) : "None"},
- ${fieldMode ? JSON.stringify(fieldMode) : "None"},
+ ${fieldState ? toPython(fieldState) : "None"},
+ ${fieldMode ? toPython(fieldMode) : "None"},
  ${toPython(locked)}
 )
 json.dumps([f,s,u])
