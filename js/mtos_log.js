@@ -30,6 +30,10 @@ export function logEvent(type, payload = {}) {
 
     MTOS_LOG.push(entry)
 
+    while(JSON.stringify(MTOS_LOG).length > 2000000){
+        MTOS_LOG.shift()
+    }
+
     // ограничение размера
     if(MTOS_LOG.length > 1000){
         MTOS_LOG.shift()
