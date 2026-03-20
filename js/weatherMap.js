@@ -97,7 +97,7 @@ export function drawWeatherMap(
             let kin = (seal-1)*13 + tone
             while(kin>260) kin-=260
 
-            let phi = fieldData[kin-1]
+            let phi = fieldData?.[kin-1] ?? 0
 
             // ===============================
             // USER MEMORY INFLUENCE
