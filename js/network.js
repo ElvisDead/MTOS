@@ -234,6 +234,37 @@ export function drawNetwork(id, users, onSelect){
         const my = (e.clientY - rect.top - offsetY) / scale
 
         // ===============================
+        // ADD CONNECTION (Shift + click)
+        // ===============================
+        if(e.shiftKey){
+
+            for(let i=0;i<N;i++){
+
+                const dx = mx - positions[i].x
+                const dy = my - positions[i].y
+
+                if(Math.sqrt(dx*dx + dy*dy) < 15){
+
+                    if(selected !== null && selected !== i){
+
+                        const u1 = users[selected].name
+                        const u2 = users[i].name
+
+                        if(window.addConnection){
+                            window.addConnection(u1, u2)
+                        }
+
+                        selected = null
+                        return
+                    }
+
+                    selected = i
+                    return
+                }
+            }
+        }
+
+        // ===============================
         // DELETE EDGE (в edit режиме)
         // ===============================
         if(currentMode === "edit"){
