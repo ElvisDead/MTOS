@@ -239,7 +239,6 @@ return {
 }
             })
         }
-        )
 
         window.currentUsers = users
         logEvent("agents_update", {
