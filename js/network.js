@@ -81,6 +81,8 @@ export function drawNetwork(id, users, onSelect){
 
                 const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
+                if(locked[key1] || locked[key2]) return
+
                 if(score > 0.3){
 
                     const dx = positions[j].x - positions[i].x
