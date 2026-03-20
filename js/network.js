@@ -64,6 +64,56 @@ export function drawNetwork(id, users, onSelect){
 
     function applyClustering(){
 
+        // ===============================
+        // DELETE EDGE (в edit режиме)
+        // ===============================
+        if(currentMode === "edit"){
+
+            for(let i=0;i<N;i++){
+                for(let j=i+1;j<N;j++){
+
+                    const x1 = positions[i].x
+                    const y1 = positions[i].y
+                    const x2 = positions[j].x
+                    const y2 = positions[j].y
+
+                    const A = mx - x1
+                    const B = my - y1
+                    const C = x2 - x1
+                    const D = y2 - y1
+
+                    const dot = A*C + B*D
+                    const len_sq = C*C + D*D
+                    const param = dot / len_sq
+
+                    if(param >= 0 && param <= 1){
+
+                        const xx = x1 + param * C
+                        const yy = y1 + param * D
+
+                        const dx = mx - xx
+                        const dy = my - yy
+
+                        if(Math.sqrt(dx*dx + dy*dy) < 6){
+
+                            const u1 = users[i].name
+                            const u2 = users[j].name
+
+                            if(confirm(`Удалить связь ${u1} ↔ ${u2}?`)){
+
+                                if(window.removeConnection){
+                                    window.removeConnection(u1, u2)
+                                }
+                            }
+
+                            return
+
+                        }
+                    }
+                }
+            }
+        }
+
         for(let i=0;i<N;i++){
             for(let j=i+1;j<N;j++){
 
