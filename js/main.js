@@ -14,6 +14,7 @@ let fieldMode = null
 let users = []
 let selectedAgent = null
 let selectedKin = null
+let selectionMemory = new Array(260).fill(0)
 
 // ===============================
 // INIT
@@ -168,6 +169,33 @@ json.dumps([f,s,u])
         fieldMode  = fieldResult[1]
         users      = fieldResult[2]
 
+        // ===============================
+        // AGENT MOVEMENT (field-driven)
+        // ===============================
+        if(fieldState){
+            users = users.map(u => {
+                
+                let bestKin = u.kin
+                let bestVal = -Infinity
+                    
+                for(let d = -3; d <= 3; d++){
+                    let k = (u.kin - 1 + d + 260) % 260
+                        
+                    const v = fieldState[k]
+                        
+                    if(v > bestVal){
+                        bestVal = v
+                        bestKin = k + 1
+                    }
+                }
+                
+                return {
+                    ...u,
+                    kin: bestKin
+                }
+            })
+        }
+
         window.currentUsers = users
 
         // ===============================
@@ -263,6 +291,33 @@ json.dumps([f,s,u])
             fieldMode  = fieldResult[1]
             users      = fieldResult[2]
 
+            // ===============================
+            // AGENT MOVEMENT (field-driven)
+            // ===============================
+            if(fieldState){
+                users = users.map(u => {
+                    
+                    let bestKin = u.kin
+                    let bestVal = -Infinity
+                        
+                    for(let d = -3; d <= 3; d++){
+                        let k = (u.kin - 1 + d + 260) % 260
+                            
+                        const v = fieldState[k]
+                            
+                        if(v > bestVal){
+                            bestVal = v
+                            bestKin = k + 1
+                        }
+                    }
+                    
+                    return {
+                        ...u,
+                        kin: bestKin
+                    }
+                })
+            }
+
             window.currentUsers = users
 
             renderCognitiveState(
@@ -286,6 +341,13 @@ json.dumps([f,s,u])
     }
 
     window.onKinSelect = (kin) => {
+        // ===============================
+        // MEMORY UPDATE
+        // ===============================
+        selectionMemory[kin-1] += 1
+
+        // затухание памяти
+        selectionMemory = selectionMemory.map(v => v * 0.98)
         selectedKin = kin
             
         renderAll(weather, pressure, userKin, todayKin, year, month, day)
