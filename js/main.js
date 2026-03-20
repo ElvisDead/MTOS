@@ -139,16 +139,25 @@ export async function runMTOS(){
         // ===============================
         const result = JSON.parse(pyodide.runPython(`
 import json
-import datetime
 
-date = datetime.date(${year}, ${month}, ${day})
+weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
+kin = mtos_current_kin_NEW(${JSON.stringify(name)},${year},${month},${day})
+pressure = mtos_pressure_map()
 
-kin, tone, seal, idx = kin_from_date(date)
+attention = sum([w["attention"] for w in weather]) / 260
+noise = sum([abs(w["attention"]-0.5) for w in weather]) / 260
+lyapunov = noise * 2.5
+prediction = attention * (1 - noise)
 
 json.dumps({
-  "kin": kin,
-  "tone": tone,
-  "seal": seal
+ "weather": weather,
+ "pressure": pressure,
+ "kin": kin,
+ "attention": attention,
+ "noise": noise,
+ "lyapunov": lyapunov,
+ "prediction": prediction,
+ "predictability": predictability([w["attention"] for w in weather])
 })
 `))
 
@@ -483,17 +492,26 @@ function renderAll(weather, pressure, userKin, todayKin, year, month, day){
 // ===============================
 // UI STATE
 // ===============================
-function renderCognitiveState(userKin){
+function renderCognitiveState(
+    userKin,
+    todayKin,
+    attention,
+    noise,
+    lyapunov,
+    prediction,
+    predictability
+){
 
     const el = document.getElementById("mtosSummary")
-
     if(!el) return
 
     el.innerHTML = `
-    <div style="font-weight:bold; font-size:16px;">
-        DEBUG MODE
-    </div>
-
-    <div>Your Kin: ${userKin}</div>
+        <div>Today Kin: ${todayKin}</div>
+        <div>Your Kin: ${userKin}</div>
+        <div>Attention: ${attention.toFixed(3)}</div>
+        <div>Noise: ${noise.toFixed(3)}</div>
+        <div>Lyapunov: ${lyapunov.toFixed(3)}</div>
+        <div>Prediction: ${prediction.toFixed(3)}</div>
+        <div style="color:lime;">Predictability: ${predictability} days</div>
     `
 }
