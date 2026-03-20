@@ -2,6 +2,7 @@ import { drawNetwork } from "./network.js"
 import { drawAttractor } from "./attractor.js"
 import { drawCollective } from "./collective.js"
 import { drawPhaseSpace } from "./phaseSpace.js"
+import { drawWeatherMap } from "./weatherMap.js"
 
 let replayIndex = 0
 let replayTimer = null
@@ -14,11 +15,6 @@ function getLog(){
 // APPLY STATE
 // ===============================
 function applyEntry(entry){
-
-    if(entry.type === "agents_update"){
-        window.currentUsers = entry.users
-        window._replayField = entry.fieldState
-    }
 
     if(entry.type === "python_result"){
         window._replayMeta = entry
