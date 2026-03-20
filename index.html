@@ -85,6 +85,26 @@ canvas{
     <div id="networkMap"></div>
 </div>
 
+<div style="margin-top:10px;">
+    <button onclick="toggleEditMode()" id="editBtn">
+        EDIT OFF
+    </button>
+</div>
+
+<div style="
+    margin-top:10px;
+    color:#888;
+    font-size:13px;
+    max-width:400px;
+    margin-left:auto;
+    margin-right:auto;
+">
+    Click on lines to remove relationships.<br>
+    Click on nodes to remove participants.<br>
+    Hold <b>Shift</b> and click two nodes to create a connection.
+</div>
+
+
 <!-- SERIES -->
 <div class="section">
     <h2>Series</h2>
@@ -108,14 +128,6 @@ canvas{
     <h2>Collective</h2>
     <div id="collectiveMap"></div>
 </div>
-
-<button onclick="toggleEditMode()" id="editBtn">
-  Edit Mode
-</button>
-
-<button onclick="toggleEditMode()" id="editBtn">
-  EDIT OFF
-</button>
 
 <!-- ACTIVITY -->
 <div class="section">
