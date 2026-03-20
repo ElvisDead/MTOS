@@ -52,7 +52,7 @@ export async function initMTOS(){
     if(el.children.length > 200){
         el.removeChild(el.lastChild)
     }
-        window.exportLog = exportLog
+window.exportLog = exportLog
 }
 }
 
