@@ -16,6 +16,13 @@ import {
     initReplay
 } from "./replay.js"
 
+function toPython(obj){
+    return JSON.stringify(obj)
+        .replace(/true/g, "True")
+        .replace(/false/g, "False")
+        .replace(/null/g, "None")
+}
+
 let pyodide = null
 let historyStack = []
 let fieldState = null
@@ -342,7 +349,7 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
             ${day},
             None,
             None,
-            ${JSON.stringify(locked).replace(/true/g, "True").replace(/false/g, "False")}
+            ${JSON.stringify(locked)
         )
         json.dumps([f,s,u])
         `))
@@ -496,7 +503,7 @@ f,s,u = mtos_multi_agents_field(
  ${dd},
  ${fieldState ? JSON.stringify(fieldState) : "None"},
  ${fieldMode ? JSON.stringify(fieldMode) : "None"},
- ${JSON.stringify(locked).replace(/true/g, "True").replace(/false/g, "False")}
+ ${toPython(locked)}
 )
 json.dumps([f,s,u])
 `))
