@@ -73,6 +73,12 @@ export function drawNetwork(id, users, onSelect){
                 const key1 = u1.name + "->" + u2.name
                 const key2 = u2.name + "->" + u1.name
 
+                const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+                if(locked[key1] || locked[key2]){
+                    continue
+                }
+
                 const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
                 if(score > 0.3){
