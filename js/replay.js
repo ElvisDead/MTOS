@@ -16,9 +16,7 @@ function getLog(){
 function applyEntry(entry){
 
     if(entry.type === "agents_update"){
-
         window.currentUsers = entry.users
-
         window._replayField = entry.fieldState
     }
 
@@ -44,7 +42,7 @@ function renderReplay(){
 
     if(!users) return
 
-    // 🔥 ВОССТАНАВЛИВАЕМ РЕНДЕР
+    // 🔥 ПОЛНАЯ ПЕРЕРИСОВКА
     drawNetwork("networkMap", users, ()=>{})
 
     drawAttractor(
