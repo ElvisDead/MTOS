@@ -1702,6 +1702,9 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     for i in range(len(users)):
         for j in range(i+1, len(users)):
 
+            u1 = users[i]
+            u2 = users[j]
+
             key1 = f"{u1['name']}->{u2['name']}"
             key2 = f"{u2['name']}->{u1['name']}"
             
