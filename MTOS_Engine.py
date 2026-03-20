@@ -1690,8 +1690,6 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     # ===============================
     # 2. ДИНАМИКА ПОЛЯ (получаем state)
     # ===============================
-    prev_field = prev_field if 'prev_field' in locals() else None
-    prev_state = prev_state if 'prev_state' in locals() else None
     field, state = mtos_field_step_from_array(base_field, prev_field, prev_state)
 
     # собираем состояния агентов
