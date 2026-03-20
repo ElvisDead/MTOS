@@ -176,9 +176,21 @@ function removeConnection(a, b){
     delete memory[a + "->" + b]
     delete memory[b + "->" + a]
 
+    lockConnection(a, b)
+
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
     runMTOS()
+}
+
+function lockConnection(a, b){
+
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    locked[a + "->" + b] = true
+    locked[b + "->" + a] = true
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
 }
 
 function undo(){
