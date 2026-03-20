@@ -61,6 +61,11 @@ export async function initMTOS(){
         el.removeChild(el.lastChild)
     }
 }
+    window.toggleEditMode = () => {
+        window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
+        console.log("Mode:", window.networkMode)
+    }
+    
     window.replayPlay = replayPlay
     window.replayPause = replayPause
     window.replayStep = replayStep
@@ -108,6 +113,38 @@ function addUser(list, name){
     }
 
     return list
+}
+
+function removeUser(name){
+
+    // 1. удаляем из списка
+    let list = loadUsers()
+    list = list.filter(u => u !== name)
+    saveUsers(list)
+
+    // 2. чистим память связей
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
+
+    const newMemory = {}
+
+    Object.keys(memory).forEach(key => {
+        if(!key.includes(name)){
+            newMemory[key] = memory[key]
+        }
+    })
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(newMemory))
+
+    // 3. пересборка системы
+    users = list.map(uName => ({
+        name: uName,
+        kin: 1,
+        phase: 0,
+        weight: 1
+    }))
+
+    // 4. обновление UI
+    renderAll([], [], 0, 0, 0, 0, 0)
 }
 
 // ===============================
