@@ -554,7 +554,7 @@ json.dumps([f,s,u])
                 result.predictability
             )
 
-            renderAll(weather, pressure, currentKin, todayKin, y, m, dd)
+            renderAll(weather, weatherToday, pressure, currentKin, todayKin, y, m, dd)
         }
 
         initTimeControls(step)
