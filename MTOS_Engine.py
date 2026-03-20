@@ -168,19 +168,18 @@ def verify_correlation():
 
 def kin_from_date(date):
 
-    print("GMT ACTIVE")
+    # --- правильный JDN ---
+    a = (14 - date.month)//12
+    y = date.year + 4800 - a
+    m = date.month + 12*a - 3
 
-    # --- Gregorian → Julian Day Number ---
-    jdn = date.toordinal() + 1721424.5
+    jdn = date.day + ((153*m + 2)//5) + 365*y + y//4 - y//100 + y//400 - 32045
 
-    # --- GMT correlation ---
     GMT = 584283
 
-    print("DEBUG:", jdn, GMT)
+    kin = (jdn - GMT) % 260 + 1
 
-    kin = int((jdn - GMT) % 260) + 1
-
-    print("KIN RESULT:", kin)
+    print("JDN:", jdn, "KIN:", kin)
 
     tone = ((kin - 1) % 13) + 1
     seal_index = (kin - 1) % 20
