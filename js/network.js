@@ -49,7 +49,7 @@ export function drawNetwork(id, users, onSelect){
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
     const locked = window._lockedCache || JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
-        window._lockedCache = locked
+    window._lockedCache = locked
 
     const N = users.length
 
