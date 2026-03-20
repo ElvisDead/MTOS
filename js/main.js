@@ -62,6 +62,7 @@ export async function initMTOS(){
     }
 }
     window.toggleEditMode = () => {
+        window.removeUser = removeUser
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
         console.log("Mode:", window.networkMode)
     }
@@ -144,7 +145,7 @@ function removeUser(name){
     }))
 
     // 4. обновление UI
-    renderAll([], [], 0, 0, 0, 0, 0)
+    runMTOS()
 }
 
 // ===============================
