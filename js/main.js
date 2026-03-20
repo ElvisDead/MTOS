@@ -342,7 +342,7 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
             ${day},
             None,
             None,
-            ${JSON.stringify(locked)}
+            ${JSON.stringify(locked).replace(/true/g, "True").replace(/false/g, "False")}
         )
         json.dumps([f,s,u])
         `))
@@ -496,7 +496,7 @@ f,s,u = mtos_multi_agents_field(
  ${dd},
  ${fieldState ? JSON.stringify(fieldState) : "None"},
  ${fieldMode ? JSON.stringify(fieldMode) : "None"},
- ${JSON.stringify(locked)}
+ ${JSON.stringify(locked).replace(/true/g, "True").replace(/false/g, "False")}
 )
 json.dumps([f,s,u])
 `))
