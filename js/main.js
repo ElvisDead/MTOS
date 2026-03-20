@@ -141,7 +141,7 @@ export async function runMTOS(){
 import json
 
 weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
-kin = mtos_current_kin(${JSON.stringify(name)},${year},${month},${day})
+kin = mtos_current_kin_NEW(${JSON.stringify(name)},${year},${month},${day})
 pressure = mtos_pressure_map()
 
 attention = sum([w["attention"] for w in weather]) / 260
@@ -177,7 +177,7 @@ json.dumps({
         const now = new Date()
 
         const todayKin = Number(pyodide.runPython(`
-mtos_current_kin("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
+mtos_current_kin_NEW("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
 `))
 
         // ===============================
@@ -186,7 +186,7 @@ mtos_current_kin("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate(
         users = userList.map(uName=>{
 
             const kin = Number(pyodide.runPython(`
-mtos_current_kin("${uName}",${year},${month},${day})
+mtos_current_kin_NEW("${uName}",${year},${month},${day})
 `))
 
             const phase = (kin % 20) * Math.PI / 10
@@ -305,7 +305,7 @@ return {
 import json
 
 weather = mtos_260_weather(${JSON.stringify(name)},${y},${m},${dd})
-kin = mtos_current_kin(${JSON.stringify(name)},${y},${m},${dd})
+kin = mtos_current_kin_NEW(${JSON.stringify(name)},${y},${m},${dd})
 pressure = mtos_pressure_map()
 
 attention = sum([w["attention"] for w in weather]) / 260
@@ -338,7 +338,7 @@ json.dumps({
             users = users.map(u=>{
 
                 const kin = Number(pyodide.runPython(`
-mtos_current_kin("${u.name}",${y},${m},${dd})
+mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
 `))
 
                 const phase = (kin % 20) * Math.PI / 10
