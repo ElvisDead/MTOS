@@ -933,8 +933,6 @@ def mtos_260_weather(name,year,month,day):
 
     for kin in range(1,261):
 
-        
-
         kin_date = today + datetime.timedelta(days=kin-1)
 
         memory_backup_seal = SEAL_MEMORY.copy()
