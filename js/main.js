@@ -35,7 +35,7 @@ export async function initMTOS(){
     pyodide = await loadPyodide()
     await pyodide.loadPackage("numpy")
 
-    const code = await fetch("./MTOS_Engine.py").then(r => r.text())
+    const code = await fetch("./MTOS_Engine.py?v=" + Date.now()).then(r => r.text())
     pyodide.runPython(code)
 
     status.innerText = "Ready"
