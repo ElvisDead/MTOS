@@ -330,20 +330,22 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
         // ===============================
         // FIELD
         // ===============================
+        const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+        
         const fieldResult = JSON.parse(pyodide.runPython(`
-import json
-users = ${JSON.stringify(users)}
-f,s,u = mtos_multi_agents_field(
-    users,
-    ${year},
-    ${month},
-    ${day},
-    null,
-    null,
-    ${JSON.stringify(locked)}
-)
-json.dumps([f,s,u])
-`))
+        import json
+        users = ${JSON.stringify(users)}
+        f,s,u = mtos_multi_agents_field(
+            users,
+            ${year},
+            ${month},
+            ${day},
+            null,
+            null,
+            ${JSON.stringify(locked)}
+        )
+        json.dumps([f,s,u])
+        `))
 
         fieldState = fieldResult[0]
         fieldMode  = fieldResult[1]
