@@ -129,7 +129,10 @@ function removeUser(name){
     const newMemory = {}
 
     Object.keys(memory).forEach(key => {
-        if(!key.includes(name)){
+
+        const [a, b] = key.split("->")
+
+        if(a !== name && b !== name){
             newMemory[key] = memory[key]
         }
     })
