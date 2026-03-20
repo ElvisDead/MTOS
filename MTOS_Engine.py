@@ -1438,7 +1438,7 @@ def mtos_kin_activity():
 # ===============================
 # GMT CORRELATION (584283)
 # ===============================
-def mtos_current_kin(name, year, month, day):
+def mtos_current_kin_NEW(name, year, month, day):
 
     import datetime
 
