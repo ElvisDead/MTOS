@@ -171,9 +171,20 @@ export function drawPhaseSpace(id, weather, selectedKin){
         const prev = weather[i0]
         const curr = weather[i1]
 
+        // ===============================
+        // ATTRACTOR INFLUENCE
+        // ===============================
+        let attractorBoost = 0
+            
+        if(window._attractorField){
+            const a = window._attractorField[i1] || 0
+                
+            attractorBoost = a * 0.2
+        }
+
         return {
-            x: (prev[axisX] || 0) * SIZE * scale + offsetX,
-            y: (curr[axisY] || 0) * SIZE * scale + offsetY
+            x: ((prev[axisX] || 0) + attractorBoost) * SIZE * scale + offsetX,
+            y: ((curr[axisY] || 0) + attractorBoost) * SIZE * scale + offsetY
         }
     }
 
