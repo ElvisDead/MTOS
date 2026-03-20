@@ -1651,7 +1651,7 @@ def mtos_field_step(name, year, month, day, prev_field=None, prev_state=None):
 # ===============================
 # MULTI-AGENT FIELD
 # ===============================
-def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state=None):
+def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state=None, locked):
 
     import math
 
