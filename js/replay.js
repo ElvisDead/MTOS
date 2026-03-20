@@ -23,6 +23,16 @@ function applyEntry(entry){
     if(entry.type === "python_result"){
         window._replayMeta = entry
     }
+
+    if(entry.type === "agents_update"){
+        window.currentUsers = entry.users
+        window._replayField = entry.fieldState
+            
+        window._replayWeather = entry.weather
+        window._replayPressure = entry.pressure
+        window._replayUserKin = entry.userKin
+        window._replayTodayKin = entry.todayKin
+    }
 }
 
 // ===============================
@@ -42,21 +52,31 @@ function renderReplay(){
 
     if(!users) return
 
-    // 🔥 ПОЛНАЯ ПЕРЕРИСОВКА
-    drawNetwork("networkMap", users, ()=>{})
+    const users = window.currentUsers
+    const fieldState = window._replayField
 
-    drawAttractor(
-        "attractorMap",
-        users,
-        [],
+    const weather = window._replayWeather
+    const pressure = window._replayPressure
+    const userKin = window._replayUserKin
+    const todayKin = window._replayTodayKin
+
+    if(!users || !weather) return
+
+    drawWeatherMap(
+        "weatherMap",
+        weather,
+        userKin,
+        todayKin,
+        pressure,
+        fieldState,
+        null,
         null
     )
 
+    drawNetwork("networkMap", users, ()=>{})
     drawCollective("collectiveMap", users)
-
-    if(fieldState){
-        drawPhaseSpace("phaseMap", fieldState, null)
-    }
+    drawPhaseSpace("phaseMap", weather, null)
+    drawAttractor("attractorMap", users, [], null)
 }
 
 // ===============================
