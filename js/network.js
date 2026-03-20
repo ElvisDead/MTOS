@@ -229,9 +229,6 @@ export function drawNetwork(id, users, onSelect){
 
         if(currentMode === "edit"){
 
-            const mx = (e.clientX - rect.left - offsetX) / scale
-            const my = (e.clientY - rect.top - offsetY) / scale
-
             for(let i=0;i<N;i++){
 
                 const dx = mx - positions[i].x
