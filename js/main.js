@@ -674,39 +674,6 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 
     drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
     drawPhaseSpace("phaseMap", weather, selectedKin)
-    if(window.attractorMode === "structure"){
-
-    const matrix2D = JSON.parse(pyodide.runPython(`
-        import json
-        json.dumps(mtos_climate_atlas())
-        `))
-
-        const matrix = matrix2D.flat()
-
-        drawClimateAtlas("attractorMap", matrix)
-
-    }else if(window.attractorMode === "map"){
-
-        const matrix2D = JSON.parse(pyodide.runPython(`
-        import json
-        json.dumps(mtos_climate_atlas())
-        `))
-
-        const matrix = matrix2D.flat()
-
-        drawAttractorMap("attractorMap", matrix, {
-            selectedSeal: selectedKin ? (selectedKin - 1) % 20 : null
-        })
-
-    }else{
-
-        drawAttractor(
-            "attractorMap",
-            users,
-            [],
-            selectedKin
-        )
-    }
     
     let matrix = null
         
