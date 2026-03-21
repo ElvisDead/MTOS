@@ -1717,10 +1717,6 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             if locked.get(key1) or locked.get(key2):
                 continue
 
-            # если связи нет в памяти — пропускаем
-            if not (memory.get(key1) or memory.get(key2)):
-                continue
-
             kin_i = kin_list[i]
             kin_j = kin_list[j]
 
