@@ -70,6 +70,7 @@ export async function initMTOS(){
 }
     window.removeUser = removeUser
     window.removeConnection = removeConnection
+    window.removeConnectionHard = removeConnectionHard
     window.addConnection = addConnection
     
     window.toggleEditMode = () => {
@@ -174,6 +175,8 @@ function removeUser(name){
 
 function removeConnection(a, b){
 
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+
     historyStack.push({
         users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
         memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
@@ -183,8 +186,6 @@ function removeConnection(a, b){
 
     delete memory[a + "->" + b]
     delete memory[b + "->" + a]
-
-    lockConnection(a, b)
 
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
