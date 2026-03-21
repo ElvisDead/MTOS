@@ -707,24 +707,59 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
             selectedKin
         )
     }
+    
+    let matrix = null
+    
+    if(window.attractorMode === "structure"){
+        const matrix2D = JSON.parse(pyodide.runPython(`
+        import json
+        json.dumps(mtos_climate_atlas())
+        `))
 
-    if(window.attractorMode === "map" && selectedKin){
+        matrix = matrix2D.flat()
+
+        drawClimateAtlas("attractorMap", matrix)
+
+    }else if(window.attractorMode === "map"){
+
+        const matrix2D = JSON.parse(pyodide.runPython(`
+        import json
+        json.dumps(mtos_climate_atlas())
+        `))
+
+        matrix = matrix2D.flat()
+
+        drawAttractorMap("attractorMap", matrix, {
+            selectedSeal: selectedKin ? (selectedKin - 1) % 20 : null
+        })
+
+    }else{
+        drawAttractor(
+            "attractorMap",
+            users,
+            [],
+            selectedKin
+        )
+    }
+
+    if(window.attractorMode === "map" && selectedKin && matrix){
+
         const seal = (selectedKin - 1) % 20
         const analysis = analyzeInteractions(matrix, seal)
-            
+
         const el = document.getElementById("interactionAnalysis")
 
         if(el){
-
             el.innerHTML = `
             <div><b>Best interactions:</b></div>
-            ${analysis.best.map(x => `${x.value > 0.7 ? "🟢" : x.value < 0.3 ? "🔴" : "🟡"} 
-            Seal ${x.seal} → ${x.value.toFixed(2)}
+            ${analysis.best.map(x => `
+            🟢 Seal ${x.seal} → ${x.value.toFixed(2)}
             `).join("<br>")}
             
             <div style="margin-top:8px;"><b>Worst interactions:</b></div>
-            ${analysis.worst.map(x => `${x.value > 0.7 ? "🟢" : x.value < 0.3 ? "🔴" : "🟡"} 
-            Seal ${x.seal} → ${x.value.toFixed(2)}
+
+            ${analysis.worst.map(x => `
+            🔴 Seal ${x.seal} → ${x.value.toFixed(2)}
             `).join("<br>")}
         }
     }
