@@ -195,8 +195,6 @@ function removeConnection(a, b){
 
 function addConnection(a, b, value = 1){
 
-    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
-
     memory[a + "->" + b] = value
     memory[b + "->" + a] = value
 
