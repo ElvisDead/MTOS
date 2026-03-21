@@ -697,7 +697,9 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         const activeKin = selectedKin || userKin
 
         drawAttractorMap("attractorMap", matrix, {
-            selectedSeal: activeKin ? (activeKin - 1) % 20 : null
+            selectedSeal: activeKin ? (activeKin - 1) % 20 : null,
+            labels: SEALS,
+            meanings: SEAL_MEANING
         })
         
     }else{
