@@ -76,7 +76,9 @@ export function drawNetwork(id, users, onSelect){
                 const key2 = u2.name + "->" + u1.name
 
                 if(locked[key1] || locked[key2]){
-                    continue
+                    memory[key1] = 0
+                    memory[key2] = 0
+                        continue
                 }
 
                 const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
@@ -156,7 +158,9 @@ export function drawNetwork(id, users, onSelect){
             const key2 = u2.name + "->" + u1.name
 
             if(locked[key1] || locked[key2]){
-                continue
+                memory[key1] = 0
+                memory[key2] = 0
+                    continue
             }
 
             const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
