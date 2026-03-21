@@ -9,6 +9,7 @@ import { initTimeControls } from "./timeController.js"
 import { logEvent } from "./mtos_log.js"
 import { exportLog } from "./exportExperiment.js"
 import { drawAttractorMap } from "./attractorMap.js"
+import { drawClimateAtlas } from "./climateAtlasMap.js"
 import {
     replayPlay,
     replayPause,
@@ -673,12 +674,25 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 
     drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
     drawPhaseSpace("phaseMap", weather, selectedKin)
-    if(window.attractorMode === "map"){
+    if(window.attractorMode === "structure"){
 
-        const matrix = JSON.parse(pyodide.runPython(`
-    import json
-    json.dumps(mtos_climate_atlas())
-    `))
+    const matrix2D = JSON.parse(pyodide.runPython(`
+        import json
+        json.dumps(mtos_climate_atlas())
+        `))
+
+        const matrix = matrix2D.flat()
+
+        drawClimateAtlas("attractorMap", matrix)
+
+    }else if(window.attractorMode === "map"){
+
+        const matrix2D = JSON.parse(pyodide.runPython(`
+        import json
+        json.dumps(mtos_climate_atlas())
+        `))
+
+        const matrix = matrix2D.flat()
 
         drawAttractorMap("attractorMap", matrix)
 
