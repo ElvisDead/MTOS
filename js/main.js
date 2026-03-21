@@ -720,13 +720,13 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
             el.innerHTML = `
             <div><b>Best interactions:</b></div>
             ${analysis.best.map(x => `
-            🟢 Seal ${x.seal} → ${x.value.toFixed(2)}
+            🟢 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
             `).join("<br>")}
             
             <div style="margin-top:8px;"><b>Worst interactions:</b></div>
 
             ${analysis.worst.map(x => `
-            🔴 Seal ${x.seal} → ${x.value.toFixed(2)}
+            🔴 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
             `).join("<br>")}
             `
         }
@@ -762,6 +762,36 @@ function renderCognitiveState(
         <div style="color:lime;">Predictability: ${predictability} days</div>
     `
 }
+
+const SEALS = [
+"Dragon","Wind","Night","Seed","Serpent",
+"Worldbridger","Hand","Star","Moon","Dog",
+"Monkey","Human","Skywalker","Wizard","Eagle",
+"Warrior","Earth","Mirror","Storm","Sun"
+]
+
+const SEAL_MEANING = [
+"initiation, birth",
+"breath, communication",
+"inner world, intuition",
+"growth, potential",
+"instinct, life force",
+"transition, letting go",
+"action, healing",
+"harmony, beauty",
+"purification, flow",
+"loyalty, heart",
+"play, spontaneity",
+"choice, free will",
+"exploration, expansion",
+"time, depth",
+"vision, perspective",
+"strategy, intelligence",
+"synchronization, navigation",
+"structure, reflection",
+"transformation, energy",
+"clarity, center"
+]
 
 function analyzeInteractions(matrix, seal){
 
