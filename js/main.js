@@ -173,21 +173,29 @@ function removeUser(name){
     runMTOS()
 }
 
-function removeConnection(a, b){
-
-    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+function removeConnectionHard(a, b){
 
     historyStack.push({
         users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
         memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
     })
 
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+
     delete memory[a + "->" + b]
     delete memory[b + "->" + a]
 
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
-    window._lockedCache = null
+    // 🔴 КЛЮЧ: ЖЁСТКАЯ БЛОКИРОВКА
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    locked[a + "->" + b] = true
+    locked[b + "->" + a] = true
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
+
+    window._lockedCache = locked
 
     runMTOS()
 }
