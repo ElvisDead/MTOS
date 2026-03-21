@@ -305,7 +305,11 @@ export function drawNetwork(id, users, onSelect){
 
                             if(confirm(`Удалить связь ${u1} ↔ ${u2}?`)){
                                 if(window.removeConnection){
-                                    window.removeConnection(u1, u2)
+                                    if(e.shiftKey){
+                                        window.removeConnectionHard(u1, u2)
+                                    }else{
+                                        window.removeConnection(u1, u2)
+                                    }
                                 }
                             }
                             return
