@@ -1,5 +1,7 @@
 export function drawAttractorMap(id, data, options = {}) {
 
+    const { labels = null, meanings = null } = options
+
     const {
         size = 20,
         labels = null,
@@ -57,12 +59,16 @@ export function drawAttractorMap(id, data, options = {}) {
         }
 
         // tooltip
+
         const labelA = labels ? labels[row] : row
         const labelB = labels ? labels[col] : col
 
+        const meaningA = meanings ? meanings[row] : ""
+        const meaningB = meanings ? meanings[col] : ""
+
         cell.title = `
-        A: ${SEALS[row]} (${SEAL_MEANING[row]})
-        B: ${SEALS[col]} (${SEAL_MEANING[col]})
+        A: ${labelA} (${meaningA})
+        B: ${labelB} (${meaningB})
         Stability: ${v.toFixed(3)}
         `
 
