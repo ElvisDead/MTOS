@@ -1716,52 +1716,52 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             if locked.get(key1) or locked.get(key2):
 
             # убиваем влияние агентов
-            kin_i = kin_list[i]
-            kin_j = kin_list[j]
+                kin_i = kin_list[i]
+                kin_j = kin_list[j]
                 
-            base_field[kin_i] *= 0.2
-            base_field[kin_j] *= 0.2
+                base_field[kin_i] *= 0.2
+                base_field[kin_j] *= 0.2
                 
-                continue
+                    continue
 
-            kin_i = kin_list[i]
-            kin_j = kin_list[j]
+                kin_i = kin_list[i]
+                kin_j = kin_list[j]
 
-            w_i = users[i].get("weight", 1.0)
-            w_j = users[j].get("weight", 1.0)
+                w_i = users[i].get("weight", 1.0)
+                w_j = users[j].get("weight", 1.0)
 
-            state_i = state_list[i]
-            state_j = state_list[j]
+                state_i = state_list[i]
+                state_j = state_list[j]
 
-            dist = min(abs(kin_i - kin_j), 260 - abs(kin_i - kin_j))
+                dist = min(abs(kin_i - kin_j), 260 - abs(kin_i - kin_j))
 
-            if dist > 30:
-                continue
+                if dist > 30:
+                    continue
                 
-            strength = math.exp(-dist / 10.0)
+                strength = math.exp(-dist / 10.0)
 
-            # ===============================
-            # ЗНАК (КЛЮЧ)
-            # ===============================
-            if state_i == 1 and state_j == 1:
-                sign = +1.0      # синергия
-            elif state_i == 0 and state_j == 0:
-                sign = -0.5      # хаос
-            else:
-                sign = -1.0      # конфликт
+                # ===============================
+                # ЗНАК (КЛЮЧ)
+                # ===============================
+                if state_i == 1 and state_j == 1:
+                    sign = +1.0      # синергия
+                elif state_i == 0 and state_j == 0:
+                    sign = -0.5      # хаос
+                else:
+                    sign = -1.0      # конфликт
+                    
+                    interaction = sign * w_i * w_j * strength
 
-            interaction = sign * w_i * w_j * strength
+                    # распространяем влияние
+                for k in range(260):
 
-            # распространяем влияние
-            for k in range(260):
-
-                d_i = min(abs(k - kin_i), 260 - abs(k - kin_i))
-                d_j = min(abs(k - kin_j), 260 - abs(k - kin_j))
-
-                base_field[k] += interaction * (
-                    math.exp(-d_i / 6.0) +
-                    math.exp(-d_j / 6.0)
-                )
+                    d_i = min(abs(k - kin_i), 260 - abs(k - kin_i))
+                    d_j = min(abs(k - kin_j), 260 - abs(k - kin_j))
+                    
+                    base_field[k] += interaction * (
+                        math.exp(-d_i / 6.0) +
+                        math.exp(-d_j / 6.0)
+                    )
 
     # ===============================
     # НОРМАЛИЗАЦИЯ
