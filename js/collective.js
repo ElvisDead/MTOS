@@ -9,7 +9,7 @@ export function drawCollective(id, users){
 
         // A влияет на остальных
         const key1 = sourceA + "->" + u.name
-        if(memory[key1] !== undefined){
+        if(memory[key1] !== undefined && memory[key1] !== 0){
             memory[key1] += impact * spreadFactor
         }
 
@@ -20,11 +20,11 @@ export function drawCollective(id, users){
         }
 
         // нормализация
-        if(memory[key1] !== undefined){
+        if(memory[key1] !== undefined && memory[key1] !== 0){
             memory[key1] = Math.max(-1, Math.min(1, memory[key1]))
         }
 
-        if(memory[key2] !== undefined){
+        if(memory[key2] !== undefined && memory[key2] !== 0){
             memory[key2] = Math.max(-1, Math.min(1, memory[key2]))
         }
     })
@@ -108,6 +108,11 @@ export function drawCollective(id, users){
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
             const key = a.name + "->" + b.name
+            const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+            if(locked[key]){
+                continue
+            }
             // ❌ если связь заблокирована — вообще не трогаем
             if(locked[key]){
                 continue
@@ -121,8 +126,8 @@ export function drawCollective(id, users){
                     continue
                 }
 
-                const drift = (Math.random() - 0.5) * (0.05 + temperature * 0.2)
-                const decay = -0.01 - (1 - temperature) * 0.03
+                const drift = 0
+                const decay = 0
 
                 score = memory[key] + drift + decay
                 score = Math.max(-1, Math.min(1, score))
@@ -219,7 +224,7 @@ export function drawCollective(id, users){
             
             memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
                 
-            propagateImpact(memory, users, r.a, r.b, impact)
+            //propagateImpact(memory, users, r.a, r.b, impact)
                 
             temperature += Math.abs(impact) * 0.1
             temperature = Math.max(0, Math.min(1, temperature))
