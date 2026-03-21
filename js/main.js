@@ -203,6 +203,7 @@ function addConnection(a, b, value = 1){
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
     const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
 
     delete locked[a + "->" + b]
     delete locked[b + "->" + a]
@@ -338,6 +339,7 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
         // FIELD
         // ===============================
         const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+        const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
         
         const fieldResult = JSON.parse(pyodide.runPython(`
         import json
@@ -349,7 +351,8 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
             ${day},
             None,
             None,
-            ${toPython(locked)}
+            ${toPython(locked)},
+            ${toPython(memory)}
         )
         json.dumps([f,s,u])
         `))
@@ -492,6 +495,7 @@ mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
             })
 
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+            const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
 
             const fieldResult = JSON.parse(pyodide.runPython(`
 import json
@@ -503,7 +507,8 @@ f,s,u = mtos_multi_agents_field(
  ${dd},
  ${fieldState ? toPython(fieldState) : "None"},
  ${fieldMode ? toPython(fieldMode) : "None"},
- ${toPython(locked)}
+ ${toPython(locked)},
+ ${toPython(memory)}
 )
 json.dumps([f,s,u])
 `))
