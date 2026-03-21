@@ -294,6 +294,10 @@ export async function runMTOS(){
     const year  = +document.getElementById("year").value
     const month = +document.getElementById("month").value
     const day   = +document.getElementById("day").value
+    if(!year || !month || !day){
+        document.getElementById("status").innerText = "Enter date"
+        return
+    }
 
     try{
 
