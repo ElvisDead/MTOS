@@ -1,4 +1,4 @@
-export function drawNetwork(id, users, onSelect){
+export function drawNetwork(id, users, onSelect, matrix = null){
 
     const root = document.getElementById(id)
     if(!root) return
@@ -172,10 +172,21 @@ export function drawNetwork(id, users, onSelect){
                     ? 0
                     : ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
+            let attractorValue = null
+                if(matrix){
+                    const sealA = (users[i].kin - 1) % 20
+                    const sealB = (users[j].kin - 1) % 20
+                    attractorValue = matrix[sealA * 20 + sealB]
+                }
+
             if(Math.abs(score) < 0.5) continue
 
             if(selected !== null && i !== selected && j !== selected){
-                ctx.globalAlpha = 0.05
+                if(window.networkMode === "attractor"){
+                    continue
+                }else{
+                    ctx.globalAlpha = 0.05
+                }
             }else{
                 ctx.globalAlpha = 0.2 + Math.abs(score) * 0.8
             }
@@ -183,8 +194,18 @@ export function drawNetwork(id, users, onSelect){
             ctx.beginPath()
             ctx.moveTo(positions[i].x, positions[i].y)
             ctx.lineTo(positions[j].x, positions[j].y)
-
-            ctx.strokeStyle = score > 0 ? "#00ff88" : "#ff4444"
+            
+            if(window.networkMode === "attractor" && attractorValue !== null){
+                if(attractorValue > 0.7){
+                    ctx.strokeStyle = "#00ff88"
+                }else if(attractorValue < 0.3){
+                    ctx.strokeStyle = "#ff4444"
+                }else{
+                    ctx.strokeStyle = "#ffaa00"
+                }
+            }else{
+                ctx.strokeStyle = score > 0 ? "#00ff88" : "#ff4444"
+            }
             ctx.lineWidth = Math.max(1, Math.abs(score) * 5)
 
             ctx.stroke()
