@@ -82,7 +82,10 @@ export function drawNetwork(id, users, onSelect){
                         continue
                 }
 
-                const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+                const score =
+                    (memory[key1] === 0 || memory[key2] === 0)
+                        ? 0
+                        : ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
                 if(score > 0.3){
 
