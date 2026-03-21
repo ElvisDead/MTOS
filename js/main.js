@@ -692,7 +692,7 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         json.dumps(mtos_climate_atlas())
         `))
 
-        const matrix = matrix2D.flat()
+        matrix = matrix2D.flat()
 
         const activeKin = selectedKin || userKin
 
@@ -709,9 +709,9 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         )
     }
 
-    if(window.attractorMode === "map" && selectedKin && matrix){
+    if(window.attractorMode === "map" && matrix){
 
-        const seal = (selectedKin - 1) % 20
+        const seal = (selectedKin || userKin) % 20
         const analysis = analyzeInteractions(matrix, seal)
 
         const el = document.getElementById("interactionAnalysis")
