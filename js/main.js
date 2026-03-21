@@ -880,3 +880,35 @@ function analyzeInteractions(matrix, seal){
         worst: ranked.slice(-3).reverse()
     }
 }
+
+window.setNetworkMode = (mode) => {
+
+    window.networkMode = mode
+
+    // сброс стилей
+    const buttons = ["modeNormal", "modeAttractor", "modeEdit"]
+
+    buttons.forEach(id => {
+        const btn = document.getElementById(id)
+        if(btn){
+            btn.style.background = "#111"
+            btn.style.color = "#fff"
+        }
+    })
+
+    // активная кнопка
+    const activeMap = {
+        interaction: "modeNormal",
+        attractor: "modeAttractor",
+        edit: "modeEdit"
+    }
+
+    const activeBtn = document.getElementById(activeMap[mode])
+
+    if(activeBtn){
+        activeBtn.style.background = "#00ff88"
+        activeBtn.style.color = "#000"
+    }
+
+    runMTOS()
+}
