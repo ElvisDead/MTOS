@@ -1707,8 +1707,11 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
 
             key1 = f"{u1['name']}->{u2['name']}"
             key2 = f"{u2['name']}->{u1['name']}"
-            
-            if locked and (locked.get(key1) or locked.get(key2)):
+
+            # разрешаем ТОЛЬКО явно заданные связи
+            relations = locked or {}
+
+            if not (relations.get(key1) or relations.get(key2)):
                 continue
 
             kin_i = kin_list[i]
