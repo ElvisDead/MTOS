@@ -664,12 +664,6 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         window._attractorField
     )
 
-    drawNetwork("networkMap", users, (agent)=>{
-        selectedAgent = agent
-        
-        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
-    })
-
     const now = new Date()
 
     drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
@@ -710,6 +704,11 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
             selectedKin
         )
     }
+
+    drawNetwork("networkMap", users, (agent)=>{
+        selectedAgent = agent
+        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
+    }, matrix)
 
     if(window.attractorMode === "map" && matrix){
 
