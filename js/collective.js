@@ -40,6 +40,7 @@ export function drawCollective(id, users){
     temperature = Math.max(0, Math.min(1, temperature))
 
     let memory = {}
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
     try {
         memory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
     } catch(e){
@@ -107,6 +108,10 @@ export function drawCollective(id, users){
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
             const key = a.name + "->" + b.name
+            // ❌ если связь заблокирована — вообще не трогаем
+            if(locked[key]){
+                continue
+            }
             let score
                     
             if(memory[key] !== undefined){
@@ -129,7 +134,9 @@ export function drawCollective(id, users){
 
             // 🔴 НЕ ПЕРЕЗАПИСЫВАЕМ ЗАБЛОКИРОВАННЫЕ
             if(memory[key] !== 0){
-                memory[key] = Number(score.toFixed(4))
+                if(memory[key] !== 0 && !locked[key]){
+                    memory[key] = Number(score.toFixed(4))
+                }
             }
 
             // случайные события
@@ -185,7 +192,7 @@ export function drawCollective(id, users){
                 
             memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
 
-            propagateImpact(memory, users, r.a, r.b, impact)
+            //propagateImpact(memory, users, r.a, r.b, impact)
                 
             temperature += Math.abs(impact) * 0.1
             temperature = Math.max(0, Math.min(1, temperature))
