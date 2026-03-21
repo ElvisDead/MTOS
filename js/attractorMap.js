@@ -1,10 +1,9 @@
 export function drawAttractorMap(id, data, options = {}) {
 
-    const { labels = null, meanings = null } = options
-
     const {
         size = 20,
         labels = null,
+        meanings = null,
         selectedSeal = null
     } = options
 
