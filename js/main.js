@@ -195,13 +195,14 @@ function removeConnection(a, b){
 
 function addConnection(a, b, value = 1){
 
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+
     memory[a + "->" + b] = value
     memory[b + "->" + a] = value
 
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
     const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
-    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
 
     delete locked[a + "->" + b]
     delete locked[b + "->" + a]
