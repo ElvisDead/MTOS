@@ -92,7 +92,8 @@ export async function initMTOS(){
     window.replayPause = replayPause
     window.replayStep = replayStep
     window.replaySeek = replaySeek
-    setNetworkMode("interaction")
+    window.networkMode = "interaction"
+    setTimeout(() => setNetworkMode("interaction"), 0)
 
     initReplay()
 }
