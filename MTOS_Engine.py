@@ -1294,14 +1294,26 @@ def mtos_user_network():
     today_kin, today_tone, today_seal, today_i = kin_from_date(today)
 
     names = list(users.keys())
-
     edges = []
+
+    from js import localStorage
+    import json
+    
+    locked = json.loads(localStorage.getItem("mtos_locked_relations") or "{}")
+    memory = json.loads(localStorage.getItem("collective_relations_memory") or "{}")
 
     for i in range(len(names)):
         for j in range(i + 1, len(names)):
 
             a = users[names[i]]
             b = users[names[j]]
+
+            key1 = names[i] + "->" + names[j]
+            key2 = names[j] + "->" + names[i]
+
+            # ЕСЛИ УДАЛЕНО — НЕ РИСУЕМ
+            if locked.get(key1) or locked.get(key2):
+                continue
 
             ia = seals.index(a["seal"])
             ib = seals.index(b["seal"])
