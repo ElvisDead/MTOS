@@ -91,9 +91,9 @@ canvas{
     </button>
 </div>
 
-<button onclick="window.networkMode='interaction'; runMTOS()">Normal</button>
-<button onclick="window.networkMode='attractor'; runMTOS()">Attractor</button>
-<button onclick="window.networkMode='edit'; runMTOS()">Edit</button>
+<button id="modeNormal" onclick="setNetworkMode('interaction')">Normal</button>
+<button id="modeAttractor" onclick="setNetworkMode('attractor')">Attractor</button>
+<button id="modeEdit" onclick="setNetworkMode('edit')">Edit</button>
 
 <div style="
     margin-top:10px;
