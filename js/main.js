@@ -182,8 +182,6 @@ function removeConnection(a, b){
         memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
     })
 
-    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
-
     delete memory[a + "->" + b]
     delete memory[b + "->" + a]
 
