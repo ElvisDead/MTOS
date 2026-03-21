@@ -167,7 +167,10 @@ export function drawNetwork(id, users, onSelect){
                     continue
             }
 
-            const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+            const score =
+                (memory[key1] === 0 || memory[key2] === 0)
+                    ? 0
+                    : ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
             if(Math.abs(score) < 0.5) continue
 
@@ -451,7 +454,10 @@ export function drawNetwork(id, users, onSelect){
                     const key1 = u1.name + "->" + u2.name
                     const key2 = u2.name + "->" + u1.name
 
-                    const score = ((memory[key1] || 0) + (memory[key2] || 0)) / 2
+                    const score =
+                        (memory[key1] === 0 || memory[key2] === 0)
+                            ? 0
+                            : ((memory[key1] || 0) + (memory[key2] || 0)) / 2
 
                     hoverEdge = {
                         text: `${u1.name} ↔ ${u2.name}: ${score.toFixed(2)}`
