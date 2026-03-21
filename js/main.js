@@ -751,17 +751,53 @@ function renderCognitiveState(
     predictability
 ){
 
+    const userSeal = (userKin - 1) % 20
+    const todaySeal = (todayKin - 1) % 20
+        
+    const userSealName = SEALS[userSeal]
+    const todaySealName = SEALS[todaySeal]
+
+    const userMeaning = SEAL_MEANING[userSeal]
+    const todayMeaning = SEAL_MEANING[todaySeal]
+    
     const el = document.getElementById("mtosSummary")
     if(!el) return
 
     el.innerHTML = `
-        <div>Today Kin: ${todayKin}</div>
-        <div>Your Kin: ${userKin}</div>
-        <div>Attention: ${attention.toFixed(3)}</div>
-        <div>Noise: ${noise.toFixed(3)}</div>
-        <div>Lyapunov: ${lyapunov.toFixed(3)}</div>
-        <div>Prediction: ${prediction.toFixed(3)}</div>
-        <div style="color:lime;">Predictability: ${predictability} days</div>
+    <div>
+    <b>Today Kin:</b> ${todayKin} — ${todaySealName}<br>
+    <span style="color:#aaa">${todayMeaning}</span>
+    </div>
+    
+    <div style="margin-top:8px;">
+    <b>Your Kin:</b> ${userKin} — ${userSealName}<br>
+    <span style="color:#aaa">${userMeaning}</span>
+    </div>
+    
+    <div style="margin-top:10px;">
+    <b>Attention:</b> ${attention.toFixed(3)}<br>
+    <span style="color:#888">${interpretAttention(attention)}</span>
+    </div>
+    
+    <div>
+    <b>Noise:</b> ${noise.toFixed(3)}<br>
+    <span style="color:#888">${interpretNoise(noise)}</span>
+    </div>
+    
+    <div>
+    <b>Lyapunov:</b> ${lyapunov.toFixed(3)}<br>
+    <span style="color:#888">${interpretLyapunov(lyapunov)}</span>
+    </div>
+    
+    <div>
+    <b>Prediction:</b> ${prediction.toFixed(3)}<br>
+    <span style="color:#888">${interpretPrediction(prediction)}</span>
+    </div>
+    
+    <div style="color:lime; margin-top:6px;">
+    <b>Predictability:</b> ${predictability} days<br>
+    <span style="color:#8f8">${interpretPredictability(predictability)}</span>
+    </div>
     `
 }
 
@@ -794,6 +830,40 @@ const SEAL_MEANING = [
 "transformation, energy",
 "clarity, center"
 ]
+
+// ===============================
+// METRIC INTERPRETATION
+// ===============================
+
+function interpretAttention(a){
+    if(a > 0.7) return "high focus, stable attention"
+    if(a < 0.4) return "low focus, scattered attention"
+    return "balanced attention"
+}
+
+function interpretNoise(n){
+    if(n < 0.1) return "low noise, stable system"
+    if(n > 0.3) return "high noise, unstable dynamics"
+    return "moderate variability"
+}
+
+function interpretLyapunov(l){
+    if(l < 0.05) return "high stability"
+    if(l > 0.2) return "chaotic behavior"
+    return "sensitive but controlled"
+}
+
+function interpretPrediction(p){
+    if(p > 0.7) return "high predictability"
+    if(p < 0.4) return "low predictability"
+    return "moderate predictability"
+}
+
+function interpretPredictability(days){
+    if(days > 200) return "long stable horizon"
+    if(days < 50) return "short unstable horizon"
+    return "medium-term stability"
+}
 
 function analyzeInteractions(matrix, seal){
 
