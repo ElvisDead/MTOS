@@ -61,9 +61,9 @@ export function drawAttractorMap(id, data, options = {}) {
         const labelB = labels ? labels[col] : col
 
         cell.title = `
-A: ${labelA}
-B: ${labelB}
-Stability: ${v.toFixed(3)}
+        A: ${SEALS[row]} (${SEAL_MEANING[row]})
+        B: ${SEALS[col]} (${SEAL_MEANING[col]})
+        Stability: ${v.toFixed(3)}
         `
 
         // click = focus row
