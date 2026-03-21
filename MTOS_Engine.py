@@ -1651,9 +1651,13 @@ def mtos_field_step(name, year, month, day, prev_field=None, prev_state=None):
 # ===============================
 # MULTI-AGENT FIELD
 # ===============================
-def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state=None, locked=None):
+def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state=None, locked=None, memory=None):
+    
     if locked is None:
         locked = {}
+
+    if memory is None:
+        memory = {}
 
     import math
 
@@ -1709,9 +1713,12 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             key2 = f"{u2['name']}->{u1['name']}"
 
             # разрешаем ТОЛЬКО явно заданные связи
-            relations = locked or {}
+            # если связь удалена — пропускаем
+            if locked.get(key1) or locked.get(key2):
+                continue
 
-            if not (relations.get(key1) or relations.get(key2)):
+            # если связи нет в памяти — пропускаем
+            if not (memory.get(key1) or memory.get(key2)):
                 continue
 
             kin_i = kin_list[i]
