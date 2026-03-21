@@ -483,10 +483,5 @@ export function drawNetwork(id, users, onSelect){
 }
     draw()
 
-    function loop(){
-        draw()
-        requestAnimationFrame(loop)
-    }
-    
-    loop()
+    draw()
 }
