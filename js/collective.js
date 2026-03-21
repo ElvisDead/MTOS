@@ -15,7 +15,7 @@ export function drawCollective(id, users){
 
         // остальные влияют на B
         const key2 = u.name + "->" + sourceB
-        if(memory[key2] !== undefined){
+        if(memory[key2] !== undefined && memory[key2] !== 0){
             memory[key2] += impact * spreadFactor
         }
 
@@ -145,7 +145,7 @@ export function drawCollective(id, users){
             }
 
             // случайные события
-            if(Math.random() < 0.05){
+            if(memory[key] !== 0 && Math.random() < 0.05){
                 const eventImpact = (Math.random() - 0.5) * 0.8
                 memory[key] = Math.max(-1, Math.min(1, memory[key] + eventImpact))
             }
