@@ -1725,7 +1725,7 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             key2 = f"{u2['name']}->{u1['name']}"
 
             # 🔴 ЖЁСТКИЙ ЗАПРЕТ
-            if locked.get(key1) or locked.get(key2):
+            if locked.get(key1) or locked.get(key2) or memory.get(key1) == 0 or memory.get(key2) == 0:
 
             # убиваем влияние агентов
                 kin_i = kin_list[i]
