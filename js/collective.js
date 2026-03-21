@@ -110,19 +110,24 @@ export function drawCollective(id, users){
             let score
                     
             if(memory[key] !== undefined){
+
+                // если связь обнулена — полностью игнорируем
+                if(memory[key] === 0){
+                    continue
+                }
+
                 const drift = (Math.random() - 0.5) * (0.05 + temperature * 0.2)
                 const decay = -0.01 - (1 - temperature) * 0.03
-                    
+
                 score = memory[key] + drift + decay
                 score = Math.max(-1, Math.min(1, score))
             }else{
-                const base = ((a.weight || 1) + (b.weight || 1)) / 2 - 0.5
-                const noise = (Math.random() - 0.5) * 0.8
-                    
-                score = Math.max(-1, Math.min(1, base + noise))
+
+                // ❌ НИЧЕГО НЕ СОЗДАЁМ С НУЛЯ
+                continue
             }
 
-memory[key] = Number(score.toFixed(4))
+            memory[key] = Number(score.toFixed(4))
 
             // случайные события
             if(Math.random() < 0.05){
