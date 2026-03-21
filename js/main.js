@@ -694,7 +694,9 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 
         const matrix = matrix2D.flat()
 
-        drawAttractorMap("attractorMap", matrix)
+        drawAttractorMap("attractorMap", matrix, {
+            selectedSeal: selectedKin ? (selectedKin - 1) % 20 : null
+        })
 
     }else{
 
@@ -705,6 +707,24 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
             selectedKin
         )
     }
+
+    if(window.attractorMode === "map" && selectedKin){
+        const seal = (selectedKin - 1) % 20
+        const analysis = analyzeInteractions(matrix, seal)
+            
+        const el = document.getElementById("interactionAnalysis")
+
+        if(el){
+
+            el.innerHTML = `
+            <div><b>Best interactions:</b></div>
+            ${analysis.best.map(x => `#${x.seal} (${x.value.toFixed(2)})`).join("<br>")}
+            
+            <div style="margin-top:8px;"><b>Worst interactions:</b></div>
+            ${analysis.worst.map(x => `#${x.seal} (${x.value.toFixed(2)})`).join("<br>")}
+        }
+    }
+    
     drawCollective("collectiveMap", users)
     drawActivity("activityMap", weather)
 }
@@ -734,4 +754,20 @@ function renderCognitiveState(
         <div>Prediction: ${prediction.toFixed(3)}</div>
         <div style="color:lime;">Predictability: ${predictability} days</div>
     `
+}
+
+function analyzeInteractions(matrix, seal){
+
+    const size = 20
+    const start = seal * size
+    const row = matrix.slice(start, start + size)
+
+    const ranked = row
+        .map((v,i)=>({seal:i, value:v}))
+        .sort((a,b)=>b.value-a.value)
+
+    return {
+        best: ranked.slice(0,3),
+        worst: ranked.slice(-3).reverse()
+    }
 }
