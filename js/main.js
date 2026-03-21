@@ -185,6 +185,9 @@ function removeConnectionHard(a, b){
     delete memory[a + "->" + b]
     delete memory[b + "->" + a]
 
+    memory[a + "->" + b] = 0
+    memory[b + "->" + a] = 0
+
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
 
     // 🔴 КЛЮЧ: ЖЁСТКАЯ БЛОКИРОВКА
