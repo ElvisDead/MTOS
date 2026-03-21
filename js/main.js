@@ -718,10 +718,14 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 
             el.innerHTML = `
             <div><b>Best interactions:</b></div>
-            ${analysis.best.map(x => `#${x.seal} (${x.value.toFixed(2)})`).join("<br>")}
+            ${analysis.best.map(x => `${x.value > 0.7 ? "🟢" : x.value < 0.3 ? "🔴" : "🟡"} 
+            Seal ${x.seal} → ${x.value.toFixed(2)}
+            `).join("<br>")}
             
             <div style="margin-top:8px;"><b>Worst interactions:</b></div>
-            ${analysis.worst.map(x => `#${x.seal} (${x.value.toFixed(2)})`).join("<br>")}
+            ${analysis.worst.map(x => `${x.value > 0.7 ? "🟢" : x.value < 0.3 ? "🔴" : "🟡"} 
+            Seal ${x.seal} → ${x.value.toFixed(2)}
+            `).join("<br>")}
         }
     }
     
