@@ -226,9 +226,11 @@ function removeConnection(a, b){
 function addConnection(a, b, value = 1){
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
-
     const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    // 🔴 КЛЮЧЕВОЙ ФИЛЬТР
     if(locked[a + "->" + b] || locked[b + "->" + a]){
+        console.log("BLOCKED:", a, b)
         return
     }
 
@@ -236,8 +238,6 @@ function addConnection(a, b, value = 1){
     memory[b + "->" + a] = value
 
     localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
-
-    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
 
     delete locked[a + "->" + b]
     delete locked[b + "->" + a]
