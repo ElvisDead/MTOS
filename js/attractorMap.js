@@ -66,8 +66,12 @@ export function drawAttractorMap(id, data, options = {}) {
         const meaningB = meanings ? meanings[col] : ""
 
         cell.title = `
-        A: ${labelA} (${meaningA})
-        B: ${labelB} (${meaningB})
+        A: ${labelA}
+        → ${meaningA}
+        
+        B: ${labelB}
+        → ${meaningB}
+        
         Stability: ${v.toFixed(3)}
         `
 
