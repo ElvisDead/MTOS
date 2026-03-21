@@ -75,6 +75,7 @@ export async function initMTOS(){
     window.removeConnectionHard = removeConnectionHard
     window.addConnection = addConnection
     window.attractorMode = "dynamic" // или "map"
+    window.networkMode = "interaction"
     
     window.toggleEditMode = () => {
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
@@ -712,7 +713,7 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 
     if(window.attractorMode === "map" && matrix){
 
-        const seal = (selectedKin || userKin) % 20
+        const seal = ((selectedKin || userKin) - 1) % 20
         const analysis = analyzeInteractions(matrix, seal)
 
         const el = document.getElementById("interactionAnalysis")
