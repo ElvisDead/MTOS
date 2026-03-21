@@ -354,6 +354,12 @@ json.dumps(weather)
         })
         const pressure = result.pressure
         const userKin = result.kin
+        window._weather = weather
+        window._weatherToday = weatherToday
+        window._pressure = pressure
+        window._userKin = userKin
+        window._todayKin = todayKin
+        window._date = { year, month, day }
 
         // ===============================
         // TODAY
@@ -651,7 +657,16 @@ json.dumps([f,s,u])
         window.selectionMemory = selectionMemory
         selectedKin = kin
             
-        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
+        renderAll(
+            window._weather,
+            window._weatherToday,
+            window._pressure,
+            window._userKin,
+            window._todayKin,
+            window._date.year,
+            window._date.month,
+            window._date.day
+        )
     }
 }
 
