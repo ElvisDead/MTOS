@@ -227,6 +227,11 @@ function addConnection(a, b, value = 1){
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
 
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+    if(locked[a + "->" + b] || locked[b + "->" + a]){
+        return
+    }
+
     memory[a + "->" + b] = value
     memory[b + "->" + a] = value
 
