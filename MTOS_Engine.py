@@ -1712,9 +1712,16 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             key1 = f"{u1['name']}->{u2['name']}"
             key2 = f"{u2['name']}->{u1['name']}"
 
-            # разрешаем ТОЛЬКО явно заданные связи
-            # если связь удалена — пропускаем
+            # 🔴 ЖЁСТКИЙ ЗАПРЕТ
             if locked.get(key1) or locked.get(key2):
+
+            # убиваем влияние агентов
+            kin_i = kin_list[i]
+            kin_j = kin_list[j]
+                
+            base_field[kin_i] *= 0.2
+            base_field[kin_j] *= 0.2
+                
                 continue
 
             kin_i = kin_list[i]
