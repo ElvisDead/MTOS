@@ -725,6 +725,7 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
             ${analysis.worst.map(x => `
             🔴 Seal ${x.seal} → ${x.value.toFixed(2)}
             `).join("<br>")}
+            `
         }
     }
     
