@@ -8,6 +8,7 @@ import { drawActivity } from "./activity.js"
 import { initTimeControls } from "./timeController.js"
 import { logEvent } from "./mtos_log.js"
 import { exportLog } from "./exportExperiment.js"
+import { drawAttractorMap } from "./attractorMap.js"
 import {
     replayPlay,
     replayPause,
@@ -72,6 +73,7 @@ export async function initMTOS(){
     window.removeConnection = removeConnection
     window.removeConnectionHard = removeConnectionHard
     window.addConnection = addConnection
+    window.attractorMode = "dynamic" // или "map"
     
     window.toggleEditMode = () => {
         window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
@@ -671,12 +673,24 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 
     drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
     drawPhaseSpace("phaseMap", weather, selectedKin)
-    drawAttractor(
-        "attractorMap",
-        users,
-        [], // relations пока пусто
-        selectedKin
-    )
+    if(window.attractorMode === "map"){
+
+        const matrix = JSON.parse(pyodide.runPython(`
+    import json
+    json.dumps(mtos_climate_atlas())
+    `))
+
+        drawAttractorMap("attractorMap", matrix)
+
+    }else{
+
+        drawAttractor(
+            "attractorMap",
+            users,
+            [],
+            selectedKin
+        )
+    }
     drawCollective("collectiveMap", users)
     drawActivity("activityMap", weather)
 }
