@@ -127,7 +127,10 @@ export function drawCollective(id, users){
                 continue
             }
 
-            memory[key] = Number(score.toFixed(4))
+            // 🔴 НЕ ПЕРЕЗАПИСЫВАЕМ ЗАБЛОКИРОВАННЫЕ
+            if(memory[key] !== 0){
+                memory[key] = Number(score.toFixed(4))
+            }
 
             // случайные события
             if(Math.random() < 0.05){
