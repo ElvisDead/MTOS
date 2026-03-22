@@ -18,6 +18,23 @@ export function drawField(id, config){
         labels.appendChild(d)
     }
 
+    const {
+        mode = "activity",
+        activity = [],
+        pressure = null,
+        global = [],
+        users = [],
+        connections = [],
+        usersByKin = {},
+        onKinClick = null,
+        getSelectedKin = null
+    } = config || {}
+
+    const c = document.getElementById(id)
+    if(!c) return
+
+    c.innerHTML = ""
+
     const seals = [
         "Dragon","Wind","Night","Seed","Serpent",
         "Worldbridger","Hand","Star","Moon","Dog",
@@ -38,27 +55,41 @@ export function drawField(id, config){
         d.innerText = s
         header.appendChild(d)
     })
+        
+    c.parentNode.insertBefore(header, c)
 
-c.parentNode.insertBefore(header, c)
+// ===============================
+// TONES (LEFT)
+// ===============================
+const labels = document.createElement("div")
+labels.style.marginRight = "6px"
 
-c.parentNode.insertBefore(header, c)
+for(let t = 1; t <= 13; t++){
 
-    const {
-        mode = "activity",
-        activity = [],
-        pressure = null,
-        global = [],
-        users = [],
-        connections = [],
-        usersByKin = {},
-        onKinClick = null,
-        getSelectedKin = null
-    } = config || {}
+    const cell = document.createElement("div")
+        
+    cell.style.width = "21px"
+    cell.style.height = "21px"
+    
+    const d = document.createElement("div")
+    d.style.height = "21px"
+    d.style.fontSize = "10px"
+    d.style.display = "flex"
+    d.style.alignItems = "center"
+    d.innerText = t
+    labels.appendChild(d)
+}
 
-    const c = document.getElementById(id)
-    if(!c) return
+const wrapper = document.createElement("div")
+wrapper.style.display = "flex"
+wrapper.style.justifyContent = "center"
+wrapper.style.alignItems = "flex-start"
 
-    c.innerHTML = ""
+// ВАЖНО
+wrapper.appendChild(labels)
+wrapper.appendChild(c)
+
+c.parentNode.appendChild(wrapper)
 
     // --- AUTO PRESSURE ---
     const computedPressure = pressure || computePressure(users, connections)
@@ -75,8 +106,6 @@ c.parentNode.insertBefore(header, c)
     // --- GRID ---
     c.style.display = "grid"
     c.style.gridTemplateColumns = "repeat(20, 21px)"
-    cell.style.width = "21px"
-    cell.style.height = "21px"
     c.style.gap = "2px"
     c.style.justifyContent = "center"
     c.style.margin = "20px auto"
