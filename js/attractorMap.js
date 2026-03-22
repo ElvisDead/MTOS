@@ -88,24 +88,116 @@ export function drawAttractorMap(id, data, options = {}) {
 
     if(labels){
 
-        const header = document.createElement("div")
-        header.style.display = "grid"
-        header.style.gridTemplateColumns = `repeat(${size}, 26px)`
-        header.style.justifyContent = "center"
-        header.style.fontSize = "10px"
-        header.style.color = "#aaa"
+    const wrapper = document.createElement("div")
+    wrapper.style.display = "grid"
+    wrapper.style.gridTemplateColumns = `40px repeat(${size}, 26px) 40px`
+    wrapper.style.gridTemplateRows = `20px repeat(${size}, 26px) 20px`
+    wrapper.style.gap = "2px"
+    wrapper.style.justifyContent = "center"
+    wrapper.style.alignItems = "center"
 
-        for(let i=0;i<size;i++){
-            const l = document.createElement("div")
-            l.innerText = labels[i].slice(0,3)
-            l.style.textAlign = "center"
-            header.appendChild(l)
-        }
-
-        root.appendChild(header)
+    // --- TOP LABELS ---
+    for(let i=0;i<size;i++){
+        const l = document.createElement("div")
+        l.innerText = labels[i].slice(0,3)
+        l.style.fontSize = "10px"
+        l.style.color = "#aaa"
+        l.style.textAlign = "center"
+        l.style.gridColumn = i + 2
+        l.style.gridRow = 1
+        wrapper.appendChild(l)
     }
 
+    // --- BOTTOM LABELS ---
+    for(let i=0;i<size;i++){
+        const l = document.createElement("div")
+        l.innerText = labels[i].slice(0,3)
+        l.style.fontSize = "10px"
+        l.style.color = "#aaa"
+        l.style.textAlign = "center"
+        l.style.gridColumn = i + 2
+        l.style.gridRow = size + 2
+        wrapper.appendChild(l)
+    }
+
+    // --- LEFT LABELS ---
+    for(let i=0;i<size;i++){
+        const l = document.createElement("div")
+        l.innerText = labels[i].slice(0,3)
+        l.style.fontSize = "10px"
+        l.style.color = "#aaa"
+        l.style.textAlign = "right"
+        l.style.gridColumn = 1
+        l.style.gridRow = i + 2
+        wrapper.appendChild(l)
+    }
+
+    // --- RIGHT LABELS ---
+    for(let i=0;i<size;i++){
+        const l = document.createElement("div")
+        l.innerText = labels[i].slice(0,3)
+        l.style.fontSize = "10px"
+        l.style.color = "#aaa"
+        l.style.textAlign = "left"
+        l.style.gridColumn = size + 2
+        l.style.gridRow = i + 2
+        wrapper.appendChild(l)
+    }
+
+    // --- CELLS ---
+    for (let i = 0; i < data.length; i++) {
+
+        const v = data[i]
+
+        const row = Math.floor(i / size)
+        const col = i % size
+
+        const cell = document.createElement("div")
+
+        cell.style.width = "26px"
+        cell.style.height = "26px"
+        cell.style.background = getColor(v)
+        cell.style.cursor = "pointer"
+        cell.style.boxSizing = "border-box"
+
+        if (selectedSeal !== null && row === selectedSeal) {
+            cell.style.outline = "1px solid yellow"
+        }
+
+        const labelA = labels[row]
+        const labelB = labels[col]
+
+        const meaningA = meanings ? meanings[row] : ""
+        const meaningB = meanings ? meanings[col] : ""
+
+        cell.title = `
+A: ${labelA}
+→ ${meaningA}
+
+B: ${labelB}
+→ ${meaningB}
+
+Stability: ${v.toFixed(3)}
+        `
+
+        cell.onclick = () => {
+            drawAttractorMap(id, data, {
+                ...options,
+                selectedSeal: row
+            })
+        }
+
+        cell.style.gridColumn = col + 2
+        cell.style.gridRow = row + 2
+
+        wrapper.appendChild(cell)
+    }
+
+    root.appendChild(wrapper)
+
+}else{
     root.appendChild(grid)
+}
 
     // =========================
     // LEGEND
