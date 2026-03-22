@@ -154,11 +154,13 @@ canvas{
     <h2>Field</h2>
 
     <div style="margin-bottom:10px;">
-        <button onclick="window.fieldMode='activity'; runMTOS()">Activity</button>
-        <button onclick="window.fieldMode='pressure'; runMTOS()">Pressure</button>
-        <button onclick="window.fieldMode='global'; runMTOS()">Global</button>
-        <button onclick="window.fieldMode='hybrid'; runMTOS()">Hybrid</button>
+        <button id="btnActivity" onclick="setFieldMode('activity')">Activity</button>
+        <button id="btnPressure" onclick="setFieldMode('pressure')">Pressure</button>
+        <button id="btnGlobal" onclick="setFieldMode('global')">Global</button>
+        <button id="btnHybrid" onclick="setFieldMode('hybrid')">Hybrid</button>
     </div>
+
+    <div id="fieldLegend" style="margin-top:10px; font-size:12px; color:#aaa;"></div>
 
     <div id="fieldMap"></div>
 </div>
