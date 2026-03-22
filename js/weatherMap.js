@@ -232,6 +232,12 @@ export function drawWeatherMap(
                 const sealIndex = (kin - 1) % 20
                 const name = window.SEALS ? window.SEALS[sealIndex] : sealIndex
 
+                cell.innerText = name.slice(0,2)
+                cell.style.fontSize = "8px"
+                cell.style.display = "flex"
+                cell.style.alignItems = "center"
+                cell.style.justifyContent = "center"
+
             cell.dataset.kin = kin
 
             cell.addEventListener("click", (e)=>onCellClick(kin, e))
