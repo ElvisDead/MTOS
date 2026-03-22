@@ -123,6 +123,17 @@ if(!wrapper.classList?.contains("field-wrapper")){
     wrapper.classList.add("field-wrapper")
 
     wrapper.style.display = "flex"
+    wrapper.style.flexDirection = "col// ===============================
+// WRAPPER (один раз)
+// ===============================
+let wrapper = c.parentNode
+
+if(!wrapper.classList?.contains("field-wrapper")){
+
+    wrapper = document.createElement("div")
+    wrapper.classList.add("field-wrapper")
+
+    wrapper.style.display = "flex"
     wrapper.style.flexDirection = "column"
     wrapper.style.alignItems = "center"
 
@@ -132,18 +143,76 @@ if(!wrapper.classList?.contains("field-wrapper")){
     wrapper.appendChild(c)
 }
 
-// 🔥 header теперь ВНУТРИ wrapper
-wrapper.appendChild(header)
+// ===============================
+// HEADER (seals)
+// ===============================
+let header = wrapper.querySelector(".field-header")
 
-// 🔥 строка: labels + grid
-const row = document.createElement("div")
-row.style.display = "flex"
-row.style.alignItems = "flex-start"
+if(!header){
+    header = document.createElement("div")
+    header.classList.add("field-header")
 
-row.appendChild(labels)
-row.appendChild(c)
+    header.style.display = "grid"
+    header.style.gridTemplateColumns = "repeat(20, 21px)"
+    header.style.justifyContent = "center"
+    header.style.marginBottom = "6px"
+    header.style.width = "fit-content"
 
-wrapper.appendChild(row)
+    const seals = [
+        "Dragon","Wind","Night","Seed","Serpent",
+        "Worldbridger","Hand","Star","Moon","Dog",
+        "Monkey","Human","Skywalker","Wizard","Eagle",
+        "Warrior","Earth","Mirror","Storm","Sun"
+    ]
+
+    seals.forEach(s => {
+        const d = document.createElement("div")
+        d.style.fontSize = "9px"
+        d.style.textAlign = "center"
+        d.innerText = s.slice(0,3)
+        header.appendChild(d)
+    })
+
+    wrapper.appendChild(header)
+}
+
+// ===============================
+// LABELS (tones)
+// ===============================
+let labels = wrapper.querySelector(".field-labels")
+
+if(!labels){
+    labels = document.createElement("div")
+    labels.classList.add("field-labels")
+    labels.style.marginRight = "6px"
+
+    for(let t = 1; t <= 13; t++){
+        const d = document.createElement("div")
+        d.style.height = "21px"
+        d.style.fontSize = "10px"
+        d.style.display = "flex"
+        d.style.alignItems = "center"
+        d.innerText = t
+        labels.appendChild(d)
+    }
+}
+
+// ===============================
+// ROW (labels + grid)
+// ===============================
+let row = wrapper.querySelector(".field-row")
+
+if(!row){
+    row = document.createElement("div")
+    row.classList.add("field-row")
+    row.style.display = "flex"
+    row.style.alignItems = "flex-start"
+
+    row.appendChild(labels)
+    row.appendChild(c)
+
+    wrapper.appendChild(row)
+}
 
     // --- AUTO PRESSURE ---
     const computedPressure = pressure || computePressure(users, connections)
