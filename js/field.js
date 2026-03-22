@@ -96,17 +96,18 @@ if(!labels){
     labels.style.marginRight = "6px"
     labels.style.display = "flex"
     labels.style.flexDirection = "column"
-    labels.style.justifyContent = "space-between"
+}else{
+    labels.innerHTML = ""   // 🔥 ВОТ ЭТО КРИТИЧНО
+}
 
-    for(let tone = 0; tone < 13; tone++){
-        const d = document.createElement("div")
-        d.style.height = "21px"
-        d.style.fontSize = "10px"
-        d.style.display = "flex"
-        d.style.alignItems = "center"
-        d.innerText = tone + 1
-        labels.appendChild(d)
-    }
+for(let tone = 0; tone < 13; tone++){
+    const d = document.createElement("div")
+    d.style.height = "21px"
+    d.style.fontSize = "10px"
+    d.style.display = "flex"
+    d.style.alignItems = "center"
+    d.innerText = tone + 1
+    labels.appendChild(d)
 }
 
 // ===============================
@@ -153,7 +154,7 @@ if(!row){
 for(let tone = 0; tone < 13; tone++){
     for(let seal = 0; seal < 20; seal++){
 
-        const kin = tone + seal * 13 + 1
+        const kin = ((seal * 13 + tone) % 260) + 1
         const i = kin - 1
 
         const a = (activity[i] || 0) / maxActivity
