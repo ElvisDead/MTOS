@@ -102,12 +102,12 @@ export function drawWeatherMap(
             // ===============================
             // USER MEMORY INFLUENCE
             // ===============================
-            if(window.selectionMemory){
+            //if(window.selectionMemory){
 
-                const m = window.selectionMemory[kin-1] || 0
+                //const m = window.selectionMemory[kin-1] || 0
 
-                phi += m * 0.05
-            }
+                //phi += m * 0.05
+            //}
 
             // ===============================
             // ATTRACTOR FEEDBACK
