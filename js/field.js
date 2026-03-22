@@ -5,6 +5,8 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
+    history = []
+
     const {
         mode = "activity",
         activity = [],
