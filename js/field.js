@@ -64,8 +64,6 @@ const labels = document.createElement("div")
 labels.style.marginRight = "6px"
 
 for(let t = 1; t <= 13; t++){
-
-    const cell = document.createElement("div")
         
     cell.style.width = "21px"
     cell.style.height = "21px"
@@ -206,11 +204,6 @@ function detectClusters(pressure, threshold = 0.6){
     const clusters = []
 
     function getNeighbors(i){
-
-        const kin = i + 1
-
-        const tone = ((kin - 1) % 13)
-        const seal = ((kin - 1) % 20)
 
         const neighbors = []
 
