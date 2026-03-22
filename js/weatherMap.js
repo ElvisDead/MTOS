@@ -110,16 +110,6 @@ export function drawWeatherMap(
             //}
 
             // ===============================
-            // ATTRACTOR FEEDBACK
-            // ===============================
-            if(attractorField){
-                const a = attractorField[kin-1] || 0
-                
-                // мягкое влияние
-                phi = phi * 0.7 + a * 0.3
-            }
-
-            // ===============================
             // LATTICE (СТРУКТУРА)
             // ===============================
             const toneNorm = (tone-1)/12
@@ -387,7 +377,6 @@ function onCellClick(kin, e){
     popup.style.display = "block"
     if(window.onKinSelect){
         window.onKinSelect(kin)
-        window.selectedKin = kin
     }
 }
 
