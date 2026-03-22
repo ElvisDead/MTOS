@@ -179,7 +179,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
                     attractorValue = matrix[sealA * 20 + sealB]
                 }
 
-            if(Math.abs(score) < 0.5) continue
+            //if(Math.abs(score) < 0.5) continue
 
             if(selected !== null && i !== selected && j !== selected){
                 if(window.networkMode === "attractor"){
@@ -403,11 +403,17 @@ export function drawNetwork(id, users, onSelect, matrix = null){
         offsetX = mx - (mx - offsetX) * zoom
         offsetY = my - (my - offsetY) * zoom
         scale *= zoom
+
+        draw()
     }
             
     canvas.onmousedown = (e)=>{
 
-        if(window.networkMode !== "edit") return
+        if(window.networkMode === "edit"){
+            isDragging = true
+            dragStartX = e.clientX
+            dragStartY = e.clientY
+        }
         
         isDragging = true
         dragStartX = e.clientX
@@ -422,7 +428,36 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     // ===============================
     canvas.onmousemove = (e)=>{
 
-        if(window.networkMode !== "edit") return
+        const rect = canvas.getBoundingClientRect()
+            
+        const mx = (e.clientX - rect.left - offsetX) / scale
+        const my = (e.clientY - rect.top - offsetY) / scale
+        
+        // hover работает ВСЕГДА
+        hover = null
+        tooltip = null
+            
+        for(let i=0;i<N;i++){
+            
+            const dx = mx - positions[i].x
+            const dy = my - positions[i].y
+
+            if(Math.sqrt(dx*dx + dy*dy) < 15){
+                hover = i
+                tooltip = users[i].name
+                break
+            }
+        }
+        
+        // drag ТОЛЬКО в edit
+        if(window.networkMode === "edit" && isDragging){
+            
+            offsetX += e.clientX - dragStartX
+            offsetY += e.clientY - dragStartY
+
+            dragStartX = e.clientX
+            dragStartY = e.clientY
+        }
 
     const rect = canvas.getBoundingClientRect()
 
@@ -507,7 +542,10 @@ export function drawNetwork(id, users, onSelect, matrix = null){
 
     draw()
 }
+function loop(){
     draw()
+    requestAnimationFrame(loop)
+}
 
-    draw()
+loop()
 }
