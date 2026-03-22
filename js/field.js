@@ -71,7 +71,7 @@ wrapper.style.alignItems = "flex-start"
 wrapper.appendChild(labels)
 wrapper.appendChild(c)
 
-c.parentNode.appendChild(wrapper)
+c.parentNode.replaceChild(wrapper, c)
 
     // --- AUTO PRESSURE ---
     const computedPressure = pressure || computePressure(users, connections)
