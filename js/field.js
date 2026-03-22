@@ -86,15 +86,18 @@ c.parentNode.insertBefore(header, c)
 
     const selectedKin = getSelectedKin ? getSelectedKin() : null
 
-    for(let i = 0; i < 260; i++){
+    for(let tone = 0; tone < 13; tone++){
+        for(let seal = 0; seal < 20; seal++){
 
-        const kin = i + 1
-        const tone = ((kin - 1) % 13) + 1
-        const seal = ((kin - 1) % 20) + 1
+            const kin = tone + seal * 13 + 1
 
-        const a = (activity[i] || 0) / maxActivity
-        const p = (computedPressure[i] || 0)
-        const g = (global[i] || 0) / maxGlobal
+            const kin = i + 1
+            const tone = ((kin - 1) % 13) + 1
+            const seal = ((kin - 1) % 20) + 1
+
+            const a = (activity[i] || 0) / maxActivity
+            const p = (computedPressure[i] || 0)
+            const g = (global[i] || 0) / maxGlobal
 
         // --- VALUE ---
         let v = 0
