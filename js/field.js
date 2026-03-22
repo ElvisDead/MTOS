@@ -5,7 +5,6 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-    const labels = document.createElement("div")
         labels.style.marginRight = "6px"
 
     for(let t = 1; t <= 13; t++){
@@ -115,27 +114,22 @@ c.parentNode.appendChild(wrapper)
 
     const selectedKin = getSelectedKin ? getSelectedKin() : null
 
-    for(let tone = 0; tone < 13; tone++){
-        for(let seal = 0; seal < 20; seal++){
+for(let tone = 0; tone < 13; tone++){
+    for(let seal = 0; seal < 20; seal++){
 
-            const kin = tone + seal * 13 + 1
+        const kin = tone + seal * 13 + 1
+        const i = kin - 1
 
-            const kin = i + 1
-            const tone = ((kin - 1) % 13) + 1
-            const seal = ((kin - 1) % 20) + 1
+        const a = (activity[i] || 0) / maxActivity
+        const p = (computedPressure[i] || 0)
+        const g = (global[i] || 0) / maxGlobal
 
-            const a = (activity[i] || 0) / maxActivity
-            const p = (computedPressure[i] || 0)
-            const g = (global[i] || 0) / maxGlobal
-
-        // --- VALUE ---
         let v = 0
         if(mode === "activity") v = a
         if(mode === "pressure") v = p
         if(mode === "global") v = g
         if(mode === "hybrid") v = a * p
 
-        // --- COLOR ---
         let color = "rgb(0,0,0)"
 
         if(mode === "activity"){
@@ -156,18 +150,15 @@ c.parentNode.appendChild(wrapper)
             color = `rgb(${r},0,${b})`
         }
 
-        // --- EVENT ---
         const isEvent = detectEvent(i, computedPressure)
 
         const cell = document.createElement("div")
-
-        cell.style.width = "14px"
-        cell.style.height = "14px"
+        cell.style.width = "21px"
+        cell.style.height = "21px"
         cell.style.background = color
         cell.style.cursor = "pointer"
         cell.style.boxSizing = "border-box"
 
-        // ✅ ПРАВИЛЬНЫЙ ПРИОРИТЕТ
         if(isEvent){
             cell.style.outline = "2px solid white"
         }
@@ -184,20 +175,16 @@ c.parentNode.appendChild(wrapper)
             cell.style.outline = "2px solid orange"
         }
 
-        // --- FLOW ---
         if(flow[i] > 0.2){
             cell.style.boxShadow = "inset 0 0 4px white"
         }
 
-        // --- TOOLTIP ---
-        let title = `Kin ${kin}\nTone ${tone}\nSeal ${seal}`
+        let title = `Kin ${kin}\nTone ${tone+1}\nSeal ${seal+1}`
         title += `\nActivity: ${activity[i] || 0}`
         title += `\nPressure: ${p.toFixed(3)}`
         title += `\nHybrid: ${(a*p).toFixed(3)}`
 
-        // GLOBAL USERS (🔥 добавка)
         const usersList = usersByKin[kin] || []
-            
         if(usersList.length){
             title += `\nUsers: ${usersList.length}`
             title += "\n" + usersList.map(u => u.name).join(", ")
