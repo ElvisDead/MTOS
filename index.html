@@ -1,6 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<style>
+body {
+    margin: 0;
+    background: black;
+    position: relative;
+}
+
+/* общий класс */
+.mayan-border {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 80px;
+    background-size: contain;
+    background-repeat: repeat-y;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* левая */
+.mayan-left {
+    left: 0;
+    background-image: url("./assets/mayan-borders.png");
+    background-position: left top;
+}
+
+/* правая */
+.mayan-right {
+    right: 0;
+    background-image: url("./mayan-borders.png");
+    background-position: right top;
+}
+</style>
+    
 <meta charset="UTF-8">
 <title>MTOS FULL SYSTEM</title>
 
@@ -44,7 +79,17 @@ canvas{
 
 <body>
 
-<h1>MTOS FULL SYSTEM</h1>
+<div id="app">
+
+<div class="mayan-border mayan-left"></div>
+<div class="mayan-border mayan-right"></div>
+
+#app {
+    position: relative;
+    z-index: 1;
+}
+
+<h1>MTOS SYSTEM</h1>
 
 <!-- INPUT -->
 <div>
