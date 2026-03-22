@@ -3,6 +3,13 @@
 <head>
 
 <style>
+
+
+#app {
+    position: relative;
+    z-index: 1;
+}
+    
 body {
     margin: 0;
     background: black;
@@ -24,7 +31,7 @@ body {
 /* левая */
 .mayan-left {
     left: 0;
-    background-image: url("./assets/mayan-borders.png");
+    background-image: url("./mayan-borders.png");
     background-position: left top;
 }
 
@@ -79,15 +86,10 @@ canvas{
 
 <body>
 
-<div id="app">
-
 <div class="mayan-border mayan-left"></div>
 <div class="mayan-border mayan-right"></div>
 
-#app {
-    position: relative;
-    z-index: 1;
-}
+<div id="app">
 
 <h1>MTOS SYSTEM</h1>
 
