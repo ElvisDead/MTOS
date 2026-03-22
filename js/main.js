@@ -924,7 +924,18 @@ window.setNetworkMode = (mode) => {
         activeBtn.style.color = "#000"
     }
 
-    runMTOS()
+    if(window._weather){
+    renderAll(
+        window._weather,
+        window._weatherToday,
+        window._pressure,
+        window._userKin,
+        window._todayKin,
+        window._date.year,
+        window._date.month,
+        window._date.day
+    )
+}
 }
 
 function renderAttractorOnly(){
