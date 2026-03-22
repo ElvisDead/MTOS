@@ -653,6 +653,7 @@ json.dumps([f,s,u])
         // ===============================
         
         selectedKin = kin
+        window.selectedKin = kin
             
         renderAll(
             window._weather,
