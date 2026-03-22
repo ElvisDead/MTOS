@@ -5,6 +5,44 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
+    const labels = document.createElement("div")
+        labels.style.marginRight = "6px"
+
+    for(let t = 1; t <= 13; t++){
+        const d = document.createElement("div")
+        d.style.height = "21px"
+        d.style.fontSize = "10px"
+        d.style.display = "flex"
+        d.style.alignItems = "center"
+        d.innerText = t
+        labels.appendChild(d)
+    }
+
+    const seals = [
+        "Dragon","Wind","Night","Seed","Serpent",
+        "Worldbridger","Hand","Star","Moon","Dog",
+        "Monkey","Human","Skywalker","Wizard","Eagle",
+        "Warrior","Earth","Mirror","Storm","Sun"
+    ]
+
+    const header = document.createElement("div")
+    header.style.display = "grid"
+    header.style.gridTemplateColumns = "repeat(20, 21px)"
+    header.style.justifyContent = "center"
+    header.style.marginBottom = "6px"
+
+    seals.forEach(s => {
+        const d = document.createElement("div")
+        d.style.fontSize = "9px"
+        d.style.textAlign = "center"
+        d.innerText = s
+        header.appendChild(d)
+    })
+
+c.parentNode.insertBefore(header, c)
+
+c.parentNode.insertBefore(header, c)
+
     const {
         mode = "activity",
         activity = [],
@@ -36,10 +74,12 @@ export function drawField(id, config){
 
     // --- GRID ---
     c.style.display = "grid"
-    c.style.gridTemplateColumns = "repeat(20, 14px)"
+    c.style.gridTemplateColumns = "repeat(20, 21px)"
+    cell.style.width = "21px"
+    cell.style.height = "21px"
     c.style.gap = "2px"
     c.style.justifyContent = "center"
-    c.style.margin = "0 auto"
+    c.style.margin = "20px auto"
 
     const maxActivity = Math.max(...activity, 1)
     const maxGlobal = Math.max(...global, 1)
