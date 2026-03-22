@@ -667,7 +667,9 @@ json.dumps([f,s,u])
 // ===============================
 function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day){
 
-    window.selectedKin = highlightKin
+    if(!window.selectedKin){
+        window.selectedKin = todayKin
+    }
 
     drawWeatherMap(
         "weatherMap",
