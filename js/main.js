@@ -845,6 +845,8 @@ const SEAL_MEANING = [
 "clarity, center"
 ]
 
+window.SEALS = SEALS
+
 // ===============================
 // METRIC INTERPRETATION
 // ===============================
