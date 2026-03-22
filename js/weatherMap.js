@@ -223,11 +223,11 @@ export function drawWeatherMap(
 
             const cell = document.createElement("div")
 
-                users.forEach(u=>{
-                    if(u.kin === kin){
-                        cell.style.outline = "2px solid yellow"
-                    }
-                })
+                //users.forEach(u=>{
+                    //if(u.kin === kin){
+                        //cell.style.outline = "2px solid yellow"
+                    //}
+                //})
 
                 const sealIndex = (kin - 1) % 20
                 const name = window.SEALS ? window.SEALS[sealIndex] : sealIndex
