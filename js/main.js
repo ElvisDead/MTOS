@@ -1107,24 +1107,24 @@ function updateFieldLegend(mode){
     if(!el) return
 
     if(mode === "activity"){
-        el.innerHTML = "🔴 Activity — интенсивность внимания"
+        el.innerHTML = "🔴 Activity — attention intensity"
     }
 
     if(mode === "pressure"){
-        el.innerHTML = "🔵→🔴 Pressure — напряжение системы"
+        el.innerHTML = "🔵→🔴 Pressure — system tension"
     }
 
     if(mode === "global"){
-        el.innerHTML = "🟠 Global — количество пользователей"
+        el.innerHTML = "🟠 Global — users per kin"
     }
 
     if(mode === "hybrid"){
-        el.innerHTML = "🟣 Hybrid — внимание × давление"
+        el.innerHTML = "🟣 Hybrid — attention × pressure"
     }
 
-    el.innerHTML += "<br>🟩 Cluster — зона давления"
-    el.innerHTML += "<br>🟨 Attractor — устойчивая зона"
-    el.innerHTML += "<br>⚡ Event — всплеск"
+    el.innerHTML += "<br>🟩 Cluster — pressure zone"
+    el.innerHTML += "<br>🟨 Attractor — stable zone"
+    el.innerHTML += "<br>⚡ Event — spike"
 }
 
 function hashCode(str){
