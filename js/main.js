@@ -651,11 +651,7 @@ json.dumps([f,s,u])
         // ===============================
         // MEMORY UPDATE
         // ===============================
-        selectionMemory[kin-1] += 1
-
-        // затухание памяти
-        selectionMemory = selectionMemory.map(v => v * 0.98)
-        window.selectionMemory = selectionMemory
+        
         selectedKin = kin
             
         renderAll(
