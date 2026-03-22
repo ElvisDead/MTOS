@@ -35,11 +35,13 @@ export function drawField(id, config){
     header.style.justifyContent = "center"
     header.style.marginBottom = "6px"
 
+    header.style.width = "fit-content"
+
     seals.forEach(s => {
         const d = document.createElement("div")
         d.style.fontSize = "9px"
         d.style.textAlign = "center"
-        d.innerText = s
+        d.innerText = s.slice(0,3)
         header.appendChild(d)
     })
     
