@@ -42,10 +42,8 @@ export function drawField(id, config){
         d.innerText = s
         header.appendChild(d)
     })
-        
-    if(!c.previousSibling || !c.previousSibling.classList?.contains("field-header")){
+    
         header.classList.add("field-header")
-        c.parentNode.insertBefore(header, c)
     }
 
 // ===============================
@@ -69,15 +67,24 @@ const parent = c.parentNode
 
 const wrapper = document.createElement("div")
 wrapper.style.display = "flex"
-wrapper.style.justifyContent = "center"
-wrapper.style.alignItems = "flex-start"
+wrapper.style.flexDirection = "column"
+wrapper.style.alignItems = "center"
 
-// 🔥 СНАЧАЛА заменить
+// 🔥 сначала заменить c
 parent.replaceChild(wrapper, c)
 
-// 🔥 ПОТОМ добавлять внутрь
-wrapper.appendChild(labels)
-wrapper.appendChild(c)
+// 🔥 header теперь ВНУТРИ wrapper
+wrapper.appendChild(header)
+
+// 🔥 строка: labels + grid
+const row = document.createElement("div")
+row.style.display = "flex"
+row.style.alignItems = "flex-start"
+
+row.appendChild(labels)
+row.appendChild(c)
+
+wrapper.appendChild(row)
 
     // --- AUTO PRESSURE ---
     const computedPressure = pressure || computePressure(users, connections)
