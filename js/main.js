@@ -332,6 +332,7 @@ json.dumps({
  "kin": kin,
  "attention": attention,
  "noise": noise,
+ "entropy": entropy([w["attention"] for w in weather]),
  "lyapunov": lyapunov,
  "prediction": prediction,
  "predictability": predictability([w["attention"] for w in weather])
@@ -475,6 +476,7 @@ return {
             todayKin,
             result.attention,
             result.noise,
+            result.entropy,
             result.lyapunov,
             result.prediction,
             result.predictability
@@ -766,6 +768,7 @@ function renderCognitiveState(
     todayKin,
     attention,
     noise,
+    entropy,
     lyapunov,
     prediction,
     predictability
@@ -803,6 +806,11 @@ function renderCognitiveState(
     <b>Noise:</b> ${noise.toFixed(3)}<br>
     <span style="color:#888">${interpretNoise(noise)}</span>
     </div>
+
+    <div>
+    <b>Entropy:</b> ${entropy.toFixed(3)}<br>
+    <span style="color:#888">${getEntropyDescription(entropy)}</span>
+    </div>
     
     <div>
     <b>Lyapunov:</b> ${lyapunov.toFixed(3)}<br>
@@ -819,6 +827,16 @@ function renderCognitiveState(
     <span style="color:#8f8">${interpretPredictability(predictability)}</span>
     </div>
     `
+}
+
+function getEntropyDescription(e){
+    
+    if(e > 2.5) return "high chaos, low structure"
+    if(e > 2.0) return "dynamic system, flexible"
+    if(e > 1.5) return "moderate complexity"
+    if(e > 1.0) return "structured, stable"
+    
+    return "low entropy, rigid system"
 }
 
 const SEALS = [
