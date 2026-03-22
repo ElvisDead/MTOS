@@ -259,12 +259,9 @@ export function drawWeatherMap(
             if(kin === userKin){
                 cell.style.boxShadow = "0 0 0 3px white inset"
             }
-
-            if(
-                (selectedAgent && kin === selectedAgent.kin) ||
-                (window.selectedKin && kin === window.selectedKin)
-            ){
-                cell.style.boxShadow = "0 0 0 3px cyan inset"
+                
+            if(window.selectedKin && kin === window.selectedKin){
+                cell.style.boxShadow = "0 0 0 3px #00ff88 inset"
             }
 
             // ===============================
