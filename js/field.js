@@ -20,11 +20,12 @@ export function drawField(id, config){
     const c = document.getElementById(id)
     if(!c) return
 
-    // 🔥 УДАЛЯЕМ ВСЮ СТАРУЮ ОБЁРТКУ
-    const oldWrapper = c.parentNode
+    // 🔥 ПОЛНАЯ ОЧИСТКА ВСЕХ ОБЁРОК
+    let node = c
         
-    if(oldWrapper.classList?.contains("field-wrapper")){
-        oldWrapper.replaceWith(c)
+    while(node.parentNode && node.parentNode.classList?.contains("field-wrapper")){
+        const parent = node.parentNode
+        parent.replaceWith(node)
     }
 
     c.innerHTML = ""
@@ -71,6 +72,8 @@ if(!header){
         "Warrior","Earth","Mirror","Storm","Sun"
     ]
 
+    header.innerHTML = ""
+
     seals.forEach(s => {
         const d = document.createElement("div")
         d.style.fontSize = "9px"
@@ -91,8 +94,11 @@ if(!labels){
     labels = document.createElement("div")
     labels.classList.add("field-labels")
     labels.style.marginRight = "6px"
+    labels.style.display = "flex"
+    labels.style.flexDirection = "column"
+    labels.style.justifyContent = "space-between"
 
-    for(let t = 13; t >= 1; t--){
+    for(let tone = 0; tone < 13; tone++){
         const d = document.createElement("div")
         d.style.height = "21px"
         d.style.fontSize = "10px"
