@@ -46,7 +46,6 @@ export function drawField(id, config){
     })
     
         header.classList.add("field-header")
-    }
 
 // ===============================
 // TONES (LEFT)
