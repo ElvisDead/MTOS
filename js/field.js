@@ -5,6 +5,8 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
+    console.log("DRAW FIELD")
+
     history = []
 
     const {
