@@ -102,7 +102,10 @@ export function drawField(id, config){
         else if(attractors.includes(i)){
             cell.style.outline = "2px solid yellow"
         }
-        else if(clusters.some(c => c.includes(i))){
+        else if(
+            (mode === "pressure" || mode === "hybrid") &&
+            clusters.some(c => c.includes(i))
+        ){
             cell.style.outline = "1px solid lime"
         }
         else if(selectedKin === kin){
@@ -123,6 +126,10 @@ export function drawField(id, config){
         if(mode === "global"){
             const usersList = usersByKin[kin] || []
             title += `\nUsers: ${usersList.length}`
+
+            if(usersList.length){
+                title += "\n" + usersList.map(u=>u.name).join(", ")
+            }
         }
 
         if(isEvent){
