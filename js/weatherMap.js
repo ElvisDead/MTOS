@@ -256,7 +256,7 @@ export function drawWeatherMap(
 
             if(
                 (selectedAgent && kin === selectedAgent.kin) ||
-                (selectedKin && kin === selectedKin)
+                (window.selectedKin && kin === window.selectedKin)
             ){
                 cell.style.boxShadow = "0 0 0 3px cyan inset"
             }
@@ -265,9 +265,8 @@ export function drawWeatherMap(
             // TOOLTIP
             // ===============================
 
-            cell.title = `${kin} — ${name}`
             cell.title = `
-            Kin: ${kin}
+            ${kin} — ${name}
             Φ: ${phi.toFixed(3)}
             Wave: ${waveSum.toFixed(3)}
             Lattice: ${latticeNorm.toFixed(3)}
@@ -385,7 +384,7 @@ function onCellClick(kin, e){
     popup.style.display = "block"
     if(window.onKinSelect){
         window.onKinSelect(kin)
-        selectedKin = kin
+        window.selectedKin = kin
     }
 }
 
