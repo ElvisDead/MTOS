@@ -17,6 +17,7 @@ import {
     replaySeek,
     initReplay
 } from "./replay.js"
+import { drawField } from "./field.js"
 
 function toPython(obj){
     return JSON.stringify(obj)
@@ -686,6 +687,54 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         selectedAgent,
         window._attractorField
     )
+
+    // ===============================
+// FIELD
+// ===============================
+
+const fieldModeCurrent = window.fieldMode || "hybrid"
+
+// Activity (из weather)
+const activity = weather.map(w => w.attention)
+
+// Global (сколько пользователей на кин)
+const globalCounts = new Array(260).fill(0)
+const usersByKin = {}
+
+users.forEach(u => {
+    const k = u.kin
+    globalCounts[k-1]++
+
+    if(!usersByKin[k]) usersByKin[k] = []
+    usersByKin[k].push(u)
+})
+
+// Connections из памяти
+const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+
+const connections = Object.keys(memory).map(key => {
+    const [a,b] = key.split("->")
+    return {
+        a,
+        b,
+        weight: Math.abs(memory[key]),
+        type: memory[key] < 0 ? "conflict" : "support"
+    }
+})
+
+drawField("fieldMap", {
+    mode: fieldModeCurrent,
+    activity,
+    pressure,
+    global: globalCounts,
+    users,
+    connections,
+    usersByKin,
+    onKinClick: (kin) => {
+        window.onKinSelect(kin)
+    },
+    getSelectedKin: () => window.selectedKin
+})
 
     const now = new Date()
 
