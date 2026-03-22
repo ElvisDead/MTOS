@@ -245,7 +245,10 @@ export function drawWeatherMap(
                 cell.style.boxShadow = "0 0 0 3px white inset"
             }
 
-            if(selectedAgent && kin === selectedAgent.kin){
+            if(
+                (selectedAgent && kin === selectedAgent.kin) ||
+                (selectedKin && kin === selectedKin)
+            ){{
                 cell.style.boxShadow = "0 0 0 3px cyan inset"
             }
 
@@ -371,6 +374,7 @@ function onCellClick(kin, e){
     popup.style.display = "block"
     if(window.onKinSelect){
         window.onKinSelect(kin)
+        selectedKin = kin
     }
 }
 
