@@ -20,6 +20,13 @@ export function drawField(id, config){
     const c = document.getElementById(id)
     if(!c) return
 
+    // 🔥 УДАЛЯЕМ ВСЮ СТАРУЮ ОБЁРТКУ
+    const oldWrapper = c.parentNode
+        
+    if(oldWrapper.classList?.contains("field-wrapper")){
+        oldWrapper.replaceWith(c)
+    }
+
     c.innerHTML = ""
 
 // ===============================
@@ -85,7 +92,7 @@ if(!labels){
     labels.classList.add("field-labels")
     labels.style.marginRight = "6px"
 
-    for(let t = 1; t <= 13; t++){
+    for(let t = 13; t >= 1; t--){
         const d = document.createElement("div")
         d.style.height = "21px"
         d.style.fontSize = "10px"
