@@ -658,7 +658,16 @@ json.dumps([f,s,u])
         window.selectionMemory = selectionMemory
         selectedKin = kin
             
-        renderAttractorOnly()
+        renderAll(
+            window._weather,
+            window._weatherToday,
+            window._pressure,
+            window._userKin,
+            window._todayKin,
+            window._date.year,
+            window._date.month,
+            window._date.day
+        )
     }
 }
 
