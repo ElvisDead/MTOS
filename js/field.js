@@ -123,6 +123,14 @@ export function drawField(id, config){
         title += `\nPressure: ${p.toFixed(3)}`
         title += `\nHybrid: ${(a*p).toFixed(3)}`
 
+        // GLOBAL USERS (🔥 добавка)
+        const usersList = usersByKin[kin] || []
+            
+        if(usersList.length){
+            title += `\nUsers: ${usersList.length}`
+            title += "\n" + usersList.map(u => u.name).join(", ")
+        }
+
         if(mode === "global"){
             const usersList = usersByKin[kin] || []
             title += `\nUsers: ${usersList.length}`
