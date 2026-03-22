@@ -1,65 +1,110 @@
-export function drawFieldMap({
-    id,
-    mode = "structure", // "structure" | "activity"
-    kinCounts = [],
-    activityData = [],
-    usersByKin = {},
-    onKinSelect = () => {},
-}) {
+// MTOS/js/field.js
+
+export function drawField(id, config){
+
+    const {
+        mode = "activity",
+        activity = [],
+        pressure = [],
+        global = [],
+        usersByKin = {},
+        onKinClick = null,
+        getSelectedKin = null
+    } = config || {}
 
     const c = document.getElementById(id)
-    if (!c) return
+    if(!c) return
 
     c.innerHTML = ""
 
-    const maxCount = Math.max(...kinCounts, 1)
-    const maxActivity = Math.max(...activityData, 1)
-
+    // --- GRID ---
     c.style.display = "grid"
-    c.style.gridTemplateColumns = "repeat(20, 20px)"
-    c.style.gap = "3px"
+    c.style.gridTemplateColumns = "repeat(20, 14px)"
+    c.style.gap = "2px"
 
-    for (let i = 0; i < 260; i++) {
+    const maxActivity = Math.max(...activity, 1)
+    const maxGlobal = Math.max(...global, 1)
+
+    for(let i = 0; i < 260; i++){
 
         const kin = i + 1
         const tone = ((kin - 1) % 13) + 1
         const seal = ((kin - 1) % 20) + 1
 
-        const users = usersByKin[kin] || []
-        const count = kinCounts[i] || 0
-        const activity = activityData[i] || 0
+        // --- VALUE ---
+        let v = 0
 
-        const cell = document.createElement("div")
+        if(mode === "activity"){
+            v = (activity[i] || 0) / maxActivity
+        }
 
-        cell.dataset.kin = kin
+        if(mode === "pressure"){
+            v = (pressure[i] || 0)
+        }
 
-        cell.style.width = "20px"
-        cell.style.height = "20px"
-        cell.style.cursor = "pointer"
-        cell.style.transition = "0.15s"
+        if(mode === "global"){
+            v = (global[i] || 0) / maxGlobal
+        }
 
-        // 🎨 режимы
-        if (mode === "structure") {
-            const v = count / maxCount
+        // --- COLOR ---
+        let color = "rgb(0,0,0)"
+
+        if(mode === "activity"){
+            const r = Math.floor(255 * v)
+            color = `rgb(${r},0,0)`
+        }
+
+        if(mode === "pressure"){
+            const r = Math.floor(255 * v)
+            const b = Math.floor(255 * (1 - v))
+            color = `rgb(${r},0,${b})`
+        }
+
+        if(mode === "global"){
             const r = Math.floor(255 * v)
             const g = Math.floor(180 * v)
-            const b = 50
-            cell.style.background = `rgb(${r},${g},${b})`
+            color = `rgb(${r},${g},50)`
         }
 
-        if (mode === "activity") {
-            const v = activity / maxActivity
-            const r = Math.floor(255 * v)
-            cell.style.background = `rgb(${r},0,0)`
+        // --- CELL ---
+        const cell = document.createElement("div")
+
+        cell.style.width = "14px"
+        cell.style.height = "14px"
+        cell.style.background = color
+        cell.style.cursor = "pointer"
+        cell.style.boxSizing = "border-box"
+
+        // --- SELECTED HIGHLIGHT ---
+        const selectedKin = getSelectedKin ? getSelectedKin() : null
+
+        if(selectedKin === kin){
+            cell.style.outline = "2px solid yellow"
         }
 
-        cell.title =
-            `Kin ${kin}\nTone ${tone}\nSeal ${seal}\nUsers: ${users.length}\nActivity: ${activity}`
+        // --- TOOLTIP ---
+        let title = `Kin ${kin}\nTone ${tone}\nSeal ${seal}`
 
-        // 🖱 клик по клетке → подсветить людей в Network
+        if(mode === "activity"){
+            title += `\nActivity: ${activity[i] || 0}`
+        }
+
+        if(mode === "pressure"){
+            title += `\nPressure: ${(pressure[i] || 0).toFixed(3)}`
+        }
+
+        if(mode === "global"){
+            const users = usersByKin[kin] || []
+            title += `\nUsers: ${users.length}`
+        }
+
+        cell.title = title
+
+        // --- CLICK ---
         cell.onclick = () => {
-            const userIds = users.map(u => u.id)
-            onKinSelect(kin, userIds)
+            if(onKinClick){
+                onKinClick(kin)
+            }
         }
 
         c.appendChild(cell)
