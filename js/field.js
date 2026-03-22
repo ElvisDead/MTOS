@@ -29,7 +29,27 @@ export function drawField(id, config){
         "Warrior","Earth","Mirror","Storm","Sun"
     ]
 
-    const header = document.createElement("div")
+    let header = wrapper.querySelector(".field-header")
+        if(!header){
+            header = document.createElement("div")
+            header.classList.add("field-header")
+                
+            header.style.display = "grid"
+            header.style.gridTemplateColumns = "repeat(20, 21px)"
+            header.style.justifyContent = "center"
+            header.style.marginBottom = "6px"
+            header.style.width = "fit-content"
+                
+            seals.forEach(s => {
+                const d = document.createElement("div")
+                d.style.fontSize = "9px"
+                d.style.textAlign = "center"
+                d.innerText = s.slice(0,3)
+                header.appendChild(d)
+            })
+
+            wrapper.appendChild(header)
+        }
     header.style.display = "grid"
     header.style.gridTemplateColumns = "repeat(20, 21px)"
     header.style.justifyContent = "center"
@@ -50,7 +70,37 @@ export function drawField(id, config){
 // ===============================
 // TONES (LEFT)
 // ===============================
-const labels = document.createElement("div")
+let labels = wrapper.querySelector(".field-labels")
+
+if(!labels){
+    labels = document.createElement("div")
+    labels.classList.add("field-labels")
+    labels.style.marginRight = "6px"
+
+    for(let t = 1; t <= 13; t++){
+        const d = document.createElement("div")
+        d.style.height = "21px"
+        d.style.fontSize = "10px"
+        d.style.display = "flex"
+        d.style.alignItems = "center"
+        d.innerText = t
+        labels.appendChild(d)
+    }
+}
+
+let row = wrapper.querySelector(".field-row")
+
+if(!row){
+    row = document.createElement("div")
+    row.classList.add("field-row")
+    row.style.display = "flex"
+    row.style.alignItems = "flex-start"
+
+    row.appendChild(labels)
+    row.appendChild(c)
+
+    wrapper.appendChild(row)
+}
 labels.style.marginRight = "6px"
 
 for(let t = 1; t <= 13; t++){
@@ -64,15 +114,23 @@ for(let t = 1; t <= 13; t++){
     labels.appendChild(d)
 }
 
-const parent = c.parentNode
+let wrapper = c.parentNode
 
-const wrapper = document.createElement("div")
-wrapper.style.display = "flex"
-wrapper.style.flexDirection = "column"
-wrapper.style.alignItems = "center"
+// если wrapper уже есть — используем его
+if(!wrapper.classList?.contains("field-wrapper")){
 
-// 🔥 сначала заменить c
-parent.replaceChild(wrapper, c)
+    wrapper = document.createElement("div")
+    wrapper.classList.add("field-wrapper")
+
+    wrapper.style.display = "flex"
+    wrapper.style.flexDirection = "column"
+    wrapper.style.alignItems = "center"
+
+    const parent = c.parentNode
+    parent.replaceChild(wrapper, c)
+
+    wrapper.appendChild(c)
+}
 
 // 🔥 header теперь ВНУТРИ wrapper
 wrapper.appendChild(header)
