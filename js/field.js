@@ -104,7 +104,7 @@ if(!labels){
         d.style.fontSize = "10px"
         d.style.display = "flex"
         d.style.alignItems = "center"
-        d.innerText = t + 1
+        d.innerText = tone + 1
         labels.appendChild(d)
     }
 }
