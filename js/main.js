@@ -658,8 +658,6 @@ json.dumps([f,s,u])
         window.selectionMemory = selectionMemory
         selectedKin = kin
             
-        selectedKin = kin
-            
         renderAttractorOnly()
     }
 }
@@ -703,6 +701,7 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         `))
 
         matrix = matrix2D.flat()
+        window._matrix = matrix
 
         const activeKin = selectedKin || userKin
 
@@ -936,14 +935,11 @@ function renderAttractorOnly(){
 
     if(window.attractorMode === "map"){
 
-        const matrix2D = JSON.parse(pyodide.runPython(`
-        import json
-        json.dumps(mtos_climate_atlas())
-        `))
-
-        matrix = matrix2D.flat()
+        const matrix = window._matrix
+        if(!matrix) return
 
         const activeKin = selectedKin || window._userKin
+        if(!activeKin) return
 
         drawAttractorMap("attractorMap", matrix, {
             selectedSeal: activeKin ? (activeKin - 1) % 20 : null,
