@@ -5,6 +5,9 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
+    if(window._drawingField) return
+    window._drawingField = true
+
     console.log("DRAW FIELD")
 
     history = []
@@ -242,6 +245,7 @@ row.appendChild(c)
         c.appendChild(cell)
     }
 }
+    window._drawingField = false
 }
 
 function detectClusters(pressure, threshold = 0.6){
