@@ -38,6 +38,8 @@ export function drawField(id, config){
     c.style.display = "grid"
     c.style.gridTemplateColumns = "repeat(20, 14px)"
     c.style.gap = "2px"
+    c.style.justifyContent = "center"
+    c.style.margin = "0 auto"
 
     const maxActivity = Math.max(...activity, 1)
     const maxGlobal = Math.max(...global, 1)
