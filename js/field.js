@@ -5,18 +5,6 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-        labels.style.marginRight = "6px"
-
-    for(let t = 1; t <= 13; t++){
-        const d = document.createElement("div")
-        d.style.height = "21px"
-        d.style.fontSize = "10px"
-        d.style.display = "flex"
-        d.style.alignItems = "center"
-        d.innerText = t
-        labels.appendChild(d)
-    }
-
     const {
         mode = "activity",
         activity = [],
@@ -64,9 +52,6 @@ const labels = document.createElement("div")
 labels.style.marginRight = "6px"
 
 for(let t = 1; t <= 13; t++){
-        
-    cell.style.width = "21px"
-    cell.style.height = "21px"
     
     const d = document.createElement("div")
     d.style.height = "21px"
@@ -197,6 +182,7 @@ for(let tone = 0; tone < 13; tone++){
         c.appendChild(cell)
     }
 }
+}
 
 function detectClusters(pressure, threshold = 0.6){
 
@@ -204,6 +190,10 @@ function detectClusters(pressure, threshold = 0.6){
     const clusters = []
 
     function getNeighbors(i){
+
+        const kin = i + 1
+        const tone = ((kin - 1) % 13)
+        const seal = ((kin - 1) % 20)
 
         const neighbors = []
 
