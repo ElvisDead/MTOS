@@ -241,3 +241,33 @@ function predictFlow(){
 
     return flow
 }
+
+function computePressure(users, connections){
+
+    const pressure = new Array(260).fill(0)
+
+    connections.forEach(conn => {
+
+        const a = users.find(u => u.name === conn.a)
+        const b = users.find(u => u.name === conn.b)
+
+        if(!a || !b) return
+
+        const kinA = a.kin - 1
+        const kinB = b.kin - 1
+
+        const weight = conn.weight || 1
+
+        pressure[kinA] += weight
+        pressure[kinB] += weight
+
+        if(conn.type === "conflict"){
+            pressure[kinA] += weight * 2
+            pressure[kinB] += weight * 2
+        }
+    })
+
+    const max = Math.max(...pressure, 1)
+
+    return pressure.map(v => v / max)
+}
