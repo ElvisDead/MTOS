@@ -735,7 +735,6 @@ drawField("fieldMap", {
     },
     getSelectedKin: () => window.selectedKin
 })
-
     updateFieldLegend(fieldModeCurrent)
 
     const now = new Date()
