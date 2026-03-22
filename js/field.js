@@ -43,7 +43,10 @@ export function drawField(id, config){
         header.appendChild(d)
     })
         
-    c.parentNode.insertBefore(header, c)
+    if(!c.previousSibling || !c.previousSibling.classList?.contains("field-header")){
+        header.classList.add("field-header")
+        c.parentNode.insertBefore(header, c)
+    }
 
 // ===============================
 // TONES (LEFT)
@@ -62,16 +65,19 @@ for(let t = 1; t <= 13; t++){
     labels.appendChild(d)
 }
 
+const parent = c.parentNode
+
 const wrapper = document.createElement("div")
 wrapper.style.display = "flex"
 wrapper.style.justifyContent = "center"
 wrapper.style.alignItems = "flex-start"
 
-// ВАЖНО
+// 🔥 СНАЧАЛА заменить
+parent.replaceChild(wrapper, c)
+
+// 🔥 ПОТОМ добавлять внутрь
 wrapper.appendChild(labels)
 wrapper.appendChild(c)
-
-c.parentNode.replaceChild(wrapper, c)
 
     // --- AUTO PRESSURE ---
     const computedPressure = pressure || computePressure(users, connections)
