@@ -377,9 +377,7 @@ json.dumps(weather)
         // ===============================
         users = userList.map(uName=>{
 
-            const kin = Number(pyodide.runPython(`
-            mtos_current_kin_NEW("${uName}",${year},${month},${day})
-            `))
+            const kin = (Math.abs(hashCode(uName)) % 260) + 1
 
             const phase = (kin % 20) * Math.PI / 10
 
@@ -1127,4 +1125,13 @@ function updateFieldLegend(mode){
     el.innerHTML += "<br>🟩 Cluster — зона давления"
     el.innerHTML += "<br>🟨 Attractor — устойчивая зона"
     el.innerHTML += "<br>⚡ Event — всплеск"
+}
+
+function hashCode(str){
+    let hash = 0
+    for(let i = 0; i < str.length; i++){
+        hash = (hash << 5) - hash + str.charCodeAt(i)
+        hash |= 0
+    }
+    return hash
 }
