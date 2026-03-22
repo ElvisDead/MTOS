@@ -231,11 +231,11 @@ export function drawWeatherMap(
 
             const cell = document.createElement("div")
 
-                users.forEach(u=>{
-                    if(u.kin === kin){
-                        cell.style.outline = "2px solid yellow"
-                    }
-                })
+                //users.forEach(u=>{
+                    //if(u.kin === kin){
+                        //cell.style.outline = "2px solid yellow"
+                    //}
+                //})
 
                 const sealIndex = (kin - 1) % 20
                 const name = window.SEALS ? window.SEALS[sealIndex] : sealIndex
@@ -262,7 +262,7 @@ export function drawWeatherMap(
             // ===============================
             // приоритет: selected > user > today
             if(window.selectedKin && kin === window.selectedKin){
-                cell.style.boxShadow = "0 0 0 3px cyan inset"
+                cell.style.boxShadow = "0 0 0 3px #00ff88 inset"
             }
             else if(kin === userKin){
                 cell.style.boxShadow = "0 0 0 3px white inset"
