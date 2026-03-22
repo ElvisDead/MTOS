@@ -87,11 +87,6 @@ export function drawWeatherMap(
             toneCell.style.display = "flex"
             toneCell.style.alignItems = "center"
             toneCell.style.justifyContent = "flex-end"
-        users.forEach(u=>{
-            if(u.kin === kin){
-                cell.style.outline = "2px solid yellow"
-            }
-        })
             grid.appendChild(toneCell)
 
             for(let seal=1;seal<=20;seal++){
@@ -228,10 +223,14 @@ export function drawWeatherMap(
 
             const cell = document.createElement("div")
 
+                users.forEach(u=>{
+                    if(u.kin === kin){
+                        cell.style.outline = "2px solid yellow"
+                    }
+                })
+
                 const sealIndex = (kin - 1) % 20
                 const name = window.SEALS ? window.SEALS[sealIndex] : sealIndex
-                    
-                cell.title = `${kin} — ${name}`
 
             cell.dataset.kin = kin
 
@@ -265,12 +264,14 @@ export function drawWeatherMap(
             // ===============================
             // TOOLTIP
             // ===============================
+
+            cell.title = `${kin} — ${name}`
             cell.title = `
-Kin: ${kin}
-Φ: ${phi.toFixed(3)}
-Wave: ${waveSum.toFixed(3)}
-Lattice: ${latticeNorm.toFixed(3)}
-`
+            Kin: ${kin}
+            Φ: ${phi.toFixed(3)}
+            Wave: ${waveSum.toFixed(3)}
+            Lattice: ${latticeNorm.toFixed(3)}
+            `
 
             grid.appendChild(cell)
         }
