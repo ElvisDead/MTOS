@@ -124,12 +124,6 @@ for(let tone = 0; tone < 13; tone++){
         const p = (computedPressure[i] || 0)
         const g = (global[i] || 0) / maxGlobal
 
-        let v = 0
-        if(mode === "activity") v = a
-        if(mode === "pressure") v = p
-        if(mode === "global") v = g
-        if(mode === "hybrid") v = a * p
-
         let color = "rgb(0,0,0)"
 
         if(mode === "activity"){
