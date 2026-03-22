@@ -354,12 +354,6 @@ json.dumps(weather)
         })
         const pressure = result.pressure
         const userKin = result.kin
-        window._weather = weather
-        window._weatherToday = weatherToday
-        window._pressure = pressure
-        window._userKin = userKin
-        window._todayKin = todayKin
-        window._date = { year, month, day }
 
         // ===============================
         // TODAY
@@ -368,6 +362,13 @@ json.dumps(weather)
         const todayKin = Number(pyodide.runPython(`
         mtos_current_kin_NEW("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
         `))
+
+        window._weather = weather
+        window._weatherToday = weatherToday
+        window._pressure = pressure
+        window._userKin = userKin
+        window._todayKin = todayKin
+        window._date = { year, month, day }
 
         // ===============================
         // BUILD USERS
@@ -657,16 +658,9 @@ json.dumps([f,s,u])
         window.selectionMemory = selectionMemory
         selectedKin = kin
             
-        renderAll(
-            window._weather,
-            window._weatherToday,
-            window._pressure,
-            window._userKin,
-            window._todayKin,
-            window._date.year,
-            window._date.month,
-            window._date.day
-        )
+        selectedKin = kin
+            
+        renderAttractorOnly()
     }
 }
 
@@ -932,4 +926,58 @@ window.setNetworkMode = (mode) => {
     }
 
     runMTOS()
+}
+
+function renderAttractorOnly(){
+
+    if(!window._weather) return
+
+    let matrix = null
+
+    if(window.attractorMode === "map"){
+
+        const matrix2D = JSON.parse(pyodide.runPython(`
+        import json
+        json.dumps(mtos_climate_atlas())
+        `))
+
+        matrix = matrix2D.flat()
+
+        const activeKin = selectedKin || window._userKin
+
+        drawAttractorMap("attractorMap", matrix, {
+            selectedSeal: activeKin ? (activeKin - 1) % 20 : null,
+            labels: SEALS,
+            meanings: SEAL_MEANING
+        })
+
+        // 🔥 анализ тоже обновляем
+        const seal = (activeKin - 1) % 20
+        const analysis = analyzeInteractions(matrix, seal)
+
+        const el = document.getElementById("interactionAnalysis")
+
+        if(el){
+            el.innerHTML = `
+            <div><b>Best interactions:</b></div>
+            ${analysis.best.map(x => `
+            🟢 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
+            `).join("<br>")}
+            
+            <div style="margin-top:8px;"><b>Worst interactions:</b></div>
+
+            ${analysis.worst.map(x => `
+            🔴 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
+            `).join("<br>")}
+            `
+        }
+
+    }else{
+        drawAttractor(
+            "attractorMap",
+            users,
+            [],
+            selectedKin
+        )
+    }
 }
