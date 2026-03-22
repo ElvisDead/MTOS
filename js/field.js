@@ -130,7 +130,7 @@ if(!row){
 }
 
     // --- AUTO PRESSURE ---
-    const computedPressure = pressure || computePressure(users, connections)
+    const computedPressure = computePressure(users, connections)
 
     // --- HISTORY ---
     history.push([...computedPressure])
