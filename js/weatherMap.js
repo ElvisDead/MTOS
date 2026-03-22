@@ -13,7 +13,16 @@ export function drawWeatherMap(
 
     const root = document.getElementById(id)
     if(!root) return
-    window._lastWeatherArgs = arguments
+    window._lastWeatherArgs = [
+        id,
+        data,
+        userKin,
+        highlightKin,
+        pressureData,
+        fieldData,
+        selectedAgent,
+        attractorField
+    ]
 
     // === POPUP ELEMENT ===
     let popup = document.getElementById("kinPopup")
@@ -94,8 +103,7 @@ export function drawWeatherMap(
             // ===============================
             // KIN
             // ===============================
-            let kin = (seal-1)*13 + tone
-            while(kin>260) kin-=260
+            let kin = (tone - 1) * 20 + seal
 
             let phi = fieldData?.[kin-1] ?? 0
 
@@ -252,19 +260,18 @@ export function drawWeatherMap(
             // ===============================
             // ВЫДЕЛЕНИЯ
             // ===============================
-            if(kin === highlightKin){
-                cell.style.boxShadow = "0 0 0 2px yellow inset"
+            // приоритет: selected > user > today
+            if(window.selectedKin && kin === window.selectedKin){
+                cell.style.boxShadow = "0 0 0 3px cyan inset"
             }
-
-            if(kin === userKin){
+            else if(kin === userKin){
                 cell.style.boxShadow = "0 0 0 3px white inset"
             }
-
-            if(
-                (selectedAgent && kin === selectedAgent.kin) ||
-                (window.selectedKin && kin === window.selectedKin)
-            ){
-                cell.style.boxShadow = "0 0 0 3px cyan inset"
+            else if(kin === highlightKin){
+                cell.style.boxShadow = "0 0 0 2px yellow inset"
+            }
+            else{
+                cell.style.boxShadow = "none"
             }
 
             // ===============================
@@ -389,8 +396,10 @@ function onCellClick(kin, e){
 
     popup.style.display = "block"
     if(window.onKinSelect){
-        window.onKinSelect(kin)
         window.selectedKin = kin
+        
+        if(window.onKinSelect){
+            window.onKinSelect(kin)
     }
 }
 
