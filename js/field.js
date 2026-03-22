@@ -271,3 +271,13 @@ function computePressure(users, connections){
 
     return pressure.map(v => v / max)
 }
+
+function detectEvent(index, current){
+
+    if(history.length < 5) return false
+
+    const prev = history[history.length - 5][index]
+    const now = current[index]
+
+    return (now - prev) > 0.4
+}
