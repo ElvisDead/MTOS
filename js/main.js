@@ -630,6 +630,7 @@ json.dumps([f,s,u])
                 todayKin,
                 result.attention,
                 result.noise,
+                result.entropy,
                 result.lyapunov,
                 result.prediction,
                 result.predictability
