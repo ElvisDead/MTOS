@@ -18,7 +18,7 @@ export function drawAttractorMap(id, data, options = {}) {
 
     const grid = document.createElement("div")
     grid.style.display = "grid"
-    grid.style.gridTemplateColumns = `repeat(${size}, 18px)`
+    grid.style.gridTemplateColumns = `repeat(${size}, 26px)`
     grid.style.gap = "2px"
     grid.style.justifyContent = "center"
 
@@ -46,8 +46,8 @@ export function drawAttractorMap(id, data, options = {}) {
 
         const cell = document.createElement("div")
 
-        cell.style.width = "18px"
-        cell.style.height = "18px"
+        cell.style.width = "26px"
+        cell.style.height = "26px"
         cell.style.background = getColor(v)
         cell.style.cursor = "pointer"
         cell.style.boxSizing = "border-box"
@@ -84,6 +84,25 @@ export function drawAttractorMap(id, data, options = {}) {
         }
 
         grid.appendChild(cell)
+    }
+
+    if(labels){
+
+        const header = document.createElement("div")
+        header.style.display = "grid"
+        header.style.gridTemplateColumns = `repeat(${size}, 26px)`
+        header.style.justifyContent = "center"
+        header.style.fontSize = "10px"
+        header.style.color = "#aaa"
+
+        for(let i=0;i<size;i++){
+            const l = document.createElement("div")
+            l.innerText = labels[i].slice(0,3)
+            l.style.textAlign = "center"
+            header.appendChild(l)
+        }
+
+        root.appendChild(header)
     }
 
     root.appendChild(grid)
