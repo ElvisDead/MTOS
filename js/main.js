@@ -736,6 +736,8 @@ drawField("fieldMap", {
     getSelectedKin: () => window.selectedKin
 })
 
+    updateFieldLegend(fieldModeCurrent)
+
     const now = new Date()
 
     drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
@@ -955,6 +957,41 @@ function interpretPredictability(days){
     return "medium-term stability"
 }
 
+// ===============================
+// FIELD MODE UI
+// ===============================
+
+window.setFieldMode = (mode) => {
+
+    window.fieldMode = mode
+
+    const buttons = ["btnActivity","btnPressure","btnGlobal","btnHybrid"]
+
+    buttons.forEach(id=>{
+        const b = document.getElementById(id)
+        if(b){
+            b.style.background = "#111"
+            b.style.color = "#fff"
+        }
+    })
+
+    const activeMap = {
+        activity: "btnActivity",
+        pressure: "btnPressure",
+        global: "btnGlobal",
+        hybrid: "btnHybrid"
+    }
+
+    const active = document.getElementById(activeMap[mode])
+
+    if(active){
+        active.style.background = "#00ff88"
+        active.style.color = "#000"
+    }
+
+    runMTOS()
+}
+
 function analyzeInteractions(matrix, seal){
 
     const size = 20
@@ -1063,4 +1100,30 @@ function renderAttractorOnly(){
             selectedKin
         )
     }
+}
+
+function updateFieldLegend(mode){
+
+    const el = document.getElementById("fieldLegend")
+    if(!el) return
+
+    if(mode === "activity"){
+        el.innerHTML = "🔴 Activity — интенсивность внимания"
+    }
+
+    if(mode === "pressure"){
+        el.innerHTML = "🔵→🔴 Pressure — напряжение системы"
+    }
+
+    if(mode === "global"){
+        el.innerHTML = "🟠 Global — количество пользователей"
+    }
+
+    if(mode === "hybrid"){
+        el.innerHTML = "🟣 Hybrid — внимание × давление"
+    }
+
+    el.innerHTML += "<br>🟩 Cluster — зона давления"
+    el.innerHTML += "<br>🟨 Attractor — устойчивая зона"
+    el.innerHTML += "<br>⚡ Event — всплеск"
 }
