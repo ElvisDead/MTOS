@@ -378,8 +378,8 @@ json.dumps(weather)
         users = userList.map(uName=>{
 
             const kin = Number(pyodide.runPython(`
-mtos_current_kin_NEW("${uName}",${year},${month},${day})
-`))
+            mtos_current_kin_NEW("${uName}",${year},${month},${day})
+            `))
 
             const phase = (kin % 20) * Math.PI / 10
 
@@ -390,6 +390,8 @@ mtos_current_kin_NEW("${uName}",${year},${month},${day})
                 weight: 1
             }
         })
+
+        console.log("USER KINS:", users.map(u => u.kin))
 
         // ===============================
         // FIELD
