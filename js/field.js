@@ -5,14 +5,10 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-    const clusters = detectClusters(computedPressure)
-    const attractors = detectAttractors()
-    const flow = predictFlow()
-
     const {
         mode = "activity",
         activity = [],
-        pressure = null, // теперь может быть null
+        pressure = null,
         global = [],
         users = [],
         connections = [],
@@ -32,6 +28,11 @@ export function drawField(id, config){
     // --- HISTORY ---
     history.push([...computedPressure])
     if(history.length > maxHistory) history.shift()
+
+    // ✅ ТЕПЕРЬ МОЖНО (после pressure)
+    const clusters = detectClusters(computedPressure)
+    const attractors = detectAttractors()
+    const flow = predictFlow()
 
     // --- GRID ---
     c.style.display = "grid"
@@ -53,9 +54,8 @@ export function drawField(id, config){
         const p = (computedPressure[i] || 0)
         const g = (global[i] || 0) / maxGlobal
 
-        // --- MODE VALUE ---
+        // --- VALUE ---
         let v = 0
-
         if(mode === "activity") v = a
         if(mode === "pressure") v = p
         if(mode === "global") v = g
@@ -82,7 +82,7 @@ export function drawField(id, config){
             color = `rgb(${r},0,${b})`
         }
 
-        // --- EVENT DETECTION ---
+        // --- EVENT ---
         const isEvent = detectEvent(i, computedPressure)
 
         const cell = document.createElement("div")
@@ -93,12 +93,23 @@ export function drawField(id, config){
         cell.style.cursor = "pointer"
         cell.style.boxSizing = "border-box"
 
-        if(selectedKin === kin){
-            cell.style.outline = "2px solid yellow"
-        }
-
+        // ✅ ПРАВИЛЬНЫЙ ПРИОРИТЕТ
         if(isEvent){
             cell.style.outline = "2px solid white"
+        }
+        else if(attractors.includes(i)){
+            cell.style.outline = "2px solid yellow"
+        }
+        else if(clusters.some(c => c.includes(i))){
+            cell.style.outline = "1px solid lime"
+        }
+        else if(selectedKin === kin){
+            cell.style.outline = "2px solid orange"
+        }
+
+        // --- FLOW ---
+        if(flow[i] > 0.2){
+            cell.style.boxShadow = "inset 0 0 4px white"
         }
 
         // --- TOOLTIP ---
@@ -113,7 +124,7 @@ export function drawField(id, config){
         }
 
         if(isEvent){
-            title += `\n⚡ EVENT DETECTED`
+            title += `\n⚡ EVENT`
         }
 
         cell.title = title
@@ -126,64 +137,7 @@ export function drawField(id, config){
 
         c.appendChild(cell)
     }
-
-    if(clusters.some(c => c.includes(i))){
-        cell.style.outline = "1px solid lime"
-    }
-
-    if(attractors.includes(i)){
-        cell.style.outline = "2px solid yellow"
-    }
-
-    if(flow[i] > 0.2){
-        cell.style.boxShadow = "inset 0 0 4px white"
-    }
 }
-
-function computePressure(users, connections){
-
-    const pressure = new Array(260).fill(0)
-
-    connections.forEach(conn => {
-
-        const a = users.find(u => u.id === conn.a)
-        const b = users.find(u => u.id === conn.b)
-
-        if(!a || !b) return
-
-        const kinA = a.kin - 1
-        const kinB = b.kin - 1
-
-        const weight = conn.weight || 1
-
-        // базовое давление
-        pressure[kinA] += weight
-        pressure[kinB] += weight
-
-        // если есть конфликт — усиливаем
-        if(conn.type === "conflict"){
-            pressure[kinA] += weight * 2
-            pressure[kinB] += weight * 2
-        }
-
-    })
-
-    const max = Math.max(...pressure, 1)
-
-    return pressure.map(v => v / max)
-}
-
-function detectEvent(index, current){
-
-    if(history.length < 5) return false
-
-    const prev = history[history.length - 5][index]
-    const now = current[index]
-
-    return (now - prev) > 0.4
-}
-
-
 
 function detectClusters(pressure, threshold = 0.6){
 
@@ -191,10 +145,11 @@ function detectClusters(pressure, threshold = 0.6){
     const clusters = []
 
     function getNeighbors(i){
+
         const kin = i + 1
 
         const tone = ((kin - 1) % 13)
-        const seal = Math.floor((kin - 1) / 13)
+        const seal = ((kin - 1) % 20)
 
         const neighbors = []
 
@@ -203,12 +158,11 @@ function detectClusters(pressure, threshold = 0.6){
 
                 if(dt === 0 && ds === 0) continue
 
-                let nt = (tone + dt + 13) % 13
-                let ns = seal + ds
+                const nt = (tone + dt + 13) % 13
+                const ns = (seal + ds + 20) % 20
 
-                if(ns < 0 || ns >= 20) continue
+                const ni = (ns * 13 + nt) % 260
 
-                const ni = ns * 13 + nt
                 neighbors.push(ni)
             }
         }
@@ -234,9 +188,7 @@ function detectClusters(pressure, threshold = 0.6){
             visited[cur] = true
             cluster.push(cur)
 
-            const neighbors = getNeighbors(cur)
-
-            neighbors.forEach(n => {
+            getNeighbors(cur).forEach(n => {
                 if(!visited[n]) stack.push(n)
             })
         }
