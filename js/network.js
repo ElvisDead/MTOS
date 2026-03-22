@@ -406,6 +406,9 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     }
             
     canvas.onmousedown = (e)=>{
+
+        if(window.networkMode !== "edit") return
+        
         isDragging = true
         dragStartX = e.clientX
         dragStartY = e.clientY
@@ -418,6 +421,8 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     // HOVER
     // ===============================
     canvas.onmousemove = (e)=>{
+
+        if(window.networkMode !== "edit") return
 
     const rect = canvas.getBoundingClientRect()
 
