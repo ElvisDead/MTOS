@@ -122,12 +122,14 @@ if(!row){
     row.classList.add("field-row")
     row.style.display = "flex"
     row.style.alignItems = "flex-start"
-
-    row.appendChild(labels)
-    row.appendChild(c)
-
     wrapper.appendChild(row)
 }
+
+// 🔥 КЛЮЧЕВОЕ — ПОЛНАЯ ПЕРЕСБОРКА
+row.innerHTML = ""
+
+row.appendChild(labels)
+row.appendChild(c)
 
     // --- AUTO PRESSURE ---
     const computedPressure = computePressure(users, connections)
