@@ -150,6 +150,19 @@ canvas{
     Hold <b>Shift</b> and click two nodes to create a connection.
 </div>
 
+<div class="section">
+    <h2>Field</h2>
+
+    <div style="margin-bottom:10px;">
+        <button onclick="window.fieldMode='activity'; runMTOS()">Activity</button>
+        <button onclick="window.fieldMode='pressure'; runMTOS()">Pressure</button>
+        <button onclick="window.fieldMode='global'; runMTOS()">Global</button>
+        <button onclick="window.fieldMode='hybrid'; runMTOS()">Hybrid</button>
+    </div>
+
+    <div id="fieldMap"></div>
+</div>
+
 
 <!-- SERIES -->
 <div class="section">
