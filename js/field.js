@@ -150,12 +150,12 @@ if(!row){
     const maxGlobal = Math.max(...global, 1)
 
     const selectedKin = getSelectedKin ? getSelectedKin() : null
+        
+    for(let tone = 0; tone < 13; tone++){
+        for(let seal = 0; seal < 20; seal++){
 
-for(let tone = 0; tone < 13; tone++){
-    for(let seal = 0; seal < 20; seal++){
-
-        const kin = ((seal * 13 + tone) % 260) + 1
-        const i = kin - 1
+        const i = tone * 20 + seal
+        const kin = i + 1
 
         const a = (activity[i] || 0) / maxActivity
         const p = (computedPressure[i] || 0)
