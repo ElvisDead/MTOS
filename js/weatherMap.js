@@ -258,7 +258,7 @@ export function drawWeatherMap(
             if(
                 (selectedAgent && kin === selectedAgent.kin) ||
                 (selectedKin && kin === selectedKin)
-            ){{
+            ){
                 cell.style.boxShadow = "0 0 0 3px cyan inset"
             }
 
