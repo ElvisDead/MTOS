@@ -5,29 +5,49 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-        if(window._lockField) return
-        window._lockField = true
+    if(window._drawingField) return
+    window._drawingField = true
 
-        console.log("DRAW FIELD")
+    console.log("DRAW FIELD")
 
-        const {
-            mode = "activity",
-            activity = [],
-            pressure = null,
-            global = [],
-            users = [],
-            connections = [],
-            usersByKin = {},
-            onKinClick = null,
-            getSelectedKin = null
-        } = config || {}
+    history = []
 
-        const c = document.getElementById(id)
-        if(!c) return
+    const {
+        mode = "activity",
+        activity = [],
+        pressure = null,
+        global = [],
+        users = [],
+        connections = [],
+        usersByKin = {},
+        onKinClick = null,
+        getSelectedKin = null
+    } = config || {}
 
-        c.innerHTML = ""
+    const c = document.getElementById(id)
+    if(!c) return
 
-        const wrapper = c.parentNode
+    c.innerHTML = ""
+
+// ===============================
+// WRAPPER
+// ===============================
+let wrapper = c.parentNode
+
+if(!wrapper.classList?.contains("field-wrapper")){
+
+    wrapper = document.createElement("div")
+    wrapper.classList.add("field-wrapper")
+
+    wrapper.style.display = "flex"
+    wrapper.style.flexDirection = "column"
+    wrapper.style.alignItems = "center"
+
+    const parent = c.parentNode
+    parent.replaceChild(wrapper, c)
+
+    wrapper.appendChild(c)
+}
 
 // ===============================
 // HEADER
@@ -61,10 +81,6 @@ if(!header){
         header.appendChild(d)
     })
 
-        setTimeout(() => {
-                window._lockField = false
-        }, 0)
-
     wrapper.appendChild(header)
 }
 
@@ -93,17 +109,30 @@ for(let tone = 0; tone < 13; tone++){
     labels.appendChild(d)
 }
 
-if(!labels.parentNode){
-    wrapper.appendChild(labels)
+// ===============================
+// ROW
+// ===============================
+let row = wrapper.querySelector(".field-row")
+
+if(!row){
+    row = document.createElement("div")
+    row.classList.add("field-row")
+    row.style.display = "flex"
+    row.style.alignItems = "flex-start"
+    wrapper.appendChild(row)
 }
 
+// 🔥 КЛЮЧЕВОЕ — ПОЛНАЯ ПЕРЕСБОРКА
+row.innerHTML = ""
+
+row.appendChild(labels)
+row.appendChild(c)
+
     // --- AUTO PRESSURE ---
-    const computedPressure = new Array(260).fill(0)
+    const computedPressure = computePressure(users, connections)
 
     // --- HISTORY ---
-    if(history.length === 0){
-            history.push([...computedPressure])
-    }
+    history.push([...computedPressure])
     if(history.length > maxHistory) history.shift()
 
     // ✅ ТЕПЕРЬ МОЖНО (после pressure)
@@ -208,6 +237,7 @@ if(!labels.parentNode){
         c.appendChild(cell)
     }
 }
+    window._drawingField = false
 }
 
 function detectClusters(pressure, threshold = 0.6){
