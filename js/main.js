@@ -537,7 +537,6 @@ json.dumps({
                     
                 return {
                     ...u,
-                    kin: kin,
                     kin: baseKin,
                     displayKin: kin,
                     baseKin: baseKin,
