@@ -417,6 +417,8 @@ json.dumps(weather)
         const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
         const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
         
+        const prevUsers = users
+        
         const fieldResult = JSON.parse(pyodide.runPython(`
         import json
         users = ${JSON.stringify(users)}
@@ -439,7 +441,7 @@ json.dumps(weather)
             
         users = updated.map((u, i) => ({
             ...u,
-            displayKin: users[i].displayKin || u.kin
+            displayKin: prevUsers[i]?.displayKin ?? u.kin
         }))
         
         window.currentUsers = users
@@ -547,6 +549,8 @@ json.dumps({
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
             const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
 
+            const prevUsers = users
+            
             const fieldResult = JSON.parse(pyodide.runPython(`
             import json
             users = ${JSON.stringify(users)}
@@ -569,7 +573,7 @@ json.dumps({
                 
             users = updated.map((u, i) => ({
                 ...u,
-                displayKin: users[i].displayKin || u.kin
+                displayKin: prevUsers[i]?.displayKin ?? u.kin
             }))
             
             window.currentUsers = users
