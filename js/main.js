@@ -711,10 +711,10 @@ drawField("fieldMap", {
     mode: fieldModeCurrent,
     activity: activity,
     pressure: Array.isArray(pressure) ? pressure : new Array(260).fill(0),
-    global: globalCounts || new Array(260).fill(0),
+    global: new Array(260).fill(0),
     users: users || [],
-    connections: connections || [],
-    usersByKin: usersByKin || {},
+    connections: [],
+    usersByKin: {},
     onKinClick: (kin) => {
         window.onKinSelect(kin)
     },
