@@ -323,8 +323,12 @@ function computePressure(users, connections){
 
         if(!a || !b) return
 
-        const kinA = KinRegistry.toIndex(a.kin)
-        const kinB = KinRegistry.toIndex(b.kin)
+        // Принудительно превращаем в число, так как из Python/JSON может прийти строка
+        const kinA = KinRegistry.toIndex(parseInt(a.kin));
+        const kinB = KinRegistry.toIndex(parseInt(b.kin));
+
+        // Проверка на корректность индекса (0-259)
+        if (isNaN(kinA) || kinA < 0) return;
 
         const weight = conn.weight || 1
 
