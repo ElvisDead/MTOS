@@ -688,57 +688,28 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         window._attractorField
     )
 
-    // ===============================
+// ===============================
 // FIELD
 // ===============================
 
 const fieldModeCurrent = window.fieldMode || "hybrid"
 
-// Activity (из weather)
 const safeWeather = Array.isArray(weather) ? weather : []
 
-const activity = safeWeather.map(w => 
+let activity = safeWeather.map(w => 
     w && typeof w.attention === "number" ? w.attention : 0.5
 )
 
-// Global (сколько пользователей на кин)
-const globalCounts = new Array(260).fill(0)
-const usersByKin = {}
-
-users.forEach(u => {
-    const k = u.kin
-    globalCounts[k-1]++
-
-    if(!usersByKin[k]) usersByKin[k] = []
-    usersByKin[k].push(u)
-})
-
-// Connections из памяти
-const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
-
-const connections = Object.keys(memory).map(key => {
-    const [a,b] = key.split("->")
-    return {
-        a,
-        b,
-        weight: Math.abs(memory[key]),
-        type: memory[key] < 0 ? "conflict" : "support"
-    }
-})
-
-    if(window._attractorRAF){
-        cancelAnimationFrame(window._attractorRAF)
-        window._attractorRAF = null
-    }
-
+// 🔥 КРИТИЧЕСКИЙ ФИКС — УБИРАЕМ RETURN
 if(!safeWeather.length){
-    console.log("FIELD BLOCKED: no weather")
-    return
+    console.log("FIELD FALLBACK: using empty grid")
+
+    activity = new Array(260).fill(0.5)
 }
 
 drawField("fieldMap", {
     mode: fieldModeCurrent,
-    activity,
+    activity: activity,
     pressure: Array.isArray(pressure) ? pressure : new Array(260).fill(0),
     global: globalCounts || new Array(260).fill(0),
     users: users || [],
