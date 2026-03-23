@@ -18,32 +18,7 @@ import {
     initReplay
 } from "./replay.js"
 import { drawField } from "./field.js"
-
-const KinRegistry = {
-
-    // kin → индекс массива (0–259)
-    toIndex(kin){
-        return kin - 1
-    },
-
-    // индекс → kin
-    fromIndex(i){
-        return i + 1
-    },
-
-    // kin → координаты сетки (x,y)
-    toGrid(kin){
-        const i = kin - 1
-        const seal = Math.floor(i / 13)
-        const tone = i % 13
-        return { seal, tone }
-    },
-
-    // координаты → kin
-    fromGrid(seal, tone){
-        return ((seal * 13 + tone) % 260) + 1
-    }
-}
+import { KinRegistry } from "./kinRegistry.js"
 
 function toPython(obj){
     return JSON.stringify(obj)
