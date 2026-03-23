@@ -174,7 +174,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
 
             let attractorValue = null
                 if(matrix){
-                    const sealA = (users[i].kin - 1) % 20
+                    const sealA = KinRegistry.toIndex(users[i].kin) % 20
                     const sealB = (users[j].kin - 1) % 20
                     attractorValue = matrix[sealA * 20 + sealB]
                 }
