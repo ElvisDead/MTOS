@@ -695,7 +695,11 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
 const fieldModeCurrent = window.fieldMode || "hybrid"
 
 // Activity (из weather)
-const activity = weather.map(w => w.attention)
+const safeWeather = Array.isArray(weather) ? weather : []
+
+const activity = safeWeather.map(w => 
+    w && typeof w.attention === "number" ? w.attention : 0.5
+)
 
 // Global (сколько пользователей на кин)
 const globalCounts = new Array(260).fill(0)
@@ -727,14 +731,19 @@ const connections = Object.keys(memory).map(key => {
         window._attractorRAF = null
     }
 
+if(!safeWeather.length){
+    console.log("FIELD BLOCKED: no weather")
+    return
+}
+
 drawField("fieldMap", {
     mode: fieldModeCurrent,
     activity,
-    pressure,
-    global: globalCounts,
-    users,
-    connections,
-    usersByKin,
+    pressure: Array.isArray(pressure) ? pressure : new Array(260).fill(0),
+    global: globalCounts || new Array(260).fill(0),
+    users: users || [],
+    connections: connections || [],
+    usersByKin: usersByKin || {},
     onKinClick: (kin) => {
         window.onKinSelect(kin)
     },
