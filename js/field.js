@@ -126,7 +126,7 @@ export function drawField(id, config){
         for(let seal = 0; seal < 20; seal++){
 
             const kin = ((seal * 13 + tone) % 260) + 1
-            const i = kin - 1
+            const i = KinRegistry.toIndex(kin)
 
             const a = (safeActivity[i] || 0) / maxActivity
             const p = (computedPressure[i] || 0)
