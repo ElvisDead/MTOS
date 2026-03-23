@@ -19,6 +19,32 @@ import {
 } from "./replay.js"
 import { drawField } from "./field.js"
 
+const KinRegistry = {
+
+    // kin → индекс массива (0–259)
+    toIndex(kin){
+        return kin - 1
+    },
+
+    // индекс → kin
+    fromIndex(i){
+        return i + 1
+    },
+
+    // kin → координаты сетки (x,y)
+    toGrid(kin){
+        const i = kin - 1
+        const seal = Math.floor(i / 13)
+        const tone = i % 13
+        return { seal, tone }
+    },
+
+    // координаты → kin
+    fromGrid(seal, tone){
+        return ((seal * 13 + tone) % 260) + 1
+    }
+}
+
 function toPython(obj){
     return JSON.stringify(obj)
         .replace(/true/g, "True")
@@ -696,12 +722,14 @@ if(!safeWeather.length){
 
     if(sourceUsers.length){
         sourceUsers.forEach(u=>{
-            const i = (u.displayKin || u.kin) - 1
+            const i = KinRegistry.toIndex(u.displayKin || u.kin)
             if(i >= 0 && i < 260){
                 globalCounts[i]++
             }
                 
-            const k = u.displayKin || u.kin
+            const k = KinRegistry.fromIndex(
+                KinRegistry.toIndex(u.displayKin || u.kin)
+            )
                 
             if(!usersByKin[k]){
                 usersByKin[k] = []
