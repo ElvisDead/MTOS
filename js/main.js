@@ -399,7 +399,6 @@ json.dumps(weather)
             return {
                 name: uName,
                 kin: baseKin,
-                displayKin: baseKin,
                 baseKin: baseKin,
                 phase,
                 weight: 1
@@ -458,7 +457,6 @@ json.dumps(weather)
                 name: u.name,
                 kin: prev ? prev.kin : u.kin,
                 baseKin: prev ? prev.baseKin : u.kin,
-                displayKin: u.kin,
                 weight: u.weight,
                 phase: prev ? prev.phase : u.phase
             }
@@ -559,7 +557,6 @@ json.dumps({
                 return {
                     ...u,
                     kin: baseKin,
-                    displayKin: baseKin,
                     baseKin: baseKin,
                     phase
                 }
@@ -601,7 +598,6 @@ json.dumps({
                     name: u.name,
                     kin: prev ? prev.kin : u.kin,
                     baseKin: prev ? prev.baseKin : u.kin,
-                    displayKin: u.kin,
                     weight: u.weight,
                     phase: prev ? prev.phase : u.phase
                 }
@@ -640,7 +636,7 @@ json.dumps({
     window.onKinSelect = (kin) => {
         logEvent("kin_select", {
             kin,
-            memory: selectionMemory[KinRegistry.toIndex(kin]
+            memory: selectionMemory[KinRegistry.toIndex(kin)]
         })
         // ===============================
         // MEMORY UPDATE
@@ -704,13 +700,13 @@ if(!safeWeather.length){
 
     if(sourceUsers.length){
         sourceUsers.forEach(u=>{
-            const i = KinRegistry.toIndex(u.displayKin || u.kin)
+            const i = KinRegistry.toIndex(u.kin)
             if(i >= 0 && i < 260){
                 globalCounts[i]++
             }
                 
             const k = KinRegistry.fromIndex(
-                KinRegistry.toIndex(u.displayKin || u.kin)
+                KinRegistry.toIndex(u.kin)
             )
                 
             if(!usersByKin[k]){
