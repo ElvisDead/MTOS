@@ -196,7 +196,7 @@ export function drawField(id, config){
             title += `\nActivity: ${safeActivity[i] || 0}`
             title += `\nPressure: ${p.toFixed(3)}`
 
-            const usersList = usersByKin[kin] || []
+            const usersList = correctedUsersByKin[kin] || []
             if(usersList.length){
                 title += `\nUsers: ${usersList.length}`
                 title += "\n" + usersList.map(u => u.name).join(", ")
