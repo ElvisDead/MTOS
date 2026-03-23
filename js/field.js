@@ -8,26 +8,35 @@ export function drawField(id, config){
     if(window._drawingField) return
     window._drawingField = true
 
-    console.log("DRAW FIELD")
+    try {
 
-    history = []
+        console.log("DRAW FIELD")
 
-    const {
-        mode = "activity",
-        activity = [],
-        pressure = null,
-        global = [],
-        users = [],
-        connections = [],
-        usersByKin = {},
-        onKinClick = null,
-        getSelectedKin = null
-    } = config || {}
+        history = []
 
-    const c = document.getElementById(id)
-    if(!c) return
+        const {
+            mode = "activity",
+            activity = [],
+            pressure = null,
+            global = [],
+            users = [],
+            connections = [],
+            usersByKin = {},
+            onKinClick = null,
+            getSelectedKin = null
+        } = config || {}
 
-    c.innerHTML = ""
+        const c = document.getElementById(id)
+        if(!c) return
+
+        c.innerHTML = ""
+
+        // ВСЁ ОСТАЛЬНОЕ БЕЗ ИЗМЕНЕНИЙ
+
+    } finally {
+        window._drawingField = false   // 🔥 ВСЕГДА СРАБОТАЕТ
+    }
+}
 
 // ===============================
 // WRAPPER
