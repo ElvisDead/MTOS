@@ -27,26 +27,6 @@ export function drawField(id, config){
         c.innerHTML = ""
 
 // ===============================
-// WRAPPER
-// ===============================
-let wrapper = c.parentNode
-
-if(!wrapper.classList?.contains("field-wrapper")){
-
-    wrapper = document.createElement("div")
-    wrapper.classList.add("field-wrapper")
-
-    wrapper.style.display = "flex"
-    wrapper.style.flexDirection = "column"
-    wrapper.style.alignItems = "center"
-
-    const parent = c.parentNode
-    parent.replaceChild(wrapper, c)
-
-    wrapper.appendChild(c)
-}
-
-// ===============================
 // HEADER
 // ===============================
 let header = wrapper.querySelector(".field-header")
