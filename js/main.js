@@ -417,8 +417,6 @@ json.dumps(weather)
         const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
         const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
         
-        const prevUsers = users
-        
         const prevUsers = JSON.parse(JSON.stringify(users))
         const fieldResult = JSON.parse(pyodide.runPython(`
         import json
@@ -553,8 +551,6 @@ json.dumps({
 
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
             const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
-
-            const prevUsers = users
             
             const prevUsers = JSON.parse(JSON.stringify(users))
             const fieldResult = JSON.parse(pyodide.runPython(`
