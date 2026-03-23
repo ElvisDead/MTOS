@@ -1462,9 +1462,14 @@ def mtos_kin_activity():
 # ===============================
 def mtos_current_kin_NEW(name, year, month, day):
 
-    import datetime
+    users = load_users()
 
-    date = datetime.date(year, month, day)
+    if name in users:
+        birth = users[name]["birth"]
+        y, m, d = map(int, birth.split("-"))
+        date = datetime.date(y, m, d)
+    else:
+        date = datetime.date(year, month, day)
 
     kin, _, _, _ = kin_from_date(date)
 
