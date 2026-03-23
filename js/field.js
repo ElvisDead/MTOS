@@ -234,7 +234,6 @@ row.appendChild(c)
         c.appendChild(cell)
     }
 }
-}
 
 function detectClusters(pressure, threshold = 0.6){
 
