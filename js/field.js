@@ -42,7 +42,7 @@ if(!wrapper.classList?.contains("field-wrapper")){
     wrapper.style.flexDirection = "column"
     wrapper.style.alignItems = "center"
 
-    const parent = c.parentNode
+    const parent = root.parentNode
     parent.replaceChild(wrapper, root)
 
     wrapper.appendChild(root)
