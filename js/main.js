@@ -425,7 +425,6 @@ json.dumps(weather)
 
         fieldState = fieldResult[0]
         fieldMode  = fieldResult[1]
-        users      = fieldResult[2]
 
         if(fieldState){
             users = users.map(u => {
