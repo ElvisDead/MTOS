@@ -640,7 +640,7 @@ json.dumps({
     window.onKinSelect = (kin) => {
         logEvent("kin_select", {
             kin,
-            memory: selectionMemory[kin-1]
+            memory: selectionMemory[KinRegistry.toIndex(kin]
         })
         // ===============================
         // MEMORY UPDATE
