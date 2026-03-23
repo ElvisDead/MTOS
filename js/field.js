@@ -42,6 +42,38 @@ export function drawField(id, config){
     // --- RENDER ---
     root.innerHTML = ""
 
+    // ===============================
+    // CONTAINER
+    // ===============================
+    const container = document.createElement("div")
+    container.style.display = "flex"
+    container.style.flexDirection = "column"
+    container.style.alignItems = "center"
+
+    root.appendChild(container)
+
+    const header = document.createElement("div")
+    header.style.display = "grid"
+    header.style.gridTemplateColumns = "repeat(20, 21px)"
+    header.style.marginBottom = "6px"
+
+    const seals = [
+        "Drg","Wnd","Ngt","Sed","Srp",
+        "WBr","Hnd","Str","Mon","Dog",
+        "Mnk","Hum","Sky","Wzd","Egl",
+        "Wrr","Ert","Mir","Strm","Sun"
+    ]
+
+    seals.forEach(s=>{
+        const d = document.createElement("div")
+        d.style.fontSize = "9px"
+        d.style.textAlign = "center"
+        d.innerText = s
+        header.appendChild(d)
+    })
+    
+    container.appendChild(header)
+
     root.style.display = "grid"
     root.style.gridTemplateColumns = "repeat(20, 21px)"
     root.style.gap = "2px"
@@ -119,6 +151,7 @@ export function drawField(id, config){
             const usersList = usersByKin[kin] || []
             if(usersList.length){
                 title += `\nUsers: ${usersList.length}`
+                title += "\n" + usersList.map(u => u.name).join(", ")
             }
 
             cell.title = title
