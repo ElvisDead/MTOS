@@ -456,7 +456,6 @@ json.dumps(weather)
             }
         })
         
-        window.currentUsers = users
         logEvent("agents_update", {
             users: users,
             fieldState: fieldState,
@@ -599,8 +598,6 @@ json.dumps({
                     phase: prev ? prev.phase : u.phase
                 }
             })
-            
-            window.currentUsers = users
 
             logEvent("agents_update", {
                 users: users,
@@ -695,7 +692,7 @@ if(!safeWeather.length){
     const globalCounts = new Array(260).fill(0)
     const usersByKin = {}
         
-    const sourceUsers = window.currentUsers || []
+    const sourceUsers = users
 
     if(sourceUsers.length){
         sourceUsers.forEach(u=>{
