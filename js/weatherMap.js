@@ -68,7 +68,7 @@ export function drawWeatherMap(
         grid.appendChild(cell)
      }
 
-    const users = window.currentUsers || []
+    const users = selectedAgent ? [selectedAgent] : (window.currentUsers || [])
 
     window._lastFieldData = fieldData
     window._lastPressureData = pressureData
