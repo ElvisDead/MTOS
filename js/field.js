@@ -86,8 +86,9 @@ for(let tone = 0; tone < 13; tone++){
     labels.appendChild(d)
 }
 
-wrapper.appendChild(labels)
-wrapper.appendChild(c)
+if(!labels.parentNode){
+    wrapper.appendChild(labels)
+}
 
     // --- AUTO PRESSURE ---
     const computedPressure = new Array(260).fill(0)
