@@ -715,20 +715,10 @@ if(!safeWeather.length){
             usersByKin[k].push(u)
         })
     }
-
-drawField("fieldMap", {
-    mode: fieldModeCurrent,
-    activity: activity,
-    pressure: Array.isArray(pressure) ? pressure : new Array(260).fill(0),
-    global: globalCounts,
-    users: sourceUsers || [],
-    connections: [],
-    usersByKin: usersByKin,
-    onKinClick: (kin) => {
-        window.onKinSelect(kin)
-    },
-    getSelectedKin: () => window.selectedKin
-})
+    const canvas = document.getElementById("fieldMap")
+        
+    drawField(canvas, sourceUsers || [], fieldModeCurrent)
+    
     updateFieldLegend(fieldModeCurrent)
 
     const now = new Date()
