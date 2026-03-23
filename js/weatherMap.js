@@ -136,7 +136,7 @@ export function drawWeatherMap(
 
                 const aKin = KinRegistry.toIndex(agent.kin)
 
-                let dist = Math.abs((kin-1) - aKin)
+                let dist = Math.abs(KinRegistry.toIndex(kin) - aKin)
                 dist = Math.min(dist, 260 - dist)
 
                 const phase = agent.phase || 0
@@ -158,7 +158,7 @@ export function drawWeatherMap(
 
             if(selectedAgent){
 
-                const aKin = selectedAgent.kin - 1
+                const aKin = KinRegistry.toIndex(selectedAgent.kin)
 
                 let dist = Math.abs((kin-1) - aKin)
                 dist = Math.min(dist, 260 - dist)
