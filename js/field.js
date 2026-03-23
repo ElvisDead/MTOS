@@ -1,3 +1,5 @@
+import { KinRegistry } from "./kinRegistry.js"
+
 let history = []
 let maxHistory = 50
 
@@ -321,8 +323,8 @@ function computePressure(users, connections){
 
         if(!a || !b) return
 
-        const kinA = a.kin - 1
-        const kinB = b.kin - 1
+        const kinA = KinRegistry.toIndex(a.kin)
+        const kinB = KinRegistry.toIndex(b.kin)
 
         const weight = conn.weight || 1
 
