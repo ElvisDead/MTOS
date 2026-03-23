@@ -977,6 +977,14 @@ def mtos_260_weather(name,year,month,day):
                     full_weather[i] = full_weather[left] or full_weather[right]
                     
                     weather = full_weather
+
+                    if USE_CACHE:
+                        cache[key] = weather
+                        
+                        if len(cache) > 50:
+                            cache.pop(next(iter(cache)))
+                            
+                            save_weather_cache(cache)
                         
                         # ограничение размера
                         if len(cache) > 50:
