@@ -56,6 +56,9 @@ export function drawField(id, config){
     header.style.display = "grid"
     header.style.gridTemplateColumns = "repeat(20, 21px)"
     header.style.marginBottom = "6px"
+    header.style.gap = "2px"
+    header.style.justifyContent = "center"
+    header.style.width = "fit-content"
 
     const seals = [
         "Drg","Wnd","Ngt","Sed","Srp",
@@ -74,11 +77,28 @@ export function drawField(id, config){
     
     container.appendChild(header)
 
-    root.style.display = "grid"
-    root.style.gridTemplateColumns = "repeat(20, 21px)"
-    root.style.gap = "2px"
-    root.style.justifyContent = "center"
-    root.style.margin = "20px auto"
+    const row = document.createElement("div")
+    row.style.display = "flex"
+    row.style.alignItems = "flex-start"
+
+    container.appendChild(row)
+
+    const tones = document.createElement("div")
+    tones.style.display = "flex"
+    tones.style.flexDirection = "column"
+    tones.style.marginRight = "6px"
+
+    for(let i=0;i<13;i++){
+        const d = document.createElement("div")
+        d.style.height = "21px"
+        d.style.fontSize = "10px"
+        d.style.display = "flex"
+        d.style.alignItems = "center"
+        d.innerText = i+1
+        tones.appendChild(d)
+    }
+
+    row.appendChild(tones)
 
     const maxActivity = Math.max(...safeActivity, 1)
     const maxGlobal = Math.max(...safeGlobal, 1)
@@ -162,7 +182,7 @@ export function drawField(id, config){
                 }
             }
 
-            root.appendChild(cell)
+            grid.appendChild(cell)
         }
     }
 }
