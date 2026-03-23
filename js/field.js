@@ -13,7 +13,7 @@ export function drawField(id, config){
 
     // 🔥 УБИВАЕМ ВСЕ ЛИШНИЕ WRAPPER
     document.querySelectorAll(".field-wrapper").forEach(w=>{
-        if(w !== root.parentNode){{
+        if(w !== root.parentNode){
             w.remove()
         }
     })
@@ -31,7 +31,7 @@ export function drawField(id, config){
 // ===============================
 // WRAPPER
 // ===============================
-let wrapper = c.parentNode
+let wrapper = root.parentNode
 
 if(!wrapper.classList?.contains("field-wrapper")){
 
@@ -43,9 +43,9 @@ if(!wrapper.classList?.contains("field-wrapper")){
     wrapper.style.alignItems = "center"
 
     const parent = c.parentNode
-    parent.replaceChild(wrapper, c)
+    parent.replaceChild(wrapper, root)
 
-    wrapper.appendChild(c)
+    wrapper.appendChild(root)
 }
 
 // ===============================
@@ -120,7 +120,7 @@ if(!row){
     row.style.alignItems = "flex-start"
 
     row.appendChild(labels)
-    row.appendChild(c)
+    row.appendChild(root)
 
     wrapper.appendChild(row)
 }
@@ -138,11 +138,11 @@ if(!row){
     const flow = predictFlow()
 
     // --- GRID ---
-    c.style.display = "grid"
-    c.style.gridTemplateColumns = "repeat(20, 21px)"
-    c.style.gap = "2px"
-    c.style.justifyContent = "center"
-    c.style.margin = "20px auto"
+    root.style.display = "grid"
+    root.style.gridTemplateColumns = "repeat(20, 21px)"
+    root.style.gap = "2px"
+    root.style.justifyContent = "center"
+    root.style.margin = "20px auto"
 
     const maxActivity = Math.max(...activity, 1)
     const maxGlobal = Math.max(...global, 1)
@@ -231,7 +231,7 @@ for(let tone = 0; tone < 13; tone++){
             }
         }
 
-        c.appendChild(cell)
+        root.appendChild(cell)
     }
 }
 }
