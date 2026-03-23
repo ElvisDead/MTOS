@@ -126,7 +126,7 @@ row.appendChild(labels)
 row.appendChild(c)
 
     // --- AUTO PRESSURE ---
-    const computedPressure = computePressure(users, connections)
+    const computedPressure = new Array(260).fill(0)
 
     // --- HISTORY ---
     history.push([...computedPressure])
@@ -233,6 +233,7 @@ row.appendChild(c)
 
         c.appendChild(cell)
     }
+}
 }
 
 function detectClusters(pressure, threshold = 0.6){
