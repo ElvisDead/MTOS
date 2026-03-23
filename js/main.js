@@ -722,6 +722,11 @@ const connections = Object.keys(memory).map(key => {
     }
 })
 
+    if(window._attractorRAF){
+        cancelAnimationFrame(window._attractorRAF)
+        window._attractorRAF = null
+    }
+
 drawField("fieldMap", {
     mode: fieldModeCurrent,
     activity,
