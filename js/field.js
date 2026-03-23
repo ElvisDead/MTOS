@@ -26,6 +26,8 @@ export function drawField(id, config){
 
         c.innerHTML = ""
 
+        const wrapper = c.parentNode
+
 // ===============================
 // HEADER
 // ===============================
