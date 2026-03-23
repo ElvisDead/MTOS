@@ -438,8 +438,13 @@ json.dumps(weather)
         fieldMode  = fieldResult[1]
         const updated = fieldResult[2]
             
-        users = updated.map((u, i) => {
-            const prev = prevUsers[i]
+        const prevMap = {}
+        prevUsers.forEach(u => {
+            prevMap[u.name] = u
+        })
+            
+        users = updated.map(u => {
+            const prev = prevMap[u.name]
                 
             return {
                 ...u,
@@ -573,8 +578,13 @@ json.dumps({
             fieldMode  = fieldResult[1]
             const updated = fieldResult[2]
                 
-            users = updated.map((u, i) => {
-                const prev = prevUsers[i]
+            const prevMap = {}
+            prevUsers.forEach(u => {
+                prevMap[u.name] = u
+            })
+                
+            users = updated.map(u => {
+                const prev = prevMap[u.name]
                     
                 return {
                     ...u,
