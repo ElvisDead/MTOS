@@ -383,11 +383,13 @@ json.dumps(weather)
         // ===============================
         // BUILD USERS
         // ===============================
-        users = userList.map(uName => {
+        users = userList.map((uName, index) => {
             
-            const kin = Number(pyodide.runPython(`
+            const offset = (index * 17) % 260
+                
+            const kin = ((Number(pyodide.runPython(`
             mtos_current_kin_NEW("${uName}",${year},${month},${day})
-            `))
+            `)) + offset - 1) % 260) + 1
                 
             const phase = (kin % 20) * Math.PI / 10
                 
