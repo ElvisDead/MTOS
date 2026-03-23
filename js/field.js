@@ -6,6 +6,19 @@ let maxHistory = 50
 export function drawField(id, config){
 
     const root = document.getElementById(id)
+
+    const {
+        mode = "activity",
+        activity = [],
+        pressure = null,
+        global = [],
+        users = [],
+        connections = [],
+        usersByKin = {},
+        onKinClick = null,
+        getSelectedKin = null
+    } = config || {}
+    
         if(!root){
             console.log("FIELD ERROR: no container")
             return
