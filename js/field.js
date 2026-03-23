@@ -25,7 +25,6 @@ export function drawField(id, config){
         if(!c) return
 
         c.innerHTML = ""
-}
 
 // ===============================
 // WRAPPER
