@@ -582,7 +582,9 @@ json.dumps([f,s,u])
 
             fieldState = fieldResult[0]
             fieldMode  = fieldResult[1]
-            users      = fieldResult[2]
+                
+            const simulatedUsers = fieldResult[2]
+            window.currentUsers = simulatedUsers
 
             // ===============================
             // AGENT MOVEMENT (field-driven)
@@ -624,8 +626,6 @@ json.dumps([f,s,u])
                     }
                 })
             }
-
-            window.currentUsers = users
 
             logEvent("agents_update", {
                 users: users,
@@ -720,7 +720,9 @@ if(!safeWeather.length){
     const globalCounts = new Array(260).fill(0)
     const usersByKin = {}
         
-    users.forEach(u=>{
+    const sourceUsers = window.currentUsers || users
+        
+    sourceUsers.forEach(u=>{
         const i = u.kin - 1
 
         globalCounts[i]++
