@@ -242,7 +242,6 @@ row.appendChild(c)
         c.appendChild(cell)
     }
 }
-    window._drawingField = false
 }
 
 function detectClusters(pressure, threshold = 0.6){
