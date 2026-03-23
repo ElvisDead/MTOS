@@ -445,10 +445,14 @@ json.dumps(weather)
             
         users = updated.map(u => {
             const prev = prevMap[u.name]
-                
+
             return {
-                ...u,
-                displayKin: prev ? prev.displayKin : u.kin
+                name: u.name,
+                kin: prev ? prev.kin : u.kin,
+                baseKin: prev ? prev.baseKin : u.kin,
+                displayKin: prev ? prev.displayKin : u.kin,
+                weight: u.weight,
+                phase: prev ? prev.phase : u.phase
             }
         })
         
@@ -585,10 +589,14 @@ json.dumps({
                 
             users = updated.map(u => {
                 const prev = prevMap[u.name]
-                    
+
                 return {
-                    ...u,
-                    displayKin: prev ? prev.displayKin : u.kin
+                    name: u.name,
+                    kin: prev ? prev.kin : u.kin,
+                    baseKin: prev ? prev.baseKin : u.kin,
+                    displayKin: prev ? prev.displayKin : u.kin,
+                    weight: u.weight,
+                    phase: prev ? prev.phase : u.phase
                 }
             })
             
