@@ -5,13 +5,6 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-    if(window._drawingField) return
-    window._drawingField = true
-
-    console.log("DRAW FIELD")
-
-    history = []
-
     const {
         mode = "activity",
         activity = [],
@@ -26,6 +19,14 @@ export function drawField(id, config){
 
     const c = document.getElementById(id)
     if(!c) return
+
+    // 🔥 ПОЛНАЯ ОЧИСТКА ВСЕХ ОБЁРОК
+    let node = c
+        
+    while(node.parentNode && node.parentNode.classList?.contains("field-wrapper")){
+        const parent = node.parentNode
+        parent.replaceWith(node)
+    }
 
     c.innerHTML = ""
 
@@ -119,17 +120,15 @@ if(!row){
     row.classList.add("field-row")
     row.style.display = "flex"
     row.style.alignItems = "flex-start"
+
+    row.appendChild(labels)
+    row.appendChild(c)
+
     wrapper.appendChild(row)
 }
 
-// 🔥 КЛЮЧЕВОЕ — ПОЛНАЯ ПЕРЕСБОРКА
-row.innerHTML = ""
-
-row.appendChild(labels)
-row.appendChild(c)
-
     // --- AUTO PRESSURE ---
-    const computedPressure = computePressure(users, connections)
+    const computedPressure = pressure || computePressure(users, connections)
 
     // --- HISTORY ---
     history.push([...computedPressure])
@@ -151,12 +150,12 @@ row.appendChild(c)
     const maxGlobal = Math.max(...global, 1)
 
     const selectedKin = getSelectedKin ? getSelectedKin() : null
-        
-    for(let tone = 0; tone < 13; tone++){
-        for(let seal = 0; seal < 20; seal++){
 
-        const i = tone * 20 + seal
-        const kin = i + 1
+for(let tone = 0; tone < 13; tone++){
+    for(let seal = 0; seal < 20; seal++){
+
+        const kin = ((seal * 13 + tone) % 260) + 1
+        const i = kin - 1
 
         const a = (activity[i] || 0) / maxActivity
         const p = (computedPressure[i] || 0)
@@ -237,7 +236,6 @@ row.appendChild(c)
         c.appendChild(cell)
     }
 }
-    window._drawingField = false
 }
 
 function detectClusters(pressure, threshold = 0.6){
