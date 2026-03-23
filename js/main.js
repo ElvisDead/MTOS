@@ -404,7 +404,11 @@ json.dumps(weather)
             }
         })
 
-        console.log("USER KINS:", users.map(u => u.kin))
+        console.log("USER KINS:", users.map(u => ({
+            name: u.name,
+            kin: u.kin,
+            baseKin: u.baseKin
+        })))
 
         // ===============================
         // FIELD
