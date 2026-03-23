@@ -637,19 +637,21 @@ if(!safeWeather.length){
     const globalCounts = new Array(260).fill(0)
     const usersByKin = {}
         
-    const sourceUsers = window.currentUsers
-        
-    sourceUsers.forEach(u=>{
-        const i = u.kin - 1
+    const sourceUsers = window.currentUsers || []
 
-        globalCounts[i]++
+    if(sourceUsers.length){
+        sourceUsers.forEach(u=>{
+            const i = u.kin - 1
+            if(i >= 0 && i < 260){
+                globalCounts[i]++
+            }
+                
+            if(!usersByKin[u.kin]){
+                usersByKin[u.kin] = []
+            }
 
-        if(!usersByKin[u.kin]){
-            usersByKin[u.kin] = []
-        }
-
-        usersByKin[u.kin].push(u)
-    })
+            usersByKin[u.kin].push(u)
+        })
 
 drawField("fieldMap", {
     mode: fieldModeCurrent,
