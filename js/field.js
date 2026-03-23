@@ -7,8 +7,6 @@ export function drawField(id, config){
 
         console.log("DRAW FIELD")
 
-        history = []
-
         const {
             mode = "activity",
             activity = [],
@@ -103,15 +101,19 @@ if(!row){
 
 // 🔥 КЛЮЧЕВОЕ — ПОЛНАЯ ПЕРЕСБОРКА
 row.innerHTML = ""
-
 row.appendChild(labels)
-row.appendChild(c)
+
+if(!row.contains(c)){
+    row.appendChild(c)
+}
 
     // --- AUTO PRESSURE ---
     const computedPressure = new Array(260).fill(0)
 
     // --- HISTORY ---
-    history.push([...computedPressure])
+    if(history.length === 0){
+            history.push([...computedPressure])
+    }
     if(history.length > maxHistory) history.shift()
 
     // ✅ ТЕПЕРЬ МОЖНО (после pressure)
