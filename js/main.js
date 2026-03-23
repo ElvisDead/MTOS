@@ -451,17 +451,10 @@ json.dumps(weather)
 
                 const inertia = 0.7
                 const randomness = 0.2
-                    
-                if(bestKin !== u.kin){
 
                     if(Math.random() > inertia){
 
                         if((bestKin - u.kin + 260) % 260 < 130){
-                            newKin = u.kin + 1
-                        }else{
-                            newKin = u.kin - 1
-                        }
-                    }
                 }
 
                 // шум (разбивает коллапс)
