@@ -100,6 +100,14 @@ export function drawField(id, config){
 
     row.appendChild(tones)
 
+    const grid = document.createElement("div")
+    grid.style.display = "grid"
+    grid.style.gridTemplateColumns = "repeat(20, 21px)"
+    grid.style.gap = "2px"
+    grid.style.justifyContent = "center"
+
+    row.appendChild(grid)
+
     const maxActivity = Math.max(...safeActivity, 1)
     const maxGlobal = Math.max(...safeGlobal, 1)
 
