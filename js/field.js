@@ -5,8 +5,6 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-    try {
-
         console.log("DRAW FIELD")
 
         history = []
@@ -27,11 +25,6 @@ export function drawField(id, config){
         if(!c) return
 
         c.innerHTML = ""
-
-        // ВСЁ ОСТАЛЬНОЕ БЕЗ ИЗМЕНЕНИЙ
-
-    } finally {
-    }
 }
 
 // ===============================
