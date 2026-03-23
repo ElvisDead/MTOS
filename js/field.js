@@ -57,8 +57,7 @@ export function drawField(id, config){
     header.style.gridTemplateColumns = "repeat(20, 21px)"
     header.style.marginBottom = "6px"
     header.style.gap = "2px"
-    header.style.justifyContent = "center"
-    header.style.width = "fit-content"
+    header.style.justifyContent = "start"
     header.style.alignItems = "center"
     header.style.display = "grid"
     header.style.gridTemplateColumns = "repeat(20, 21px)"
@@ -89,6 +88,7 @@ export function drawField(id, config){
     const row = document.createElement("div")
     row.style.display = "flex"
     row.style.alignItems = "flex-start"
+    row.style.justifyContent = "center"
 
     container.appendChild(row)
 
@@ -113,7 +113,7 @@ export function drawField(id, config){
     grid.style.display = "grid"
     grid.style.gridTemplateColumns = "repeat(20, 21px)"
     grid.style.gap = "2px"
-    grid.style.justifyContent = "center"
+    grid.style.justifyContent = "start"
 
     row.appendChild(grid)
 
