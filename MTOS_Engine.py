@@ -1043,8 +1043,6 @@ def mtos_260_weather(name,year,month,day):
     for i in range(260):
         weather[i]["attention"] = float(field[i])
 
-        if field[i] > 0.58:
-
         nb = neighbors(i)
         gradient = np.mean([abs(field[i] - field[j]) for j in nb])
 
