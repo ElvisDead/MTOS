@@ -399,7 +399,7 @@ json.dumps(weather)
             return {
                 name: uName,
                 kin: baseKin,
-                displayKin: kin,
+                displayKin: baseKin,
                 baseKin: baseKin,
                 phase,
                 weight: 1
@@ -444,7 +444,18 @@ json.dumps(weather)
             prevMap[u.name] = u
         })
             
-        users = updated
+        users = updated.map(u => {
+            const prev = prevMap[u.name]
+
+            return {
+                name: u.name,
+                kin: prev ? prev.kin : u.kin,
+                baseKin: prev ? prev.baseKin : u.kin,
+                displayKin: prev ? prev.displayKin : u.kin,
+                weight: u.weight,
+                phase: prev ? prev.phase : u.phase
+            }
+        })
         
         logEvent("agents_update", {
             users: users,
@@ -541,7 +552,7 @@ json.dumps({
                 return {
                     ...u,
                     kin: baseKin,
-                    displayKin: kin,
+                    displayKin: baseKin,
                     baseKin: baseKin,
                     phase
                 }
@@ -576,7 +587,18 @@ json.dumps({
                 prevMap[u.name] = u
             })
                 
-            users = updated
+            users = updated.map(u => {
+                const prev = prevMap[u.name]
+
+                return {
+                    name: u.name,
+                    kin: prev ? prev.kin : u.kin,
+                    baseKin: prev ? prev.baseKin : u.kin,
+                    displayKin: prev ? prev.displayKin : u.kin,
+                    weight: u.weight,
+                    phase: prev ? prev.phase : u.phase
+                }
+            })
 
             logEvent("agents_update", {
                 users: users,
