@@ -29,7 +29,7 @@ export function drawAttractor(id, participants = [], relations = [], selectedKin
     
     // 1. участники → базовое поле
     participants.forEach(p => {
-        const i = ((p.kin % N) + N) % N
+        const i = KinRegistry.toIndex(p.kin)
         const w = p.weight !== undefined ? p.weight : 1
         field[i] += w
     })
@@ -129,7 +129,7 @@ export function drawAttractor(id, participants = [], relations = [], selectedKin
             let pull = 0
                 
             if(selectedKin !== null){
-                let dist = Math.abs(i - (selectedKin - 1))
+                let dist = Math.abs(i - KinRegistry.toIndex(selectedKin))
                 dist = Math.min(dist, N - dist)
                     
                 pull = Math.exp(-dist / 15) * 0.15
