@@ -27,11 +27,6 @@ export function drawField(id, config){
     const c = document.getElementById(id)
     if(!c) return
 
-    const oldWrapper = c.parentNode
-    if(oldWrapper && oldWrapper.classList?.contains("field-wrapper")){
-        oldWrapper.replaceWith(c)
-    }
-
     c.innerHTML = ""
 
 // ===============================
