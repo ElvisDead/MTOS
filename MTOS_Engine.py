@@ -962,6 +962,8 @@ def mtos_260_weather(name,year,month,day):
             "pressure": abs(series[0] - series[1]) if len(series)>1 else 0,
             "conflict": float(np.std(series[:5]))
 
+        }
+
             # 🔥 ДОСТРАИВАЕМ ПРОПУЩЕННЫЕ
             full_weather = [None]*260
         
