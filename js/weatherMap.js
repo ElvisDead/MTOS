@@ -13,7 +13,7 @@ export function drawWeatherMap(
 
     const root = document.getElementById(id)
     if(!root) return
-    window._lastWeatherArgs = arguments
+    window._lastWeatherArgs = [...arguments]
 
     // === POPUP ELEMENT ===
     let popup = document.getElementById("kinPopup")
@@ -37,7 +37,9 @@ export function drawWeatherMap(
         document.body.appendChild(popup)
     }
 
-    root.innerHTML = ""
+    while(root.firstChild){
+        root.removeChild(root.firstChild)
+    }
     root.style.display = "block"
 
     const grid = document.createElement("div")
@@ -380,16 +382,20 @@ function onCellClick(kin, e){
     }
 }
 
+if(!window._popupListenerAdded){
     document.addEventListener("click", (e)=>{
-    const popup = document.getElementById("kinPopup")
-    if(!popup) return
+        const popup = document.getElementById("kinPopup")
+        if(!popup) return
 
-    const isCell = e.target.closest("[data-kin]")
+        const isCell = e.target.closest("[data-kin]")
 
-    if(!popup.contains(e.target) && !isCell){
-        popup.style.display = "none"
-    }
-})
+        if(!popup.contains(e.target) && !isCell){
+            popup.style.display = "none"
+        }
+    })
+
+    window._popupListenerAdded = true
+}
 
 window.setWeatherMode = function(mode){
     window._weatherMode = mode
