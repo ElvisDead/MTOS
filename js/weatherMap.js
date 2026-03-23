@@ -1,3 +1,5 @@
+import { KinRegistry } from "./kinRegistry.js"
+
 window._weatherMode = "full"
 
 export function drawWeatherMap(
