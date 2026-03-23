@@ -5,42 +5,28 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-    if(!config || !Array.isArray(config.activity)){
-        console.log("FIELD ERROR: bad config")
-        return
-    }
-
-    const {
-        mode = "activity",
-        activity = [],
-        pressure = null,
-        global = [],
-        users = [],
-        connections = [],
-        usersByKin = {},
-        onKinClick = null,
-        getSelectedKin = null
-    } = config || {}
-
-    const c = document.getElementById(id)
-    if(!c) return
+    const root = document.getElementById(id)
+        if(!root){
+            console.log("FIELD ERROR: no container")
+            return
+        }
 
     // 🔥 УБИВАЕМ ВСЕ ЛИШНИЕ WRAPPER
     document.querySelectorAll(".field-wrapper").forEach(w=>{
-        if(w !== c.parentNode){
+        if(w !== root.parentNode){{
             w.remove()
         }
     })
 
     // 🔥 ПОЛНАЯ ОЧИСТКА ВСЕХ ОБЁРОК
-    let node = c
+    let node = root
         
     while(node.parentNode && node.parentNode.classList?.contains("field-wrapper")){
         const parent = node.parentNode
         parent.replaceWith(node)
     }
 
-    c.innerHTML = ""
+    root.innerHTML = ""
 
 // ===============================
 // WRAPPER
