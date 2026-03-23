@@ -169,12 +169,20 @@ function removeUser(name){
     localStorage.setItem("collective_relations_memory", JSON.stringify(newMemory))
 
     // 3. пересборка системы
-    users = list.map(uName => ({
-        name: uName,
-        kin: 1,
-        phase: 0,
-        weight: 1
-    }))
+    users = userList.map(uName=>{
+        const kin = Number(pyodide.runPython(`
+        mtos_current_kin_NEW("${uName}",${year},${month},${day})
+        `))
+            
+        const phase = (kin % 20) * Math.PI / 10
+            
+        return {
+            name: uName,
+            kin,
+            phase,
+            weight: 1
+        }
+    })
 
     // 4. обновление UI
     runMTOS()
