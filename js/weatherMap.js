@@ -108,7 +108,7 @@ export function drawWeatherMap(
             // ===============================
             //if(window.selectionMemory){
 
-                //const m = window.selectionMemory[kin-1] || 0
+                //const m = window.selectionMemory[KinRegistry.toIndex(kin)] || 0
 
                 //phi += m * 0.05
             //}
@@ -362,8 +362,8 @@ function onCellClick(kin, e){
     popup.style.left = (x + 10) + "px"
     popup.style.top  = (y + 10) + "px"
 
-    const phi = window._lastFieldData?.[kin-1] ?? 0
-    const pressure = window._lastPressureData?.[kin-1] ?? 0
+    const phi = window._lastFieldData?.[KinRegistry.toIndex(kin)] ?? 0
+    const pressure = window._lastPressureData?.[KinRegistry.toIndex(kin)] ?? 0
 
     popup.innerHTML = `
     <div style="font-weight:bold; margin-bottom:4px;">
