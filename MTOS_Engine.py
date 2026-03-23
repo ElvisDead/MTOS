@@ -1709,8 +1709,8 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
             base_field[i] += weight * weather[i]["attention"] * influence
 
     # нормализация
-    max_val = max(base_field) or 1
-    base_field = [v / max_val for v in base_field]
+    mean_val = sum(base_field) / len(base_field)
+    base_field = [v / (mean_val + 1e-6) for v in base_field]
 
     # ===============================
     # 2. ДИНАМИКА ПОЛЯ (получаем state)
@@ -1774,16 +1774,16 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
                 d_i = min(abs(k - kin_i), 260 - abs(k - kin_i))
                 d_j = min(abs(k - kin_j), 260 - abs(k - kin_j))
                 
-                base_field[k] += interaction * (
-                    math.exp(-d_i / 6.0) +
-                    math.exp(-d_j / 6.0)
+                base_field[k] += interaction * 0.3 * (
+                    math.exp(-d_i / 4.0) +
+                    math.exp(-d_j / 4.0)
                 )
 
     # ===============================
     # НОРМАЛИЗАЦИЯ
     # ===============================
-    max_val = max(base_field) or 1
-    base_field = [v / max_val for v in base_field]
+    mean_val = sum(base_field) / len(base_field)
+    base_field = [v / (mean_val + 1e-6) for v in base_field]
 
     # ===============================
     # 4. ВТОРАЯ ДИНАМИКА (после взаимодействий)
