@@ -20,6 +20,13 @@ export function drawField(id, config){
     const c = document.getElementById(id)
     if(!c) return
 
+    // 🔥 УБИВАЕМ ВСЕ ЛИШНИЕ WRAPPER
+    document.querySelectorAll(".field-wrapper").forEach(w=>{
+        if(w !== c.parentNode){
+            w.remove()
+        }
+    })
+
     // 🔥 ПОЛНАЯ ОЧИСТКА ВСЕХ ОБЁРОК
     let node = c
         
