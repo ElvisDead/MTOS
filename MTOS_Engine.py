@@ -964,34 +964,27 @@ def mtos_260_weather(name,year,month,day):
 
         }
 
-        # 🔥 ДОСТРАИВАЕМ ПРОПУЩЕННЫЕ
-        full_weather = [None]*260
+    # 🔥 ДОСТРАИВАЕМ ПРОПУЩЕННЫЕ
+    full_weather = [None]*260
 
-        for i in range(0,260,4):
-            full_weather[i] = weather[i]
-            
-            for i in range(260):
-                if full_weather[i] is None:
-                    left = (i//4)*4
-                    right = min(left+4, 259)
-                    full_weather[i] = full_weather[left] or full_weather[right]
+    for i in range(0,260,4):
+        full_weather[i] = weather[i]
+        
+        for i in range(260):
+            if full_weather[i] is None:
+                left = (i//4)*4
+                right = min(left+4, 259)
+                full_weather[i] = full_weather[left] or full_weather[right]
+                
+                weather = full_weather
+                
+                if USE_CACHE:
+                    cache[key] = weather
                     
-                    weather = full_weather
-
-                    if USE_CACHE:
-                        cache[key] = weather
+                    if len(cache) > 50:
+                        cache.pop(next(iter(cache)))
                         
-                        if len(cache) > 50:
-                            cache.pop(next(iter(cache)))
-                            
-                            save_weather_cache(cache)
-                        
-                        # ограничение размера
-                        if len(cache) > 50:
-                            cache.pop(next(iter(cache)))
-                            
-                            save_weather_cache(cache)
-
+                        save_weather_cache(cache)
     # ==========================================
     # FIELD DYNAMICS WITH TIME (NEW)
     # ==========================================
