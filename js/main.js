@@ -448,41 +448,34 @@ json.dumps(weather)
                 }
                 
                 let newKin = u.kin
-
+                    
                 const inertia = 0.7
                 const randomness = 0.2
+
+                if(bestKin !== u.kin){
 
                     if(Math.random() > inertia){
 
                         if((bestKin - u.kin + 260) % 260 < 130){
+                            newKin = u.kin + 1
+                        }else{
+                            newKin = u.kin - 1
+                        }
+                    }
                 }
-
-                // шум (разбивает коллапс)
+                // шум
                 if(Math.random() < randomness){
                     newKin += Math.random() > 0.5 ? 1 : -1
                 }
-
+                
                 // нормализация
                 if(newKin < 1) newKin += 260
                     if(newKin > 260) newKin -= 260
 
-                if(bestKin !== u.kin){
-
-                    if((bestKin - u.kin + 260) % 260 < 130){
-                        newKin = u.kin + 1
-                    }else{
-                        newKin = u.kin - 1
-                    }
+                return {
+                    ...u,
+                    kin: newKin
                 }
-
-// нормализация
-if(newKin < 1) newKin += 260
-if(newKin > 260) newKin -= 260
-
-return {
-    ...u,
-    kin: newKin
-}
             })
         }
 
@@ -628,16 +621,6 @@ json.dumps([f,s,u])
                     const inertia = 0.7
                     const randomness = 0.2
 
-                    if(bestKin !== u.kin){
-
-                        if(Math.random() > inertia){
-
-                            if((bestKin - u.kin + 260) % 260 < 130){
-                                newKin = u.kin + 1
-                            }else{
-                                newKin = u.kin - 1
-                            }
-                        }
                     }
 
                     // шум (разбивает коллапс)
