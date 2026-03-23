@@ -723,7 +723,7 @@ if(!safeWeather.length){
     const globalCounts = new Array(260).fill(0)
     const usersByKin = {}
         
-    const sourceUsers = window.currentUsers || users
+    const sourceUsers = window.currentUsers
         
     sourceUsers.forEach(u=>{
         const i = u.kin - 1
@@ -742,7 +742,7 @@ drawField("fieldMap", {
     activity: activity,
     pressure: Array.isArray(pressure) ? pressure : new Array(260).fill(0),
     global: globalCounts,
-    users: users || [],
+    users: sourceUsers || [],
     connections: [],
     usersByKin: usersByKin,
     onKinClick: (kin) => {
