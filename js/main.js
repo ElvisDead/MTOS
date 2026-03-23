@@ -513,15 +513,24 @@ json.dumps({
                 kin: currentKin
             })
 
-            users = users.map(u=>{
+            users = users.map((u, index)=>{
 
-                const kin = Number(pyodide.runPython(`
-mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
-`))
+                const baseKin = Number(pyodide.runPython(`
+                mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
+                `))
+
+                const offset = (index * 17) % 260
+
+                const kin = ((baseKin + offset - 1) % 260) + 1
 
                 const phase = (kin % 20) * Math.PI / 10
-
-                return {...u, kin, phase}
+                    
+                return {
+                    ...u,
+                    kin: kin,
+                    baseKin: baseKin,
+                    phase
+                }
             })
 
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
