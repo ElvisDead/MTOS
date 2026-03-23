@@ -427,49 +427,50 @@ json.dumps(weather)
         fieldMode  = fieldResult[1]
         users      = fieldResult[2]
 
-        let bestKin = u.kin
-        let bestVal = -Infinity
+        if(fieldState){
+            users = users.map(u => {
+                let bestKin = u.kin                    
+                let bestVal = -Infinity
 
-        for(let d = -3; d <= 3; d++){
-            let k = (u.kin - 1 + d + 260) % 260
-            const v = fieldState[k]
-
-            if(v > bestVal){
-                bestVal = v
-                bestKin = k + 1
-            }
-        }
-        let newKin = u.kin
-
-        const inertia = 0.7
-        const randomness = 0.2
-
-        if(bestKin !== u.kin){
-
-            if(Math.random() > inertia){
-
-                if((bestKin - u.kin + 260) % 260 < 130){
-                    newKin = u.kin + 1
-                }else{
-                    newKin = u.kin - 1
+                for(let d = -3; d <= 3; d++){
+                    let k = (u.kin - 1 + d + 260) % 260
+                    const v = fieldState[k]
+                        
+                    if(v > bestVal){
+                        bestVal = v
+                        bestKin = k + 1
+                    }
                 }
-            }
+                
+                let newKin = u.kin
+                    
+                const inertia = 0.7
+                const randomness = 0.2
+                    
+                if(bestKin !== u.kin){
+                    if(Math.random() > inertia){
+                        if((bestKin - u.kin + 260) % 260 < 130){
+                            newKin = u.kin + 1
+                        }else{
+                            newKin = u.kin - 1
+                        }
+                    }
+                }
+                
+                if(Math.random() < randomness){
+                    newKin += Math.random() > 0.5 ? 1 : -1
+                }
+                
+                if(newKin < 1) newKin += 260
+                    if(newKin > 260) newKin -= 260
+                        
+                return {
+                    ...u,
+                    kin: newKin
+                }
+            })
         }
-
-        // шум
-        if(Math.random() < randomness){
-            newKin += Math.random() > 0.5 ? 1 : -1
-        }
-
-        // нормализация
-        if(newKin < 1) newKin += 260
-            if(newKin > 260) newKin -= 260
-
-        return {
-            ...u,
-            kin: newKin
-        }
-
+        
         window.currentUsers = users
         logEvent("agents_update", {
             users: users,
