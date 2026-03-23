@@ -566,79 +566,68 @@ mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
             const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
 
             const fieldResult = JSON.parse(pyodide.runPython(`
-import json
-users = ${JSON.stringify(users)}
-f,s,u = mtos_multi_agents_field(
- users,
- ${y},
- ${m},
- ${dd},
- ${fieldState ? toPython(fieldState) : "None"},
- ${fieldMode ? toPython(fieldMode) : "None"},
- ${toPython(locked)},
- ${toPython(memory)}
-)
-json.dumps([f,s,u])
-`))
-
+            import json
+            users = ${JSON.stringify(users)}
+            f,s,u = mtos_multi_agents_field(
+            users,
+            ${y},
+            ${m},
+            ${dd},
+            ${fieldState ? toPython(fieldState) : "None"},
+            ${fieldMode ? toPython(fieldMode) : "None"},
+            ${toPython(locked)},
+            ${toPython(memory)}
+            )
+            json.dumps([f,s,u])
+            `))
+                
             fieldState = fieldResult[0]
             fieldMode  = fieldResult[1]
                 
-            const simulatedUsers = fieldResult[2]
-            window.currentUsers = simulatedUsers
-
-            // ===============================
-            // AGENT MOVEMENT (field-driven)
-            // ===============================
+            users = fieldResult[2]
+                
             if(fieldState){
-                users = users.map(u => {
-                    
+                users = users.map(u => {        
                     let bestKin = u.kin
                     let bestVal = -Infinity
-                        
+
                     for(let d = -3; d <= 3; d++){
                         let k = (u.kin - 1 + d + 260) % 260
-                            
                         const v = fieldState[k]
-                            
+
                         if(v > bestVal){
                             bestVal = v
                             bestKin = k + 1
                         }
                     }
-                    
                     let newKin = u.kin
                         
                     const inertia = 0.7
                     const randomness = 0.2
 
-                    // шум (разбивает коллапс)
+                    if(bestKin !== u.kin){
+                        if(Math.random() > inertia){
+                            if((bestKin - u.kin + 260) % 260 < 130){
+                                newKin = u.kin + 1
+                            }else{
+                                newKin = u.kin - 1
+                            }
+                        }
+                    }                 
                     if(Math.random() < randomness){
                         newKin += Math.random() > 0.5 ? 1 : -1
                     }
 
-                    // нормализация
                     if(newKin < 1) newKin += 260
                         if(newKin > 260) newKin -= 260
-                        
-                    if(bestKin !== u.kin){
-
-                        if((bestKin - u.kin + 260) % 260 < 130){
-                            newKin = u.kin + 1
-                        }else{
-                            newKin = u.kin - 1
-                        }
-                    }
-
-                    if(newKin < 1) newKin += 260
-                        if(newKin > 260) newKin -= 260
-
-                    return {
-                        ...u,
-                        kin: newKin
-                    }
+                            return {
+                                ...u,
+                                kin: newKin
+                            }
                 })
             }
+            
+            window.currentUsers = users
 
             logEvent("agents_update", {
                 users: users,
