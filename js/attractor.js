@@ -1,5 +1,10 @@
 export function drawAttractor(id, participants = [], relations = [], selectedKin = null){
 
+    if(window._attractorRAF){
+        cancelAnimationFrame(window._attractorRAF)
+            window._attractorRAF = null
+    }
+
     const root = document.getElementById(id)
     root.innerHTML = ""
 
@@ -284,7 +289,7 @@ export function drawAttractor(id, participants = [], relations = [], selectedKin
         }
 
         draw()
-        requestAnimationFrame(loop)
+        window._attractorRAF = requestAnimationFrame(loop)
     }
 
     const controls = document.createElement("div")
