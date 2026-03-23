@@ -419,6 +419,7 @@ json.dumps(weather)
         
         const prevUsers = users
         
+        const prevUsers = JSON.parse(JSON.stringify(users))
         const fieldResult = JSON.parse(pyodide.runPython(`
         import json
         users = ${JSON.stringify(users)}
@@ -439,10 +440,14 @@ json.dumps(weather)
         fieldMode  = fieldResult[1]
         const updated = fieldResult[2]
             
-        users = updated.map((u, i) => ({
-            ...u,
-            displayKin: prevUsers[i]?.displayKin ?? u.kin
-        }))
+        users = updated.map((u, i) => {
+            const prev = prevUsers[i]
+                
+            return {
+                ...u,
+                displayKin: prev ? prev.displayKin : u.kin
+            }
+        })
         
         window.currentUsers = users
         logEvent("agents_update", {
@@ -551,6 +556,7 @@ json.dumps({
 
             const prevUsers = users
             
+            const prevUsers = JSON.parse(JSON.stringify(users))
             const fieldResult = JSON.parse(pyodide.runPython(`
             import json
             users = ${JSON.stringify(users)}
@@ -571,10 +577,14 @@ json.dumps({
             fieldMode  = fieldResult[1]
             const updated = fieldResult[2]
                 
-            users = updated.map((u, i) => ({
-                ...u,
-                displayKin: prevUsers[i]?.displayKin ?? u.kin
-            }))
+            users = updated.map((u, i) => {
+                const prev = prevUsers[i]
+                    
+                return {
+                    ...u,
+                    displayKin: prev ? prev.displayKin : u.kin
+                }
+            })
             
             window.currentUsers = users
 
