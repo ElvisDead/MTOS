@@ -451,7 +451,7 @@ json.dumps(weather)
                 name: u.name,
                 kin: prev ? prev.kin : u.kin,
                 baseKin: prev ? prev.baseKin : u.kin,
-                displayKin: prev ? prev.displayKin : u.kin,
+                displayKin: u.kin,
                 weight: u.weight,
                 phase: prev ? prev.phase : u.phase
             }
@@ -594,7 +594,7 @@ json.dumps({
                     name: u.name,
                     kin: prev ? prev.kin : u.kin,
                     baseKin: prev ? prev.baseKin : u.kin,
-                    displayKin: prev ? prev.displayKin : u.kin,
+                    displayKin: u.kin,
                     weight: u.weight,
                     phase: prev ? prev.phase : u.phase
                 }
