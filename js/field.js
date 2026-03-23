@@ -86,26 +86,8 @@ for(let tone = 0; tone < 13; tone++){
     labels.appendChild(d)
 }
 
-// ===============================
-// ROW
-// ===============================
-let row = wrapper.querySelector(".field-row")
-
-if(!row){
-    row = document.createElement("div")
-    row.classList.add("field-row")
-    row.style.display = "flex"
-    row.style.alignItems = "flex-start"
-    wrapper.appendChild(row)
-}
-
-// 🔥 КЛЮЧЕВОЕ — ПОЛНАЯ ПЕРЕСБОРКА
-row.innerHTML = ""
-row.appendChild(labels)
-
-if(!row.contains(c)){
-    row.appendChild(c)
-}
+wrapper.appendChild(labels)
+wrapper.appendChild(c)
 
     // --- AUTO PRESSURE ---
     const computedPressure = new Array(260).fill(0)
