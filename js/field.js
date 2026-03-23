@@ -5,6 +5,9 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
+        if(window._lockField) return
+        window._lockField = true
+
         console.log("DRAW FIELD")
 
         const {
@@ -57,6 +60,10 @@ if(!header){
         d.innerText = s.slice(0,3)
         header.appendChild(d)
     })
+
+        setTimeout(() => {
+                window._lockField = false
+        }, 0)
 
     wrapper.appendChild(header)
 }
