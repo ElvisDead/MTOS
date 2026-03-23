@@ -1,3 +1,5 @@
+import { KinRegistry } from "./kinRegistry.js"
+
 export function drawAttractor(id, participants = [], relations = [], selectedKin = null){
 
     if(window._attractorRAF){
