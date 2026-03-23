@@ -125,7 +125,7 @@ export function drawField(id, config){
     for(let tone = 0; tone < 13; tone++){
         for(let seal = 0; seal < 20; seal++){
 
-            const kin = ((tone * 20 + seal) % 260) + 1
+            const kin = ((seal * 13 + tone) % 260) + 1
             const i = kin - 1
 
             const a = (safeActivity[i] || 0) / maxActivity
