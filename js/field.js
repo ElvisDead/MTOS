@@ -1,11 +1,13 @@
-// MTOS/js/field.js
-
 let history = []
 let maxHistory = 50
 
 export function drawField(id, config){
 
     const root = document.getElementById(id)
+    if(!root){
+        console.log("FIELD ERROR: no container")
+        return
+    }
 
     const {
         mode = "activity",
@@ -18,236 +20,123 @@ export function drawField(id, config){
         onKinClick = null,
         getSelectedKin = null
     } = config || {}
-    
-        if(!root){
-            console.log("FIELD ERROR: no container")
-            return
-        }
 
-    // 🔥 УБИВАЕМ ВСЕ ЛИШНИЕ WRAPPER
-    document.querySelectorAll(".field-wrapper").forEach(w=>{
-        if(w !== root.parentNode){
-            w.remove()
-        }
-    })
+    // --- SAFE DATA ---
+    const safeActivity = Array.isArray(activity) ? activity : new Array(260).fill(0.5)
+    const safeGlobal   = Array.isArray(global) ? global : new Array(260).fill(0)
+    const safeUsers    = Array.isArray(users) ? users : []
+    const safeConn     = Array.isArray(connections) ? connections : []
 
-    // 🔥 ПОЛНАЯ ОЧИСТКА ВСЕХ ОБЁРОК
-    let node = root
-        
-    while(node.parentNode && node.parentNode.classList?.contains("field-wrapper")){
-        const parent = node.parentNode
-        parent.replaceWith(node)
-    }
-
-    root.innerHTML = ""
-
-// ===============================
-// WRAPPER
-// ===============================
-let wrapper = root.parentNode
-
-if(!wrapper.classList?.contains("field-wrapper")){
-
-    wrapper = document.createElement("div")
-    wrapper.classList.add("field-wrapper")
-
-    wrapper.style.display = "flex"
-    wrapper.style.flexDirection = "column"
-    wrapper.style.alignItems = "center"
-
-    const parent = root.parentNode
-    parent.replaceChild(wrapper, root)
-
-    wrapper.appendChild(root)
-}
-
-// ===============================
-// HEADER
-// ===============================
-let header = wrapper.querySelector(".field-header")
-
-if(!header){
-    header = document.createElement("div")
-    header.classList.add("field-header")
-
-    header.style.display = "grid"
-    header.style.gridTemplateColumns = "repeat(20, 21px)"
-    header.style.justifyContent = "center"
-    header.style.marginBottom = "6px"
-    header.style.width = "fit-content"
-
-    const seals = [
-        "Dragon","Wind","Night","Seed","Serpent",
-        "Worldbridger","Hand","Star","Moon","Dog",
-        "Monkey","Human","Skywalker","Wizard","Eagle",
-        "Warrior","Earth","Mirror","Storm","Sun"
-    ]
-
-    header.innerHTML = ""
-
-    seals.forEach(s => {
-        const d = document.createElement("div")
-        d.style.fontSize = "9px"
-        d.style.textAlign = "center"
-        d.innerText = s.slice(0,3)
-        header.appendChild(d)
-    })
-
-    wrapper.appendChild(header)
-}
-
-// ===============================
-// LABELS
-// ===============================
-let labels = wrapper.querySelector(".field-labels")
-
-if(!labels){
-    labels = document.createElement("div")
-    labels.classList.add("field-labels")
-    labels.style.marginRight = "6px"
-    labels.style.display = "flex"
-    labels.style.flexDirection = "column"
-}else{
-    labels.innerHTML = ""   // 🔥 ВОТ ЭТО КРИТИЧНО
-}
-
-for(let tone = 0; tone < 13; tone++){
-    const d = document.createElement("div")
-    d.style.height = "21px"
-    d.style.fontSize = "10px"
-    d.style.display = "flex"
-    d.style.alignItems = "center"
-    d.innerText = tone + 1
-    labels.appendChild(d)
-}
-
-// ===============================
-// ROW
-// ===============================
-let row = wrapper.querySelector(".field-row")
-
-if(!row){
-    row = document.createElement("div")
-    row.classList.add("field-row")
-    row.style.display = "flex"
-    row.style.alignItems = "flex-start"
-
-    row.appendChild(labels)
-    row.appendChild(root)
-
-    wrapper.appendChild(row)
-}
-
-    // --- AUTO PRESSURE ---
-    const computedPressure = pressure || computePressure(users, connections)
+    const computedPressure = Array.isArray(pressure)
+        ? pressure
+        : computePressure(safeUsers, safeConn)
 
     // --- HISTORY ---
     history.push([...computedPressure])
     if(history.length > maxHistory) history.shift()
 
-    // ✅ ТЕПЕРЬ МОЖНО (после pressure)
     const clusters = detectClusters(computedPressure)
     const attractors = detectAttractors()
     const flow = predictFlow()
 
-    // --- GRID ---
+    // --- RENDER ---
+    root.innerHTML = ""
+
     root.style.display = "grid"
     root.style.gridTemplateColumns = "repeat(20, 21px)"
     root.style.gap = "2px"
     root.style.justifyContent = "center"
     root.style.margin = "20px auto"
 
-    const maxActivity = Math.max(...activity, 1)
-    const maxGlobal = Math.max(...global, 1)
+    const maxActivity = Math.max(...safeActivity, 1)
+    const maxGlobal = Math.max(...safeGlobal, 1)
 
     const selectedKin = getSelectedKin ? getSelectedKin() : null
 
-for(let tone = 0; tone < 13; tone++){
-    for(let seal = 0; seal < 20; seal++){
+    for(let tone = 0; tone < 13; tone++){
+        for(let seal = 0; seal < 20; seal++){
 
-        const kin = ((seal * 13 + tone) % 260) + 1
-        const i = kin - 1
+            const kin = ((seal * 13 + tone) % 260) + 1
+            const i = kin - 1
 
-        const a = (activity[i] || 0) / maxActivity
-        const p = (computedPressure[i] || 0)
-        const g = (global[i] || 0) / maxGlobal
+            const a = (safeActivity[i] || 0) / maxActivity
+            const p = (computedPressure[i] || 0)
+            const g = (safeGlobal[i] || 0) / maxGlobal
 
-        let color = "rgb(0,0,0)"
+            let color = "rgb(0,0,0)"
 
-        if(mode === "activity"){
-            color = `rgb(${255*a},0,0)`
-        }
-
-        if(mode === "pressure"){
-            color = `rgb(${255*p},0,${255*(1-p)})`
-        }
-
-        if(mode === "global"){
-            color = `rgb(${255*g},${180*g},50)`
-        }
-
-        if(mode === "hybrid"){
-            const r = Math.floor(255 * (a * p))
-            const b = Math.floor(255 * (1 - p))
-            color = `rgb(${r},0,${b})`
-        }
-
-        const isEvent = detectEvent(i, computedPressure)
-
-        const cell = document.createElement("div")
-        cell.style.width = "21px"
-        cell.style.height = "21px"
-        cell.style.background = color
-        cell.style.cursor = "pointer"
-        cell.style.boxSizing = "border-box"
-
-        if(isEvent){
-            cell.style.outline = "2px solid white"
-        }
-        else if(attractors.includes(i)){
-            cell.style.outline = "2px solid yellow"
-        }
-        else if(
-            (mode === "pressure" || mode === "hybrid") &&
-            clusters.some(c => c.includes(i))
-        ){
-            cell.style.outline = "1px solid lime"
-        }
-        else if(selectedKin === kin){
-            cell.style.outline = "2px solid orange"
-        }
-
-        if(flow[i] > 0.2){
-            cell.style.boxShadow = "inset 0 0 4px white"
-        }
-
-        let title = `Kin ${kin}\nTone ${tone+1}\nSeal ${seal+1}`
-        title += `\nActivity: ${activity[i] || 0}`
-        title += `\nPressure: ${p.toFixed(3)}`
-        title += `\nHybrid: ${(a*p).toFixed(3)}`
-
-        const usersList = usersByKin[kin] || []
-        if(usersList.length){
-            title += `\nUsers: ${usersList.length}`
-            title += "\n" + usersList.map(u => u.name).join(", ")
-        }
-
-        if(isEvent){
-            title += `\n⚡ EVENT`
-        }
-
-        cell.title = title
-
-        cell.onclick = () => {
-            if(onKinClick){
-                onKinClick(kin)
+            if(mode === "activity"){
+                color = `rgb(${255*a},0,0)`
             }
-        }
 
-        root.appendChild(cell)
+            if(mode === "pressure"){
+                color = `rgb(${255*p},0,${255*(1-p)})`
+            }
+
+            if(mode === "global"){
+                color = `rgb(${255*g},${180*g},50)`
+            }
+
+            if(mode === "hybrid"){
+                const r = Math.floor(255 * (a * p))
+                const b = Math.floor(255 * (1 - p))
+                color = `rgb(${r},0,${b})`
+            }
+
+            const isEvent = detectEvent(i, computedPressure)
+
+            const cell = document.createElement("div")
+            cell.style.width = "21px"
+            cell.style.height = "21px"
+            cell.style.background = color
+            cell.style.cursor = "pointer"
+            cell.style.boxSizing = "border-box"
+
+            if(isEvent){
+                cell.style.outline = "2px solid white"
+            }
+            else if(attractors.includes(i)){
+                cell.style.outline = "2px solid yellow"
+            }
+            else if(
+                (mode === "pressure" || mode === "hybrid") &&
+                clusters.some(c => c.includes(i))
+            ){
+                cell.style.outline = "1px solid lime"
+            }
+            else if(selectedKin === kin){
+                cell.style.outline = "2px solid orange"
+            }
+
+            if(flow[i] > 0.2){
+                cell.style.boxShadow = "inset 0 0 4px white"
+            }
+
+            let title = `Kin ${kin}`
+            title += `\nActivity: ${safeActivity[i] || 0}`
+            title += `\nPressure: ${p.toFixed(3)}`
+
+            const usersList = usersByKin[kin] || []
+            if(usersList.length){
+                title += `\nUsers: ${usersList.length}`
+            }
+
+            cell.title = title
+
+            cell.onclick = () => {
+                if(onKinClick){
+                    onKinClick(kin)
+                }
+            }
+
+            root.appendChild(cell)
+        }
     }
 }
-}
+
+// ===============================
+// HELPERS
+// ===============================
 
 function detectClusters(pressure, threshold = 0.6){
 
