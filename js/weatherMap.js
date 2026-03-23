@@ -99,7 +99,7 @@ export function drawWeatherMap(
             let kin = (seal-1)*13 + tone
             while(kin>260) kin-=260
 
-            let phi = fieldData?.[kin-1] ?? 0
+            let phi = fieldData?.[KinRegistry.toIndex(kin)] ?? 0
 
             // ===============================
             // USER MEMORY INFLUENCE
@@ -132,7 +132,7 @@ export function drawWeatherMap(
                 const agent = activeAgents[a]
                 if(!agent.kin) continue
 
-                const aKin = agent.kin - 1
+                const aKin = KinRegistry.toIndex(agent.kin)
 
                 let dist = Math.abs((kin-1) - aKin)
                 dist = Math.min(dist, 260 - dist)
@@ -171,7 +171,7 @@ export function drawWeatherMap(
             // ===============================
             const fieldNorm = (phi - fMin)/(fMax - fMin || 1)
 
-            const p = (pressureData[kin-1] - pMin)/(pMax - pMin || 1)
+            const p = (pressureData[KinRegistry.toIndex(kin)] - pMin)/(pMax - pMin || 1)
 
             // ===============================
             // СМЕШИВАНИЕ СЛОЁВ
