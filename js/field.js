@@ -5,6 +5,11 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
+    if(!config || !Array.isArray(config.activity)){
+        console.log("FIELD ERROR: bad config")
+        return
+    }
+
     const {
         mode = "activity",
         activity = [],
