@@ -5,12 +5,6 @@ let maxHistory = 50
 
 export function drawField(id, config){
 
-    // 💥 ПОЛНАЯ ОЧИСТКА ВСЕЙ СТРУКТУРЫ
-    const oldWrapper = c.parentNode
-    if(oldWrapper && oldWrapper.classList?.contains("field-wrapper")){
-        oldWrapper.remove()
-    }
-
     if(window._drawingField) return
     window._drawingField = true
 
@@ -32,6 +26,11 @@ export function drawField(id, config){
 
     const c = document.getElementById(id)
     if(!c) return
+
+    const oldWrapper = c.parentNode
+    if(oldWrapper && oldWrapper.classList?.contains("field-wrapper")){
+        oldWrapper.replaceWith(c)
+    }
 
     c.innerHTML = ""
 
