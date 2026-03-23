@@ -397,7 +397,8 @@ json.dumps(weather)
                 
             return {
                 name: uName,
-                kin: kin,
+                kin: baseKin,
+                displayKin: kin,
                 baseKin: baseKin,
                 phase,
                 weight: 1
@@ -532,6 +533,8 @@ json.dumps({
                 return {
                     ...u,
                     kin: kin,
+                    kin: baseKin,
+                    displayKin: kin,
                     baseKin: baseKin,
                     phase
                 }
@@ -659,7 +662,7 @@ if(!safeWeather.length){
 
     if(sourceUsers.length){
         sourceUsers.forEach(u=>{
-            const i = u.kin - 1
+            const i = (u.displayKin || u.kin) - 1
             if(i >= 0 && i < 260){
                 globalCounts[i]++
             }
