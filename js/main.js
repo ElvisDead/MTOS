@@ -435,7 +435,12 @@ json.dumps(weather)
 
         fieldState = fieldResult[0]
         fieldMode  = fieldResult[1]
-        users = fieldResult[2]
+        const updated = fieldResult[2]
+            
+        users = updated.map((u, i) => ({
+            ...u,
+            displayKin: users[i].displayKin || u.kin
+        }))
         
         window.currentUsers = users
         logEvent("agents_update", {
@@ -561,7 +566,12 @@ json.dumps({
                 
             fieldState = fieldResult[0]
             fieldMode  = fieldResult[1]
-            users = fieldResult[2]
+            const updated = fieldResult[2]
+                
+            users = updated.map((u, i) => ({
+                ...u,
+                displayKin: users[i].displayKin || u.kin
+            }))
             
             window.currentUsers = users
 
@@ -667,11 +677,12 @@ if(!safeWeather.length){
                 globalCounts[i]++
             }
                 
-            if(!usersByKin[u.kin]){
-                usersByKin[u.kin] = []
+            const k = u.displayKin || u.kin
+                
+            if(!usersByKin[k]){
+                usersByKin[k] = []
             }
-
-            usersByKin[u.kin].push(u)
+            usersByKin[k].push(u)
         })
     }
 
