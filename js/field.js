@@ -29,15 +29,6 @@ export function drawField(id, config){
     const safeUsers    = Array.isArray(users) ? users : []
     const safeConn     = Array.isArray(connections) ? connections : []
 
-    const correctedUsersByKin = {};
-    safeUsers.forEach(u => {
-        const k = parseInt(u.kin); 
-        if (!isNaN(k)) {
-            if (!correctedUsersByKin[k]) correctedUsersByKin[k] = [];
-            correctedUsersByKin[k].push(u);
-        }
-    });
-
     const computedPressure = Array.isArray(pressure)
         ? pressure
         : computePressure(safeUsers, safeConn)
@@ -196,7 +187,7 @@ export function drawField(id, config){
             title += `\nActivity: ${safeActivity[i] || 0}`
             title += `\nPressure: ${p.toFixed(3)}`
 
-            const usersList = correctedUsersByKin[kin] || []
+            const usersList = usersByKin[kin] || []
             if(usersList.length){
                 title += `\nUsers: ${usersList.length}`
                 title += "\n" + usersList.map(u => u.name).join(", ")
@@ -332,12 +323,8 @@ function computePressure(users, connections){
 
         if(!a || !b) return
 
-        // Принудительно превращаем в число, так как из Python/JSON может прийти строка
-        const kinA = KinRegistry.toIndex(parseInt(a.kin));
-        const kinB = KinRegistry.toIndex(parseInt(b.kin));
-
-        // Проверка на корректность индекса (0-259)
-        if (isNaN(kinA) || kinA < 0) return;
+        const kinA = KinRegistry.toIndex(a.kin)
+        const kinB = KinRegistry.toIndex(b.kin)
 
         const weight = conn.weight || 1
 
@@ -360,7 +347,4 @@ function detectEvent(index, current){
     if(history.length < 5) return false
 
     const prev = history[history.length - 5][index]
-    const now = current[index]
-
-    return (now - prev) > 0.4
-}
+    cons
