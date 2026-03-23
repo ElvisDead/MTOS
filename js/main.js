@@ -406,11 +406,18 @@ json.dumps(weather)
             }
         })
 
-        console.log("USER KINS:", users.map(u => ({
-            name: u.name,
-            kin: u.kin,
-            baseKin: u.baseKin
-        })))
+        // 1. Посмотрим в консоли, как РЕАЛЬНО выглядит один юзе
+        if (users.length > 0) {
+            console.log("DEBUG: Данные первого юзера:", users[0]);
+        }
+        
+        // 2. Пытаемся достать Кин (пробуем разные варианты написания)
+        const userKins = users.map(u => {
+            const k = u.kin || u.Kin || (u.attributes && u.attributes.kin);
+            return k ? k : "НЕ НАЙДЕН";
+        }).join(", ");
+        
+        console.log("USER KINS (fixed):", userKins);
 
         // ===============================
         // FIELD
