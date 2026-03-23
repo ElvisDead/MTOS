@@ -59,6 +59,7 @@ export function drawField(id, config){
     header.style.gap = "2px"
     header.style.justifyContent = "center"
     header.style.width = "fit-content"
+    header.style.alignItems = "center"
 
     const seals = [
         "Drg","Wnd","Ngt","Sed","Srp",
@@ -69,8 +70,13 @@ export function drawField(id, config){
 
     seals.forEach(s=>{
         const d = document.createElement("div")
+        d.style.width = "21px"
+        d.style.height = "21px"
         d.style.fontSize = "9px"
-        d.style.textAlign = "center"
+        d.style.display = "flex"
+        d.style.alignItems = "center"
+        d.style.justifyContent = "center"
+        d.style.boxSizing = "border-box"
         d.innerText = s
         header.appendChild(d)
     })
