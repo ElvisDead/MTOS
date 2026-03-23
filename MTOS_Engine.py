@@ -179,7 +179,7 @@ def kin_from_date(date):
 
     kin = (jdn - GMT) % 260 + 1
 
-    print("JDN:", jdn, "KIN:", kin)
+    #print("JDN:", jdn, "KIN:", kin)
 
     tone = ((kin - 1) % 13) + 1
     seal_index = (kin - 1) % 20
@@ -1044,7 +1044,6 @@ def mtos_260_weather(name,year,month,day):
         weather[i]["attention"] = float(field[i])
 
         if field[i] > 0.58:
-            print(f"PEAK Kin {i+1}: {round(field[i],3)}")
 
         nb = neighbors(i)
         gradient = np.mean([abs(field[i] - field[j]) for j in nb])
