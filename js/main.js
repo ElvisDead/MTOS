@@ -652,6 +652,7 @@ if(!safeWeather.length){
 
             usersByKin[u.kin].push(u)
         })
+    }
 
 drawField("fieldMap", {
     mode: fieldModeCurrent,
