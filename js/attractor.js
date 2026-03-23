@@ -31,10 +31,13 @@ export function drawAttractor(id, participants = [], relations = [], selectedKin
     
     // 1. участники → базовое поле
     participants.forEach(p => {
-        const i = KinRegistry.toIndex(p.kin)
-        const w = p.weight !== undefined ? p.weight : 1
-        field[i] += w
-    })
+        const kinValue = parseInt(p.kin);
+        const i = KinRegistry.toIndex(kinValue);
+        if (i >= 0 && i < 260) {
+            const w = p.weight !== undefined ? p.weight : 1;
+            field[i] += w;
+        }
+    });
     
     // 2. связи → распространение сигнала
     let relField = [...field]
