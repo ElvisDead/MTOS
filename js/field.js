@@ -29,6 +29,15 @@ export function drawField(id, config){
     const safeUsers    = Array.isArray(users) ? users : []
     const safeConn     = Array.isArray(connections) ? connections : []
 
+    const correctedUsersByKin = {};
+    safeUsers.forEach(u => {
+        const k = parseInt(u.kin); 
+        if (!isNaN(k)) {
+            if (!correctedUsersByKin[k]) correctedUsersByKin[k] = [];
+            correctedUsersByKin[k].push(u);
+        }
+    });
+
     const computedPressure = Array.isArray(pressure)
         ? pressure
         : computePressure(safeUsers, safeConn)
