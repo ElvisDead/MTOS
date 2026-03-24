@@ -976,8 +976,20 @@ def mtos_260_weather(name,year,month,day):
         if full_weather[k] is None:
             left = (k//4)*4
             right = min(left+4, 259)
+            left_val = full_weather[left]
+            right_val = full_weather[right]
             
-            full_weather[k] = full_weather[left] or full_weather[right] or {"attention":0.5}
+            if left_val is not None:
+                full_weather[k] = left_val
+            elif right_val is not None:
+                full_weather[k] = right_val
+            else:
+                full_weather[k] = {
+                    "attention": 0.5,
+                    "activity": 0.5,
+                    "pressure": 0,
+                    "conflict": 0
+                }
         
     weather = full_weather
                 
@@ -1069,9 +1081,15 @@ def mtos_260_weather(name,year,month,day):
     save_global_field({
         "field": field.tolist()
     })
-
+    
+    # 🔥 ЖЁСТКАЯ ОЧИСТКА WEATHER (КРИТИЧНО)
     weather = [
-        w if (w and "attention" in w) else {"attention":0.5}
+        w if isinstance(w, dict) and "attention" in w else {
+            "attention": 0.5,
+            "activity": 0.5,
+            "pressure": 0,
+            "conflict": 0
+        }
         for w in weather
     ]
 
