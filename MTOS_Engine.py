@@ -919,9 +919,32 @@ def mtos_260_weather(name,year,month,day):
     if USE_CACHE:
         cache = load_weather_cache()
         key = f"{name}_{today}"
-
-        if key in cache and isinstance(cache[key], list) and len(cache[key]) == 260:
-            return cache[key]
+        
+        if key in cache:
+            cached = cache[key]
+            
+            if not isinstance(cached, list):
+                cached = []
+                
+                cached = [
+                    w if isinstance(w, dict) and "attention" in w else {
+                        "attention": 0.5,
+                        "activity": 0.5,
+                        "pressure": 0,
+                        "conflict": 0
+                    }
+                    for w in cached
+                ]
+                
+                if len(cached) < 260:
+                    cached += [{
+                        "attention": 0.5,
+                        "activity": 0.5,
+                        "pressure": 0,
+                        "conflict": 0
+                    }] * (260 - len(cached))
+                    
+                    return cached[:260]
 
     # защита от битого кэша
     if key in cache and not isinstance(cache[key], list):
