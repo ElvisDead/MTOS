@@ -1109,25 +1109,53 @@ function updateFieldLegend(mode){
     const el = document.getElementById("fieldLegend")
     if(!el) return
 
-    if(mode === "activity"){
-        el.innerHTML = "🔴 Activity — attention intensity"
-    }
+    const modeTitle = {
+        activity: "Activity",
+        pressure: "Pressure",
+        global: "Global",
+        hybrid: "Hybrid"
+    }[mode] || "Hybrid"
 
-    if(mode === "pressure"){
-        el.innerHTML = "🔵→🔴 Pressure — system tension"
-    }
+    const modeText = {
+        activity: "Frame = attention layer. It emphasizes where the field is read as active or energized.",
+        pressure: "Frame = pressure layer. It emphasizes zones of tension, compression, overload, or conflict.",
+        global: "Frame = population layer. It emphasizes simple distribution of participants across kin.",
+        hybrid: "Frame = mixed layer. It combines attention and pressure into one synthetic view."
+    }[mode] || "Frame = mixed layer. It combines attention and pressure into one synthetic view."
 
-    if(mode === "global"){
-        el.innerHTML = "🟠 Global — users per kin"
-    }
+    el.innerHTML = `
+        <div style="margin-bottom:8px;">
+            <b>About Field</b>
+        </div>
 
-    if(mode === "hybrid"){
-        el.innerHTML = "🟣 Hybrid — attention × pressure"
-    }
+        <div style="margin-bottom:8px;">
+            Field is a 13×20 toroidal kin map (260 states). Each cell is one kin.
+            Vertical axis = tone (1–13). The grid is not linear: kin sequence moves diagonally and wraps through the edges.
+            Because the right edge connects to the left, and the bottom connects to the top, the structure behaves like a torus rather than a flat table.
+        </div>
 
-    el.innerHTML += "<br>🟩 Cluster — pressure zone"
-    el.innerHTML += "<br>🟨 Attractor — stable zone"
-    el.innerHTML += "<br>⚡ Event — spike"
+        <div style="margin-bottom:8px;">
+            <b>How to read it</b><br>
+            • Fill color = how many participants are inside the kin.<br>
+            • Frame color = currently selected mode.<br>
+            • Number inside the cell = participant count.<br>
+            • Click a kin to open full information about the people in that kin.<br>
+            • The highlighted diagonal shows the local kin trajectory around the selected kin.
+        </div>
+
+        <div style="margin-bottom:8px;">
+            <b>Current mode: ${modeTitle}</b><br>
+            ${modeText}
+        </div>
+
+        <div>
+            <b>Modes</b><br>
+            • <span style="color:#22c55e;">Activity</span> — attention / activation reading.<br>
+            • <span style="color:#ef4444;">Pressure</span> — tension / compression reading.<br>
+            • <span style="color:#f59e0b;">Global</span> — simple user distribution per kin.<br>
+            • <span style="color:#7c3aed;">Hybrid</span> — combined attention × pressure reading.
+        </div>
+    `
 }
 
 function hashCode(str){
