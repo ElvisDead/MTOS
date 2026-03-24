@@ -209,7 +209,7 @@ function removeConnectionHard(a, b){
 function removeConnection(a, b){
 
     historyStack.push({
-        users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
+        users: JSON.parse(localStorage.getItem("mtos_user_list") || "[]"),
         memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
     })
 
@@ -383,11 +383,24 @@ json.dumps(weather)
         // ===============================
         // BUILD USERS
         // ===============================
-        users = userList.map((uName, index) => {
-
-            const baseKin = Number(pyodide.runPython(`
-            mtos_current_kin_NEW("${uName}",${year},${month},${day})
+        users = userList.map((uName) => {
+            const userData = JSON.parse(pyodide.runPython(`
+            import json
+            users_db = load_users()
+            json.dumps(users_db.get(${JSON.stringify(uName)}, {}))
             `))
+                
+            let baseKin = 1
+                
+            if(userData && userData.birth){
+                const [yy, mm, dd] = userData.birth.split("-").map(Number)
+                    
+                baseKin = Number(pyodide.runPython(`
+                mtos_current_kin_NEW(${JSON.stringify(uName)}, ${yy}, ${mm}, ${dd})
+                `))
+            } else if(typeof userData.kin === "number"){
+                baseKin = userData.kin
+            }
 
             const phase = (baseKin % 20) * Math.PI / 10
                 
@@ -552,12 +565,25 @@ json.dumps({
                 kin: currentKin
             })
 
-            users = users.map((u, index)=>{
-
-                const baseKin = Number(pyodide.runPython(`
-                mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
+            users = users.map((u) => {
+                const userData = JSON.parse(pyodide.runPython(`
+                import json
+                users_db = load_users()
+                json.dumps(users_db.get(${JSON.stringify(u.name)}, {}))
                 `))
-
+                    
+                let baseKin = u.baseKin || u.kin || 1
+                    
+                if(userData && userData.birth){
+                    const [yy, mm, ddBirth] = userData.birth.split("-").map(Number)
+                        
+                    baseKin = Number(pyodide.runPython(`
+                    mtos_current_kin_NEW(${JSON.stringify(u.name)}, ${yy}, ${mm}, ${ddBirth})
+                    `))
+                } else if(typeof userData.kin === "number"){
+                    baseKin = userData.kin
+                }
+                
                 const phase = (baseKin % 20) * Math.PI / 10
                     
                 return {
