@@ -920,8 +920,12 @@ def mtos_260_weather(name,year,month,day):
         cache = load_weather_cache()
         key = f"{name}_{today}"
 
-        if key in cache:
+        if key in cache and isinstance(cache[key], list) and len(cache[key]) == 260:
             return cache[key]
+
+    # защита от битого кэша
+    if key in cache and not isinstance(cache[key], list):
+        del cache[key]
 
     birth=datetime.date(year,month,day)
 
@@ -1101,7 +1105,14 @@ def mtos_260_weather(name,year,month,day):
         for w in weather
     ]
 
-    return weather
+    return weather if isinstance(weather, list) else [
+        {
+            "attention": 0.5,
+            "activity": 0.5,
+            "pressure": 0,
+            "conflict": 0
+        } for _ in range(260)
+    ]
 
 def mtos_user_climate(user_seal):
 
