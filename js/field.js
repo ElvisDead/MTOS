@@ -28,11 +28,38 @@ function getFillColor(count) {
     return densityColors[Math.min(count - 1, densityColors.length - 1)]
 }
 
-function getStrokeColor(mode) {
-    if (mode === "activity") return "#22c55e"
-    if (mode === "pressure") return "#ef4444"
-    if (mode === "hybrid") return "#7c3aed"
-    return "#f59e0b"
+function getCellState(mode, count, kin, usersHere = []) {
+    if (count <= 0) return "empty"
+
+    // простая базовая логика состояния
+    // потом можно усложнить под реальные weather/pressure данные
+    if (count >= 3) return "cluster"
+    if (selectedFieldKin === kin) return "event"
+
+    if (mode === "pressure") {
+        return count >= 2 ? "pressure" : "stable"
+    }
+
+    if (mode === "activity") {
+        return count >= 2 ? "active" : "stable"
+    }
+
+    if (mode === "hybrid") {
+        return count >= 2 ? "resonance" : "stable"
+    }
+
+    // global
+    return count >= 2 ? "cluster" : "stable"
+}
+
+function getStateStroke(state) {
+    if (state === "cluster") return "#22c55e"     // зелёный
+    if (state === "pressure") return "#ef4444"    // красный
+    if (state === "active") return "#38bdf8"      // голубой
+    if (state === "resonance") return "#a855f7"   // фиолетовый
+    if (state === "event") return "#ffffff"       // белый
+    if (state === "stable") return "#f59e0b"      // оранжевый
+    return "#334155"
 }
 
 function ensureFieldPopup(root) {
@@ -277,7 +304,8 @@ export function drawField(rootOrId, users = [], mode = "global") {
             if (usersHere.length > 0) {
                 const count = usersHere.length
                 const fillColor = getFillColor(count)
-                const strokeColor = getStrokeColor(mode)
+                const state = getCellState(mode, count, kin, usersHere)
+                const strokeColor = getStateStroke(state)
 
                 // фон клетки
                 ctx.fillStyle = "#081122"
