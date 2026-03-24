@@ -1024,7 +1024,7 @@ window.setNetworkMode = (mode) => {
     window.networkMode = mode
 
     // сброс стилей
-    const buttons = ["modeNormal", "modeAttractor", "modeEdit"]
+    const buttons = ["modeNormal", "modeAttractor", "modeConnect", "modeEdit"]
 
     buttons.forEach(id => {
         const btn = document.getElementById(id)
@@ -1038,6 +1038,7 @@ window.setNetworkMode = (mode) => {
     const activeMap = {
         interaction: "modeNormal",
         attractor: "modeAttractor",
+        connect: "modeConnect",
         edit: "modeEdit"
     }
 

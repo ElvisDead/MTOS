@@ -369,10 +369,18 @@ export function drawField(rootOrId, users = [], mode = "global", weather = [], f
     root.style.position = "relative"
 
     const canvas = document.createElement("canvas")
-    canvas.width = 760
-    canvas.height = 420
+
+    const isMobile = window.innerWidth <= 768
+    const canvasWidth = isMobile ? Math.min(window.innerWidth - 24, 400) : 760
+    const canvasHeight = isMobile ? Math.round(canvasWidth * 0.65) : 420
+    canvas.style.borderRadius = "6px"
+
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
     canvas.style.display = "block"
     canvas.style.margin = "0 auto"
+    canvas.style.maxWidth = "100%"
+    canvas.style.height = "auto"
     root.appendChild(canvas)
 
     const popup = ensureFieldPopup(root)

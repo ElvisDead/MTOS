@@ -7,11 +7,22 @@ export function drawNetwork(id, users, onSelect, matrix = null){
 
     root.innerHTML = ""
 
+    const isMobile = window.innerWidth <= 768
+
     const canvas = document.createElement("canvas")
+    canvas.style.touchAction = "none"
     const size = Math.min(window.innerWidth * 0.7, 500)
-        
-    canvas.width = size
-    canvas.height = size
+    
+    const canvasWidth = isMobile ? Math.min(window.innerWidth - 24, 420) : 900
+    const canvasHeight = isMobile ? Math.round(canvasWidth * 0.75) : 500
+
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
+    canvas.style.display = "block"
+    canvas.style.margin = "0 auto"
+    canvas.style.maxWidth = "100%"
+    canvas.style.height = "auto"
+    canvas.style.borderRadius = "6px"
 
     root.appendChild(canvas)
 
@@ -33,11 +44,14 @@ export function drawNetwork(id, users, onSelect, matrix = null){
 
     const ctx = canvas.getContext("2d")
 
+    const hitRadius = isMobile ? 22 : 15
+
     const cx = canvas.width / 2
     const cy = canvas.width / 2
     const R = canvas.width * 0.4
 
     let selected = null
+    let connectFrom = null
     let hover = null
     let tooltip = null
     let hoverEdge = null
@@ -48,6 +62,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     let isDragging = false
     let dragStartX = 0
     let dragStartY = 0
+    let dragMoved = false
 
     const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
     console.log("MEMORY LOAD:", JSON.stringify(memory))
@@ -224,7 +239,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
         const u = users[i]
         const p = positions[i]
 
-        let radius = 10 + u.weight * 6
+        let radius = (isMobile ? 12 : 10) + u.weight * 6
 
         if(i === selected) radius += 6
         if(i === hover) radius += 3
@@ -265,11 +280,46 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     canvas.onclick = (e)=>{
 
         const currentMode = window.networkMode || "interaction"
+        if(dragMoved){
+            dragMoved = false
+            return
+        }
 
         const rect = canvas.getBoundingClientRect()
 
         const mx = (e.clientX - rect.left - offsetX) / scale
         const my = (e.clientY - rect.top - offsetY) / scale
+
+        if(currentMode === "connect"){
+            for(let i=0;i<N;i++){
+                const dx = mx - positions[i].x
+                const dy = my - positions[i].y
+                
+                if(Math.sqrt(dx*dx + dy*dy) < hitRadius){
+                    if(connectFrom === null){
+                        connectFrom = i
+                        selected = i
+                        draw()
+                        return
+                    }
+
+                    if(connectFrom !== i){
+                        const u1 = users[connectFrom].name
+                        const u2 = users[i].name          
+                        if(window.addConnection){
+                            window.addConnection(u1, u2)
+                        }
+                    }
+                    
+                    connectFrom = null
+                    selected = null
+                    draw()
+                    return
+                }
+            }
+            
+            return
+        }
 
         // ===============================
         // ADD CONNECTION (Shift + click)
@@ -281,7 +331,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
                 const dx = mx - positions[i].x
                 const dy = my - positions[i].y
 
-                if(Math.sqrt(dx*dx + dy*dy) < 15){
+                if(Math.sqrt(dx*dx + dy*dy) < hitRadius){
 
                     if(selected !== null && selected !== i){
 
@@ -360,7 +410,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
                 const dx = mx - positions[i].x
                 const dy = my - positions[i].y
 
-                if(Math.sqrt(dx*dx + dy*dy) < 15){
+                if(Math.sqrt(dx*dx + dy*dy) < hitRadius){
 
                     const name = users[i].name
 
@@ -380,7 +430,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
             const dx = mx - positions[i].x
             const dy = my - positions[i].y
 
-            if(Math.sqrt(dx*dx + dy*dy) < 15){
+            if(Math.sqrt(dx*dx + dy*dy) < hitRadius){
 
                 selected = (selected === i) ? null : i
 
@@ -410,19 +460,49 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     }
             
     canvas.onmousedown = (e)=>{
-
-        if(window.networkMode === "edit"){
-            isDragging = true
-            dragStartX = e.clientX
-            dragStartY = e.clientY
-        }
-        
         isDragging = true
+        dragMoved = false
         dragStartX = e.clientX
         dragStartY = e.clientY
     }
-                
-    canvas.onmouseup = ()=> isDragging = false
+
+    canvas.onmouseup = ()=> {
+        isDragging = false
+    }
+
+    canvas.onmouseleave = ()=> {
+        isDragging = false
+    }
+
+    canvas.ontouchstart = (e)=>{
+        if(!e.touches || !e.touches[0]) return
+        isDragging = true
+        dragMoved = false
+        dragStartX = e.touches[0].clientX
+        dragStartY = e.touches[0].clientY
+    }
+
+    canvas.ontouchmove = (e)=>{
+        if(!isDragging || !e.touches || !e.touches[0]) return
+
+        e.preventDefault()
+        
+        const clientX = e.touches[0].clientX
+        const clientY = e.touches[0].clientY
+
+        offsetX += clientX - dragStartX
+        offsetY += clientY - dragStartY
+
+        dragStartX = clientX
+        dragStartY = clientY
+        dragMoved = true
+
+        draw()
+    }
+
+    canvas.ontouchend = ()=> {
+        isDragging = false
+    }
     canvas.onmouseleave = ()=> isDragging = false
 
     // ===============================
@@ -431,7 +511,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
     canvas.onmousemove = (e)=>{
 
         const rect = canvas.getBoundingClientRect()
-            
+        
         const mx = (e.clientX - rect.left - offsetX) / scale
         const my = (e.clientY - rect.top - offsetY) / scale
         
@@ -444,7 +524,7 @@ export function drawNetwork(id, users, onSelect, matrix = null){
             const dx = mx - positions[i].x
             const dy = my - positions[i].y
 
-            if(Math.sqrt(dx*dx + dy*dy) < 15){
+            if(Math.sqrt(dx*dx + dy*dy) < hitRadius){
                 hover = i
                 tooltip = users[i].name
                 break
@@ -452,13 +532,13 @@ export function drawNetwork(id, users, onSelect, matrix = null){
         }
         
         // drag ТОЛЬКО в edit
-        if(window.networkMode === "edit" && isDragging){
-            
+        if(isDragging){
             offsetX += e.clientX - dragStartX
             offsetY += e.clientY - dragStartY
 
             dragStartX = e.clientX
             dragStartY = e.clientY
+            dragMoved = true
         }
 
 }

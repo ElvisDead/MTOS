@@ -48,9 +48,16 @@ export function drawWeatherMap(
     grid.style.width = "fit-content"
 
     grid.style.display = "grid"
-    grid.style.gridTemplateColumns = "14px repeat(20, 18px)"
-    grid.style.gridTemplateRows = "14px repeat(13, 18px)"
-    grid.style.gap = "2px"
+    const isMobile = window.innerWidth <= 768
+    const headerSize = isMobile ? 12 : 14
+    const cellSize = isMobile ? 17 : 19
+    const gapSize = isMobile ? 1 : 2
+    const fontSize = isMobile ? "7px" : "8px"
+    const axisFontSize = isMobile ? "9px" : "10px"
+
+    grid.style.gridTemplateColumns = `${headerSize}px repeat(20, ${cellSize}px)`
+    grid.style.gridTemplateRows = `${headerSize}px repeat(13, ${cellSize}px)`
+    grid.style.gap = `${gapSize}px`
     // === HEADER (SEAL NUMBERS) ===
 
     // пустая верхняя левая ячейка
@@ -60,10 +67,10 @@ export function drawWeatherMap(
     for(let s=1; s<=20; s++){
         const cell = document.createElement("div")
         cell.innerText = s
-        cell.style.fontSize = "10px"
+        cell.style.fontSize = axisFontSize
         cell.style.color = "#aaa"
         cell.style.textAlign = "center"
-        cell.style.height = "14px"
+        cell.style.height = `${headerSize}px`
         cell.style.display = "flex"
         cell.style.alignItems = "center"
         cell.style.justifyContent = "center"
@@ -86,7 +93,7 @@ export function drawWeatherMap(
             // === LEFT TONE NUMBER ===
             const toneCell = document.createElement("div")
             toneCell.innerText = tone
-            toneCell.style.fontSize = "10px"
+            toneCell.style.fontSize = axisFontSize
             toneCell.style.color = "#aaa"
             toneCell.style.display = "flex"
             toneCell.style.alignItems = "center"
@@ -227,7 +234,7 @@ export function drawWeatherMap(
                 const name = window.SEALS ? window.SEALS[sealIndex] : sealIndex
 
                 cell.innerText = name.slice(0,2)
-                cell.style.fontSize = "8px"
+                cell.style.fontSize = fontSize
                 cell.style.display = "flex"
                 cell.style.alignItems = "center"
                 cell.style.justifyContent = "center"
@@ -237,8 +244,8 @@ export function drawWeatherMap(
             cell.addEventListener("click", (e)=>onCellClick(kin, e))
             cell.addEventListener("touchstart", (e)=>onCellClick(kin, e))
 
-            cell.style.width = "18px"
-            cell.style.height = "18px"
+            cell.style.width = `${cellSize}px`
+            cell.style.height = `${cellSize}px`
             cell.style.background = `rgb(${r},${g},${b})`
             cell.style.boxSizing = "border-box"
             cell.style.border = "1px solid #222"
@@ -337,6 +344,9 @@ legend.innerHTML = `
 `
 
 const wrapper = document.createElement("div")
+wrapper.style.width = "100%"
+wrapper.style.overflowX = "auto"
+wrapper.style.webkitOverflowScrolling = "touch"
 wrapper.style.display = "flex"
 wrapper.style.justifyContent = "center"
 

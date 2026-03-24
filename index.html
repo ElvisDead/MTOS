@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 
 #app {
@@ -41,6 +43,85 @@ body {
     right: 0;
     background-image: url("./mayan-left.png");
     background-position: right top;
+}
+
+/* ===== MOBILE BASE ===== */
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* контейнер */
+#app {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* все карты */
+#weatherMap,
+#networkMap,
+#fieldMap,
+#seriesMap,
+#phaseMap,
+#attractorMap,
+#collectiveMap,
+#activityMap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* canvas */
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* кнопки */
+button {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 14px;
+    margin: 4px;
+}
+
+/* input */
+input {
+    width: calc(50% - 10px);
+    margin: 4px;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+
+    body {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 26px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    /* УБИРАЕМ РАМКИ */
+    .mayan-border {
+        display: none;
+    }
+
+    #app {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
 }
 </style>
     
@@ -135,6 +216,7 @@ canvas{
 
 <button id="modeNormal" onclick="setNetworkMode('interaction')">Normal</button>
 <button id="modeAttractor" onclick="setNetworkMode('attractor')">Attractor</button>
+<button id="modeConnect" onclick="setNetworkMode('connect')">Connect</button>
 <button id="modeEdit" onclick="setNetworkMode('edit')">Edit</button>
 
 <div style="

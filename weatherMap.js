@@ -45,12 +45,20 @@ export function drawWeatherMap(
     root.style.display = "block"
 
     const grid = document.createElement("div")
-    grid.style.width = "fit-content"
+    grid.style.width = isMobile ? "100%" : "fit-content"
 
     grid.style.display = "grid"
-    grid.style.gridTemplateColumns = "14px repeat(20, 18px)"
-    grid.style.gridTemplateRows = "14px repeat(13, 18px)"
-    grid.style.gap = "2px"
+    const isMobile = window.innerWidth <= 768
+
+    const headerSize = isMobile ? 11 : 14
+    const cellSize = isMobile ? 13 : 18
+    const gapSize = isMobile ? 1 : 2
+    const fontSize = isMobile ? "6px" : "8px"
+    const axisFontSize = isMobile ? "8px" : "10px"
+
+    grid.style.gridTemplateColumns = `${headerSize}px repeat(20, ${cellSize}px)`
+    grid.style.gridTemplateRows = `${headerSize}px repeat(13, ${cellSize}px)`
+    grid.style.gap = `${gapSize}px`
     // === HEADER (SEAL NUMBERS) ===
 
     // пустая верхняя левая ячейка
@@ -277,7 +285,7 @@ const legend = document.createElement("div")
 legend.style.marginTop = "15px"
 legend.style.fontSize = "12px"
 legend.style.color = "#aaa"
-legend.style.maxWidth = "700px"
+legend.style.maxWidth = isMobile ? "320px" : "700px"
 legend.style.marginLeft = "auto"
 legend.style.marginRight = "auto"
 legend.style.textAlign = "center" 
@@ -339,6 +347,8 @@ legend.innerHTML = `
 const wrapper = document.createElement("div")
 wrapper.style.display = "flex"
 wrapper.style.justifyContent = "center"
+wrapper.style.width = "100%"
+wrapper.style.overflowX = "hidden"
 
 wrapper.appendChild(grid)
 
