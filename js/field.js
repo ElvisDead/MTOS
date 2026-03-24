@@ -81,7 +81,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
 
             if (usersHere.length > 0) {
                 const count = usersHere.length
-                    
+
                 if (count === 1) {
                     if (mode === "activity") {
                         ctx.fillStyle = "#22c55e"
@@ -89,7 +89,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
                         ctx.fillStyle = "#ef4444"
                     } else if (mode === "hybrid") {
                         ctx.fillStyle = "#7c3aed"
-                    }
                     } else {
                         ctx.fillStyle = "#f59e0b"
                     }
@@ -99,7 +98,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
                 }
 
                 ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4)
-                    
+
                 ctx.fillStyle = "#111827"
                 ctx.font = "bold 12px monospace"
                 ctx.textAlign = "center"
@@ -107,6 +106,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
                 ctx.fillText(String(count), x + cellW / 2, y + cellH / 2)
             }
         }
+    }
 
     ctx.fillStyle = "#94a3b8"
     ctx.font = "10px monospace"
