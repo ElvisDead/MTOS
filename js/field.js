@@ -127,11 +127,11 @@ function kinToCoords(kin, cols = 20, rows = 13) {
     return null
 }
 
-function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
+function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH, span = 4) {
     if (!selectedKin) return
 
     const path = []
-    for (let d = -12; d <= 12; d++) {
+    for (let d = -span; d <= span; d++) {
         const kin = ((selectedKin - 1 + d + 260 * 3) % 260) + 1
         const coords = kinToCoords(kin)
         if (coords) {
@@ -146,7 +146,7 @@ function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
     if (path.length < 2) return
 
     ctx.save()
-    ctx.strokeStyle = "rgba(255,255,255,0.18)"
+    ctx.strokeStyle = "rgba(255,255,255,0.22)"
     ctx.lineWidth = 2
     ctx.setLineDash([5, 4])
 
@@ -157,7 +157,6 @@ function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
         const dx = Math.abs(a.x - b.x)
         const dy = Math.abs(a.y - b.y)
 
-        // не соединяем точки через дальний скачок при тороидальном переходе
         if (dx > cellW * 3 || dy > cellH * 3) continue
 
         ctx.beginPath()
@@ -168,6 +167,30 @@ function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
 
     ctx.setLineDash([])
     ctx.restore()
+}
+
+function selectFieldKin(root, users, mode, kin, cellCenterX, cellCenterY) {
+    selectedFieldKin = kin
+
+    drawField(root, users, mode)
+
+    const popup = root.querySelector(".field-popup")
+    if (!popup) return
+
+    const usersByKin = {}
+    users.forEach(u => {
+        const k = Number(u.kin)
+        if (!usersByKin[k]) usersByKin[k] = []
+        usersByKin[k].push(u)
+    })
+
+    const usersHere = usersByKin[kin] || []
+
+    if (usersHere.length > 0) {
+        showFieldPopup(root, popup, cellCenterX, cellCenterY, kin, usersHere, mode)
+    } else {
+        popup.style.display = "none"
+    }
 }
 
 export function drawField(rootOrId, users = [], mode = "global") {
@@ -285,7 +308,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
         const rect = canvas.getBoundingClientRect()
         const mx = e.clientX - rect.left
         const my = e.clientY - rect.top
-
+            
         if (mx < leftPad || my < topPad) return
 
         const seal = Math.floor((mx - leftPad) / cellW)
@@ -294,26 +317,15 @@ export function drawField(rootOrId, users = [], mode = "global") {
         if (seal < 0 || seal >= cols || tone < 0 || tone >= rows) return
 
         const kin = KinRegistry.fromGrid(seal, tone)
-        const usersHere = usersByKin[kin] || []
 
-        selectedFieldKin = kin
-
-        // redraw with diagonal highlight
-        drawField(root, users, mode)
-
-        if (usersHere.length > 0) {
-            showFieldPopup(
-                root,
-                popup,
-                leftPad + seal * cellW + cellW / 2,
-                topPad + tone * cellH + cellH / 2,
-                kin,
-                usersHere,
-                mode
-            )
-        } else {
-            popup.style.display = "none"
-        }
+        selectFieldKin(
+            root,
+            users,
+            mode,
+            kin,
+            leftPad + seal * cellW + cellW / 2,
+            topPad + tone * cellH + cellH / 2
+        )
     }
 
     canvas.oncontextmenu = (e) => {
