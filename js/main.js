@@ -398,11 +398,23 @@ json.dumps(weather)
             json.dumps(users_db.get(${JSON.stringify(uName)}, {}))
             `))
                 
-            const baseKin =
-                (userData && typeof userData.kin === "number")
-                ? userData.kin
-                : 1
-                
+            let baseKin = null
+
+            if(userData && userData.birth){
+                const [yy, mm, dd] = userData.birth.split("-").map(Number)
+                    
+                baseKin = Number(pyodide.runPython(`
+                mtos_current_kin_NEW(${JSON.stringify(uName)}, ${yy}, ${mm}, ${dd})
+                `))
+            } else if(userData && userData.kin != null){
+                baseKin = Number(userData.kin)
+            }
+
+            if(!Number.isFinite(baseKin) || baseKin < 1 || baseKin > 260){
+                console.warn("BAD USER DATA:", uName, userData)
+                return null
+            }
+
             const phase = (baseKin % 20) * Math.PI / 10
                 
             return {
@@ -412,7 +424,7 @@ json.dumps(weather)
                 phase,
                 weight: 1
             }
-        })
+        }).filter(Boolean)
 
         // 1. Посмотрим в консоли, как РЕАЛЬНО выглядит один юзе
         if (users.length > 0) {
@@ -460,14 +472,12 @@ json.dumps(weather)
         })
             
         users = updated.map(u => {
-            const prev = prevMap[u.name]
-
             return {
                 name: u.name,
-                kin: prev ? prev.kin : u.kin,
-                baseKin: prev ? prev.baseKin : u.kin,
+                kin: Number(u.kin),
+                baseKin: Number(u.baseKin ?? u.kin),
                 weight: u.weight,
-                phase: prev ? prev.phase : u.phase
+                phase: ((Number(u.baseKin ?? u.kin) % 20) * Math.PI / 10)
             }
         })
 
@@ -603,14 +613,12 @@ json.dumps({
             })
                 
             users = updated.map(u => {
-                const prev = prevMap[u.name]
-
                 return {
                     name: u.name,
-                    kin: prev ? prev.kin : u.kin,
-                    baseKin: prev ? prev.baseKin : u.kin,
+                    kin: Number(u.kin),
+                    baseKin: Number(u.baseKin ?? u.kin),
                     weight: u.weight,
-                    phase: prev ? prev.phase : u.phase
+                    phase: ((Number(u.baseKin ?? u.kin) % 20) * Math.PI / 10)
                 }
             })
 
