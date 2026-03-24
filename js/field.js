@@ -127,18 +127,21 @@ function kinToCoords(kin, cols = 20, rows = 13) {
     return null
 }
 
-function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH, span = 4) {
+function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
     if (!selectedKin) return
 
     const path = []
-    for (let d = -span; d <= span; d++) {
+
+    for (let d = -10; d <= 9; d++) {
         const kin = ((selectedKin - 1 + d + 260 * 3) % 260) + 1
         const coords = kinToCoords(kin)
+
         if (coords) {
             path.push({
                 x: leftPad + coords.seal * cellW + cellW / 2,
                 y: topPad + coords.tone * cellH + cellH / 2,
-                kin
+                kin,
+                offset: d
             })
         }
     }
@@ -166,9 +169,25 @@ function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH, span =
     }
 
     ctx.setLineDash([])
+
+    for (let i = 0; i < path.length; i++) {
+        const p = path[i]
+
+        ctx.beginPath()
+
+        if (p.offset === 0) {
+            ctx.fillStyle = "#ffffff"
+            ctx.arc(p.x, p.y, 3.4, 0, Math.PI * 2)
+        } else {
+            ctx.fillStyle = "rgba(255,255,255,0.35)"
+            ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2)
+        }
+
+        ctx.fill()
+    }
+
     ctx.restore()
 }
-
 function selectFieldKin(root, users, mode, kin, cellCenterX, cellCenterY) {
     selectedFieldKin = kin
 
