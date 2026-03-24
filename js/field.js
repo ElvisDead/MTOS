@@ -186,21 +186,17 @@ export function drawField(rootOrId, users = [], mode = "global") {
                 const count = usersHere.length
                 const fillColor = getFillColor(count)
                 const strokeColor = getStrokeColor(mode)
-                
-                // тёмная подложка
+
                 ctx.fillStyle = "#081122"
                 ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4)
 
-                // внутренняя заливка = плотность участников
                 ctx.fillStyle = fillColor
                 ctx.fillRect(x + 5, y + 5, cellW - 10, cellH - 10)
 
-                // рамка = текущий режим Field
                 ctx.strokeStyle = strokeColor
                 ctx.lineWidth = 2
                 ctx.strokeRect(x + 3.5, y + 3.5, cellW - 7, cellH - 7)
 
-                // число участников
                 ctx.fillStyle = count >= 2 ? "#0b1020" : "#e5e7eb"
                 ctx.font = "bold 12px monospace"
                 ctx.textAlign = "center"
@@ -238,10 +234,10 @@ export function drawField(rootOrId, users = [], mode = "global") {
         const tone = Math.floor((my - topPad) / cellH)
 
         if (seal < 0 || seal >= cols || tone < 0 || tone >= rows) return
-            
+
         const kin = KinRegistry.fromGrid(seal, tone)
         const usersHere = usersByKin[kin] || []
-            
+
         if (usersHere.length > 0) {
             showFieldPopup(
                 root,
@@ -254,10 +250,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
             )
         } else {
             popup.style.display = "none"
-        }
-
-        if (window.onKinSelect) {
-            window.onKinSelect(kin)
         }
     }
 
