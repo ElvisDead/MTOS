@@ -1,11 +1,7 @@
 import { KinRegistry } from "./kinRegistry.js"
 
-const seals = [
-    "Drg","Wnd","Ngt","Sed","Spr","WBr","Hnd","Str","Mon","Dog",
-    "Mnk","Hum","Sky","Wzd","Egl","Wrr","Ert","Mir","Strm","Sun"
-]
-
 const densityColors = [
+    "#1e293b", // 1
     "#c084fc", // 2
     "#8b5cf6", // 3
     "#6366f1", // 4
@@ -20,10 +16,16 @@ const densityColors = [
     "#ef4444"  // 13+
 ]
 
+const sealNames = [
+    "Dragon","Wind","Night","Seed","Serpent","WorldBridger","Hand","Star","Moon","Dog",
+    "Monkey","Human","Skywalker","Wizard","Eagle","Warrior","Earth","Mirror","Storm","Sun"
+]
+
+let selectedFieldKin = null
+
 function getFillColor(count) {
     if (count <= 0) return "#081122"
-    if (count === 1) return "#0f172a"
-    return densityColors[Math.min(count - 2, densityColors.length - 1)]
+    return densityColors[Math.min(count - 1, densityColors.length - 1)]
 }
 
 function getStrokeColor(mode) {
@@ -41,16 +43,16 @@ function ensureFieldPopup(root) {
         popup.className = "field-popup"
         popup.style.position = "absolute"
         popup.style.display = "none"
-        popup.style.minWidth = "240px"
-        popup.style.maxWidth = "340px"
-        popup.style.background = "rgba(2,6,23,0.97)"
+        popup.style.minWidth = "260px"
+        popup.style.maxWidth = "360px"
+        popup.style.background = "rgba(2,6,23,0.98)"
         popup.style.border = "1px solid #334155"
         popup.style.borderRadius = "10px"
         popup.style.padding = "10px 12px"
         popup.style.color = "#e5e7eb"
         popup.style.fontFamily = "monospace"
         popup.style.fontSize = "12px"
-        popup.style.lineHeight = "1.45"
+        popup.style.lineHeight = "1.5"
         popup.style.zIndex = "20"
         popup.style.boxShadow = "0 10px 30px rgba(0,0,0,0.45)"
         root.appendChild(popup)
@@ -59,15 +61,10 @@ function ensureFieldPopup(root) {
     return popup
 }
 
-function sealNameByIndex(sealIndex) {
-    return seals[sealIndex] || "?"
-}
-
 function showFieldPopup(root, popup, x, y, kin, usersHere, mode) {
     const tone = ((kin - 1) % 13) + 1
     const sealIndex = (kin - 1) % 20
-    const sealName = sealNameByIndex(sealIndex)
-
+    const sealName = sealNames[sealIndex] || "?"
     const names = usersHere.length
         ? usersHere.map((u, i) => `${i + 1}. ${u.name}`).join("<br>")
         : "No users"
@@ -105,7 +102,7 @@ function showFieldPopup(root, popup, x, y, kin, usersHere, mode) {
     let left = x + 12
     let top = y + 12
 
-    if (left + 320 > rootRect.width) left = x - 250
+    if (left + 340 > rootRect.width) left = x - 260
     if (top + 220 > rootRect.height) top = y - 180
 
     popup.style.left = `${Math.max(8, left)}px`
@@ -117,6 +114,60 @@ function showFieldPopup(root, popup, x, y, kin, usersHere, mode) {
             popup.style.display = "none"
         }
     }
+}
+
+function kinToCoords(kin, cols = 20, rows = 13) {
+    for (let tone = 0; tone < rows; tone++) {
+        for (let seal = 0; seal < cols; seal++) {
+            if (KinRegistry.fromGrid(seal, tone) === kin) {
+                return { seal, tone }
+            }
+        }
+    }
+    return null
+}
+
+function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
+    if (!selectedKin) return
+
+    const path = []
+    for (let d = -12; d <= 12; d++) {
+        const kin = ((selectedKin - 1 + d + 260 * 3) % 260) + 1
+        const coords = kinToCoords(kin)
+        if (coords) {
+            path.push({
+                x: leftPad + coords.seal * cellW + cellW / 2,
+                y: topPad + coords.tone * cellH + cellH / 2,
+                kin
+            })
+        }
+    }
+
+    if (path.length < 2) return
+
+    ctx.save()
+    ctx.strokeStyle = "rgba(255,255,255,0.18)"
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 4])
+
+    for (let i = 0; i < path.length - 1; i++) {
+        const a = path[i]
+        const b = path[i + 1]
+
+        const dx = Math.abs(a.x - b.x)
+        const dy = Math.abs(a.y - b.y)
+
+        // не соединяем точки через дальний скачок при тороидальном переходе
+        if (dx > cellW * 3 || dy > cellH * 3) continue
+
+        ctx.beginPath()
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(b.x, b.y)
+        ctx.stroke()
+    }
+
+    ctx.setLineDash([])
+    ctx.restore()
 }
 
 export function drawField(rootOrId, users = [], mode = "global") {
@@ -138,7 +189,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
     root.appendChild(canvas)
 
     const popup = ensureFieldPopup(root)
-
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -149,7 +199,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
     const rows = 13
 
     const leftPad = 34
-    const topPad = 20
+    const topPad = 10
     const gridW = W - leftPad
     const gridH = H - topPad
 
@@ -166,10 +216,10 @@ export function drawField(rootOrId, users = [], mode = "global") {
         usersByKin[kin].push(u)
     })
 
+    // grid
     for (let tone = 0; tone < rows; tone++) {
         for (let seal = 0; seal < cols; seal++) {
             const kin = KinRegistry.fromGrid(seal, tone)
-
             const x = leftPad + seal * cellW
             const y = topPad + tone * cellH
 
@@ -187,36 +237,44 @@ export function drawField(rootOrId, users = [], mode = "global") {
                 const fillColor = getFillColor(count)
                 const strokeColor = getStrokeColor(mode)
 
+                // фон клетки
                 ctx.fillStyle = "#081122"
                 ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4)
 
+                // внутренняя заливка = плотность
                 ctx.fillStyle = fillColor
-                ctx.fillRect(x + 5, y + 5, cellW - 10, cellH - 10)
+                ctx.fillRect(x + 6, y + 6, cellW - 12, cellH - 12)
 
+                // рамка = режим
                 ctx.strokeStyle = strokeColor
                 ctx.lineWidth = 2
                 ctx.strokeRect(x + 3.5, y + 3.5, cellW - 7, cellH - 7)
 
+                // число участников
                 ctx.fillStyle = count >= 2 ? "#0b1020" : "#e5e7eb"
                 ctx.font = "bold 12px monospace"
                 ctx.textAlign = "center"
                 ctx.textBaseline = "middle"
                 ctx.fillText(String(count), x + cellW / 2, y + cellH / 2)
             }
+
+            // выделение выбранного kin
+            if (selectedFieldKin === kin) {
+                ctx.strokeStyle = "#ffffff"
+                ctx.lineWidth = 2
+                ctx.strokeRect(x + 1.5, y + 1.5, cellW - 3, cellH - 3)
+            }
         }
     }
 
+    // диагональ выбранного kin
+    drawKinDiagonal(ctx, selectedFieldKin, leftPad, topPad, cellW, cellH)
+
+    // tones only
     ctx.fillStyle = "#94a3b8"
     ctx.font = "10px monospace"
-    ctx.textAlign = "center"
-    ctx.textBaseline = "middle"
-
-    for (let seal = 0; seal < cols; seal++) {
-        const x = leftPad + seal * cellW + cellW / 2
-        ctx.fillText(seals[seal], x, topPad / 2)
-    }
-
     ctx.textAlign = "right"
+    ctx.textBaseline = "middle"
 
     for (let tone = 0; tone < rows; tone++) {
         const y = topPad + tone * cellH + cellH / 2
@@ -238,6 +296,11 @@ export function drawField(rootOrId, users = [], mode = "global") {
         const kin = KinRegistry.fromGrid(seal, tone)
         const usersHere = usersByKin[kin] || []
 
+        selectedFieldKin = kin
+
+        // redraw with diagonal highlight
+        drawField(root, users, mode)
+
         if (usersHere.length > 0) {
             showFieldPopup(
                 root,
@@ -255,6 +318,8 @@ export function drawField(rootOrId, users = [], mode = "global") {
 
     canvas.oncontextmenu = (e) => {
         e.preventDefault()
+        selectedFieldKin = null
         popup.style.display = "none"
+        drawField(root, users, mode)
     }
 }
