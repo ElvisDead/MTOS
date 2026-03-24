@@ -5,6 +5,21 @@ const seals = [
     "Mnk","Hum","Sky","Wzd","Egl","Wrr","Ert","Mir","Strm","Sun"
 ]
 
+const densityColors = [
+    "#a855f7", // 1
+    "#8b5cf6", // 2
+    "#6366f1", // 3
+    "#3b82f6", // 4
+    "#06b6d4", // 5
+    "#14b8a6", // 6
+    "#10b981", // 7
+    "#84cc16", // 8
+    "#eab308", // 9
+    "#f59e0b", // 10
+    "#f97316", // 11
+    "#ef4444"  // 12+
+]
+
 export function drawField(rootOrId, users = [], mode = "global") {
     const root =
         typeof rootOrId === "string"
@@ -65,23 +80,30 @@ export function drawField(rootOrId, users = [], mode = "global") {
             const usersHere = usersByKin[kin] || []
 
             if (usersHere.length > 0) {
-                if (mode === "activity") {
-                    ctx.fillStyle = "#22c55e"
-                } else if (mode === "pressure") {
-                    ctx.fillStyle = "#ef4444"
-                } else if (mode === "hybrid") {
-                    ctx.fillStyle = "#a855f7"
+                const count = usersHere.length
+                    
+                if (count === 1) {
+                    if (mode === "activity") {
+                        ctx.fillStyle = "#22c55e"
+                    } else if (mode === "pressure") {
+                        ctx.fillStyle = "#ef4444"
+                    } else if (mode === "hybrid") {
+                        ctx.fillStyle = "#a855f7"
+                    } else {
+                        ctx.fillStyle = "#f59e0b"
+                    }
                 } else {
-                    ctx.fillStyle = "#f59e0b"
+                    const colorIndex = Math.min(count - 2, densityColors.length - 1)
+                    ctx.fillStyle = densityColors[colorIndex]
                 }
 
                 ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4)
-
-                ctx.fillStyle = "#000"
-                ctx.font = "10px monospace"
+                    
+                ctx.fillStyle = "#111827"
+                ctx.font = "bold 12px monospace"
                 ctx.textAlign = "center"
                 ctx.textBaseline = "middle"
-                ctx.fillText(String(usersHere.length), x + cellW / 2, y + cellH / 2)
+                ctx.fillText(String(count), x + cellW / 2, y + cellH / 2)
             }
         }
     }
