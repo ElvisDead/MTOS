@@ -23,42 +23,145 @@ const sealNames = [
 
 let selectedFieldKin = null
 
+function clamp01(v) {
+    const n = Number(v)
+    if (!Number.isFinite(n)) return 0
+    return Math.max(0, Math.min(1, n))
+}
+
 function getFillColor(count) {
     if (count <= 0) return "#081122"
     return densityColors[Math.min(count - 1, densityColors.length - 1)]
 }
 
-function getCellState(mode, count, kin, usersHere = []) {
-    if (count <= 0) return "empty"
-
-    // простая базовая логика состояния
-    // потом можно усложнить под реальные weather/pressure данные
-    if (count >= 3) return "cluster"
-    if (selectedFieldKin === kin) return "event"
-
-    if (mode === "pressure") {
-        return count >= 2 ? "pressure" : "stable"
+function safeWeatherAt(weather, kin) {
+    const w = Array.isArray(weather) ? weather[kin - 1] : null
+    if (!w || typeof w !== "object") {
+        return {
+            attention: 0,
+            activity: 0,
+            pressure: 0,
+            conflict: 0
+        }
     }
 
+    return {
+        attention: clamp01(w.attention ?? 0),
+        activity: clamp01(w.activity ?? w.attention ?? 0),
+        pressure: clamp01(w.pressure ?? 0),
+        conflict: clamp01(w.conflict ?? 0)
+    }
+}
+
+function safeFieldAt(fieldValues, kin) {
+    if (!Array.isArray(fieldValues)) return 0
+    return clamp01(fieldValues[kin - 1] ?? 0)
+}
+
+function neighborFieldAverage(fieldValues, kin) {
+    if (!Array.isArray(fieldValues) || fieldValues.length < 3) return 0
+
+    const idx = kin - 1
+    const left = clamp01(fieldValues[(idx - 1 + 260) % 260] ?? 0)
+    const right = clamp01(fieldValues[(idx + 1) % 260] ?? 0)
+    return (left + right) / 2
+}
+
+function getCellMetrics(mode, kin, weather, fieldValues) {
+    const w = safeWeatherAt(weather, kin)
+    const field = safeFieldAt(fieldValues, kin)
+    const neighborAvg = neighborFieldAverage(fieldValues, kin)
+
+    const attention = clamp01(w.attention)
+    const activity = clamp01((w.activity + attention) / 2)
+    const pressure = clamp01(Math.max(w.pressure, w.conflict, Math.abs(field - 0.5) * 2))
+    const hybrid = clamp01((activity + pressure + field) / 3)
+    const spike = clamp01(Math.abs(field - neighborAvg))
+
     if (mode === "activity") {
-        return count >= 2 ? "active" : "stable"
+        return {
+            primary: activity,
+            attention,
+            activity,
+            pressure,
+            hybrid,
+            field,
+            spike
+        }
+    }
+
+    if (mode === "pressure") {
+        return {
+            primary: pressure,
+            attention,
+            activity,
+            pressure,
+            hybrid,
+            field,
+            spike
+        }
     }
 
     if (mode === "hybrid") {
-        return count >= 2 ? "resonance" : "stable"
+        return {
+            primary: hybrid,
+            attention,
+            activity,
+            pressure,
+            hybrid,
+            field,
+            spike
+        }
     }
 
-    // global
-    return count >= 2 ? "cluster" : "stable"
+    return {
+        primary: field,
+        attention,
+        activity,
+        pressure,
+        hybrid,
+        field,
+        spike
+    }
+}
+
+function getCellState(mode, count, kin, weather, fieldValues) {
+    if (count <= 0) return "empty"
+
+    const m = getCellMetrics(mode, kin, weather, fieldValues)
+
+    if (m.spike >= 0.35 || m.primary >= 0.9) return "event"
+
+    if (mode === "pressure") {
+        if (m.pressure >= 0.7) return "pressure"
+        if (count >= 3) return "cluster"
+        return "stable"
+    }
+
+    if (mode === "activity") {
+        if (m.activity >= 0.7) return "active"
+        if (count >= 3) return "cluster"
+        return "stable"
+    }
+
+    if (mode === "hybrid") {
+        if (m.hybrid >= 0.68) return "resonance"
+        if (count >= 3) return "cluster"
+        return "stable"
+    }
+
+    if (count >= 3) return "cluster"
+    if (m.field >= 0.75) return "resonance"
+    return "stable"
 }
 
 function getStateStroke(state) {
-    if (state === "cluster") return "#22c55e"     // зелёный
-    if (state === "pressure") return "#ef4444"    // красный
-    if (state === "active") return "#38bdf8"      // голубой
-    if (state === "resonance") return "#a855f7"   // фиолетовый
-    if (state === "event") return "#ffffff"       // белый
-    if (state === "stable") return "#f59e0b"      // оранжевый
+    if (state === "cluster") return "#22c55e"
+    if (state === "pressure") return "#ef4444"
+    if (state === "active") return "#38bdf8"
+    if (state === "resonance") return "#a855f7"
+    if (state === "event") return "#ffffff"
+    if (state === "stable") return "#f59e0b"
     return "#334155"
 }
 
@@ -70,8 +173,8 @@ function ensureFieldPopup(root) {
         popup.className = "field-popup"
         popup.style.position = "absolute"
         popup.style.display = "none"
-        popup.style.minWidth = "260px"
-        popup.style.maxWidth = "360px"
+        popup.style.minWidth = "280px"
+        popup.style.maxWidth = "380px"
         popup.style.background = "rgba(2,6,23,0.98)"
         popup.style.border = "1px solid #334155"
         popup.style.borderRadius = "10px"
@@ -88,11 +191,15 @@ function ensureFieldPopup(root) {
     return popup
 }
 
-function showFieldPopup(root, popup, x, y, kin, usersHere, mode) {
+function showFieldPopup(root, popup, x, y, kin, usersHere, mode, weather, fieldValues) {
     const tone = ((kin - 1) % 13) + 1
     const sealIndex = (kin - 1) % 20
     const sealName = sealNames[sealIndex] || "?"
-    const names = usersHere.length
+    const count = usersHere.length
+    const state = getCellState(mode, count, kin, weather, fieldValues)
+    const m = getCellMetrics(mode, kin, weather, fieldValues)
+
+    const names = count
         ? usersHere.map((u, i) => `${i + 1}. ${u.name}`).join("<br>")
         : "No users"
 
@@ -115,7 +222,17 @@ function showFieldPopup(root, popup, x, y, kin, usersHere, mode) {
         </div>
 
         <div style="margin-bottom:6px;">
-            Users in kin: <b>${usersHere.length}</b>
+            Users in kin: <b>${count}</b>
+        </div>
+
+        <div style="margin-bottom:8px;color:#cbd5e1;">
+            State: <b>${state}</b><br>
+            Attention: ${m.attention.toFixed(2)}<br>
+            Activity: ${m.activity.toFixed(2)}<br>
+            Pressure: ${m.pressure.toFixed(2)}<br>
+            Hybrid: ${m.hybrid.toFixed(2)}<br>
+            Field: ${m.field.toFixed(2)}<br>
+            Spike: ${m.spike.toFixed(2)}
         </div>
 
         <div style="color:#e2e8f0;">
@@ -130,7 +247,7 @@ function showFieldPopup(root, popup, x, y, kin, usersHere, mode) {
     let top = y + 12
 
     if (left + 340 > rootRect.width) left = x - 260
-    if (top + 220 > rootRect.height) top = y - 180
+    if (top + 260 > rootRect.height) top = y - 220
 
     popup.style.left = `${Math.max(8, left)}px`
     popup.style.top = `${Math.max(8, top)}px`
@@ -215,10 +332,11 @@ function drawKinDiagonal(ctx, selectedKin, leftPad, topPad, cellW, cellH) {
 
     ctx.restore()
 }
-function selectFieldKin(root, users, mode, kin, cellCenterX, cellCenterY) {
+
+function selectFieldKin(root, users, mode, kin, cellCenterX, cellCenterY, weather, fieldValues) {
     selectedFieldKin = kin
 
-    drawField(root, users, mode)
+    drawField(root, users, mode, weather, fieldValues)
 
     const popup = root.querySelector(".field-popup")
     if (!popup) return
@@ -233,13 +351,13 @@ function selectFieldKin(root, users, mode, kin, cellCenterX, cellCenterY) {
     const usersHere = usersByKin[kin] || []
 
     if (usersHere.length > 0) {
-        showFieldPopup(root, popup, cellCenterX, cellCenterY, kin, usersHere, mode)
+        showFieldPopup(root, popup, cellCenterX, cellCenterY, kin, usersHere, mode, weather, fieldValues)
     } else {
         popup.style.display = "none"
     }
 }
 
-export function drawField(rootOrId, users = [], mode = "global") {
+export function drawField(rootOrId, users = [], mode = "global", weather = [], fieldValues = []) {
     const root =
         typeof rootOrId === "string"
             ? document.getElementById(rootOrId)
@@ -285,7 +403,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
         usersByKin[kin].push(u)
     })
 
-    // grid
     for (let tone = 0; tone < rows; tone++) {
         for (let seal = 0; seal < cols; seal++) {
             const kin = KinRegistry.fromGrid(seal, tone)
@@ -304,23 +421,19 @@ export function drawField(rootOrId, users = [], mode = "global") {
             if (usersHere.length > 0) {
                 const count = usersHere.length
                 const fillColor = getFillColor(count)
-                const state = getCellState(mode, count, kin, usersHere)
+                const state = getCellState(mode, count, kin, weather, fieldValues)
                 const strokeColor = getStateStroke(state)
 
-                // фон клетки
                 ctx.fillStyle = "#081122"
                 ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4)
 
-                // внутренняя заливка = плотность
                 ctx.fillStyle = fillColor
                 ctx.fillRect(x + 6, y + 6, cellW - 12, cellH - 12)
 
-                // рамка = режим
                 ctx.strokeStyle = strokeColor
                 ctx.lineWidth = 2
                 ctx.strokeRect(x + 3.5, y + 3.5, cellW - 7, cellH - 7)
 
-                // число участников
                 ctx.fillStyle = count >= 2 ? "#0b1020" : "#e5e7eb"
                 ctx.font = "bold 12px monospace"
                 ctx.textAlign = "center"
@@ -328,7 +441,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
                 ctx.fillText(String(count), x + cellW / 2, y + cellH / 2)
             }
 
-            // выделение выбранного kin
             if (selectedFieldKin === kin) {
                 ctx.strokeStyle = "#ffffff"
                 ctx.lineWidth = 2
@@ -337,10 +449,8 @@ export function drawField(rootOrId, users = [], mode = "global") {
         }
     }
 
-    // диагональ выбранного kin
     drawKinDiagonal(ctx, selectedFieldKin, leftPad, topPad, cellW, cellH)
 
-    // tones only
     ctx.fillStyle = "#94a3b8"
     ctx.font = "10px monospace"
     ctx.textAlign = "right"
@@ -355,7 +465,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
         const rect = canvas.getBoundingClientRect()
         const mx = e.clientX - rect.left
         const my = e.clientY - rect.top
-            
+
         if (mx < leftPad || my < topPad) return
 
         const seal = Math.floor((mx - leftPad) / cellW)
@@ -371,7 +481,9 @@ export function drawField(rootOrId, users = [], mode = "global") {
             mode,
             kin,
             leftPad + seal * cellW + cellW / 2,
-            topPad + tone * cellH + cellH / 2
+            topPad + tone * cellH + cellH / 2,
+            weather,
+            fieldValues
         )
     }
 
@@ -379,6 +491,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
         e.preventDefault()
         selectedFieldKin = null
         popup.style.display = "none"
-        drawField(root, users, mode)
+        drawField(root, users, mode, weather, fieldValues)
     }
 }
