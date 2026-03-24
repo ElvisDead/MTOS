@@ -331,21 +331,33 @@ weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
 kin = mtos_current_kin_NEW(${JSON.stringify(name)},${year},${month},${day})
 pressure = mtos_pressure_map()
 
-attention = sum([w["attention"] for w in weather]) / 260
-noise = sum([abs(w["attention"]-0.5) for w in weather]) / 260
+safe_weather = [
+    w if isinstance(w, dict) and "attention" in w else {
+        "attention": 0.5,
+        "activity": 0.5,
+        "pressure": 0,
+        "conflict": 0
+    }
+    for w in weather
+]
+
+attention_values = [w["attention"] for w in safe_weather]
+
+attention = sum(attention_values) / 260
+noise = sum([abs(v - 0.5) for v in attention_values]) / 260
 lyapunov = noise * 2.5
 prediction = attention * (1 - noise)
 
 json.dumps({
- "weather": weather,
+ "weather": safe_weather,
  "pressure": pressure,
  "kin": kin,
  "attention": attention,
  "noise": noise,
- "entropy": entropy([w["attention"] for w in weather]),
+ "entropy": entropy(attention_values),
  "lyapunov": lyapunov,
  "prediction": prediction,
- "predictability": predictability([w["attention"] for w in weather])
+ "predictability": predictability(attention_values)
 })
 `))
 
@@ -515,20 +527,33 @@ weather = mtos_260_weather(${JSON.stringify(name)},${y},${m},${dd})
 kin = mtos_current_kin_NEW(${JSON.stringify(name)},${y},${m},${dd})
 pressure = mtos_pressure_map()
 
-attention = sum([w["attention"] for w in weather]) / 260
-noise = sum([abs(w["attention"]-0.5) for w in weather]) / 260
+safe_weather = [
+    w if isinstance(w, dict) and "attention" in w else {
+        "attention": 0.5,
+        "activity": 0.5,
+        "pressure": 0,
+        "conflict": 0
+    }
+    for w in weather
+]
+
+attention_values = [w["attention"] for w in safe_weather]
+
+attention = sum(attention_values) / 260
+noise = sum([abs(v - 0.5) for v in attention_values]) / 260
 lyapunov = noise * 2.5
 prediction = attention * (1 - noise)
 
 json.dumps({
- "weather": weather,
+ "weather": safe_weather,
  "pressure": pressure,
  "kin": kin,
  "attention": attention,
  "noise": noise,
+ "entropy": entropy(attention_values),
  "lyapunov": lyapunov,
  "prediction": prediction,
- "predictability": predictability([w["attention"] for w in weather])
+ "predictability": predictability(attention_values)
 })
 `))
 
