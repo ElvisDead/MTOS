@@ -981,13 +981,11 @@ def mtos_260_weather(name,year,month,day):
         
     weather = full_weather
                 
-                if USE_CACHE:
-                    cache[key] = weather
-                    
-                    if len(cache) > 50:
-                        cache.pop(next(iter(cache)))
-                        
-                        save_weather_cache(cache)
+    if USE_CACHE:
+        cache[key] = weather         
+        if len(cache) > 50:
+            cache.pop(next(iter(cache)))
+        save_weather_cache(cache)
     # ==========================================
     # FIELD DYNAMICS WITH TIME (NEW)
     # ==========================================
