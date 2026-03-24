@@ -717,7 +717,20 @@ if(!safeWeather.length){
     const globalCounts = new Array(260).fill(0)
     const usersByKin = {}
         
-    const sourceUsers = users
+    const sourceUsers = Array.isArray(users) ? users : []
+    const sourceWeather = Array.isArray(weather) ? weather : []
+    const sourceField = Array.isArray(fieldState) ? fieldState : []
+
+    drawWeatherMap(
+        "weatherMap",
+        weather,
+        userKin,
+        todayKin,
+        pressure,
+        fieldState,
+        selectedAgent,
+        window._attractorField
+    )
 
     if(sourceUsers.length){
         sourceUsers.forEach(u=>{
@@ -741,7 +754,7 @@ if(!safeWeather.length){
         sourceUsers || [],
         fieldModeCurrent,
         weather || [],
-        fieldResult || []
+        fieldState || []
     )
     
     updateFieldLegend(fieldModeCurrent)
