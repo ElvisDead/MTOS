@@ -970,12 +970,20 @@ def mtos_260_weather(name,year,month,day):
     full_weather = [None]*260
     # заполняем известные точки
     for k in range(0,260,4):
-        full_weather[k] = weather[k]
+        if isinstance(weather[k], dict):
+            full_weather[k] = weather[k]
+        else:
+            full_weather[k] = {
+                "attention": 0.5,
+                "activity": 0.5,
+                "pressure": 0,
+                "conflict": 0
+            }
     # интерполяция пропусков
     for k in range(260):
         if full_weather[k] is None:
             left = (k//4)*4
-            right = min(left+4, 259)
+            right = left + 4 if left + 4 < 260 else left
             left_val = full_weather[left]
             right_val = full_weather[right]
             
