@@ -721,17 +721,6 @@ if(!safeWeather.length){
     const sourceWeather = Array.isArray(weather) ? weather : []
     const sourceField = Array.isArray(fieldState) ? fieldState : []
 
-    drawWeatherMap(
-        "weatherMap",
-        weather,
-        userKin,
-        todayKin,
-        pressure,
-        fieldState,
-        selectedAgent,
-        window._attractorField
-    )
-
     if(sourceUsers.length){
         sourceUsers.forEach(u=>{
             const i = KinRegistry.toIndex(u.kin)
@@ -749,12 +738,13 @@ if(!safeWeather.length){
             usersByKin[k].push(u)
         })
     }
+    
     drawField(
         "fieldMap",
-        sourceUsers || [],
+        sourceUsers,
         fieldModeCurrent,
-        weather || [],
-        fieldState || []
+        sourceWeather,
+        sourceField
     )
     
     updateFieldLegend(fieldModeCurrent)
