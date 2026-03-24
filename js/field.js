@@ -107,7 +107,6 @@ export function drawField(rootOrId, users = [], mode = "global") {
                 ctx.fillText(String(count), x + cellW / 2, y + cellH / 2)
             }
         }
-    }
 
     ctx.fillStyle = "#94a3b8"
     ctx.font = "10px monospace"
