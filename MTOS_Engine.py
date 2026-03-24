@@ -1878,9 +1878,13 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
 
     total = sum(new_weights) or 1
     new_weights = [w / total * len(users) for w in new_weights]
-
+    
     for i in range(len(users)):
         users[i]["weight"] = new_weights[i]
+
+        kin_value = int(users[i].get("kin", 1))
+        users[i]["kin"] = kin_value
+        users[i]["baseKin"] = int(users[i].get("baseKin", kin_value))
 
     # === STABILIZE FIELD ===
     field = [safe_value(v, 0.5) for v in field]
