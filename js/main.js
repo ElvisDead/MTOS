@@ -1132,38 +1132,47 @@ function updateFieldLegend(mode){
     }[mode] || "Global mode reads the field as participant distribution across kin."
 
     el.innerHTML = `
-        <div style="margin-bottom:8px;"><b>About Field</b></div>
+    <div style="
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        text-align:center;
+    ">
+    
+    <div style="margin-bottom:8px;"><b>About Field</b></div>
+    
+    <div style="margin-bottom:8px; max-width:700px;">
+        Field is a 13×20 toroidal kin map (260 states). Each cell is one kin.
+        The sequence is not linear: kin moves diagonally and wraps across the edges.
+        The right edge connects to the left, and the bottom connects to the top, so the structure behaves like a torus.
+    </div>
 
-        <div style="margin-bottom:8px;">
-            Field is a 13×20 toroidal kin map (260 states). Each cell is one kin.
-            The sequence is not linear: kin moves diagonally and wraps across the edges.
-            The right edge connects to the left, and the bottom connects to the top, so the structure behaves like a torus.
-        </div>
+    <div style="margin-bottom:8px; max-width:700px;">
+        <b>How to read the map</b><br>
+        • Fill color = participant density in the kin.<br>
+        • Inner frame = state type derived from real field/weather values.<br>
+        • White outer frame = selected kin.<br>
+        • Number inside cell = participant count.<br>
+        • Dashed diagonal = 20-kin toroidal trace (10 back, selected, 9 forward).<br>
+        • Click a kin to see full information about the people and values inside it.
+    </div>
 
-        <div style="margin-bottom:8px;">
-            <b>How to read the map</b><br>
-            • Fill color = participant density in the kin.<br>
-            • Inner frame = state type derived from real field/weather values.<br>
-            • White outer frame = selected kin.<br>
-            • Number inside cell = participant count.<br>
-            • Dashed diagonal = 20-kin toroidal trace (10 back, selected, 9 forward).<br>
-            • Click a kin to see full information about the people and values inside it.
-        </div>
+    <div style="margin-bottom:8px;">
+        <b>Current mode: ${modeTitle}</b><br>
+        ${modeText}
+    </div>
 
-        <div style="margin-bottom:8px;">
-            <b>Current mode: ${modeTitle}</b><br>
-            ${modeText}
-        </div>
+    <div style="max-width:700px;">
+        <b>State types</b><br>
+        <span style="color:#22c55e;">Cluster</span> — dense multi-user concentration.<br>
+        <span style="color:#ef4444;">Pressure</span> — high pressure / conflict / tension.<br>
+        <span style="color:#38bdf8;">Active</span> — high attention / activation.<br>
+        <span style="color:#a855f7;">Resonance</span> — strong hybrid combination.<br>
+        <span style="color:#f59e0b;">Stable</span> — neutral stable presence.<br>
+        <span style="color:#ffffff;">Event</span> — spike / threshold event.
+    </div>
 
-        <div>
-            <b>State types</b><br>
-            <span style="color:#22c55e;">Cluster</span> — dense multi-user concentration.<br>
-            <span style="color:#ef4444;">Pressure</span> — high pressure / conflict / tension.<br>
-            <span style="color:#38bdf8;">Active</span> — high attention / activation.<br>
-            <span style="color:#a855f7;">Resonance</span> — strong hybrid combination.<br>
-            <span style="color:#f59e0b;">Stable</span> — neutral stable presence.<br>
-            <span style="color:#ffffff;">Event</span> — spike / threshold event.
-        </div>
+    </div>
     `
 }
 
