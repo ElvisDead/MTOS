@@ -1,0 +1,1186 @@
+import { drawWeatherMap } from "./weatherMap.js"
+import { drawNetwork } from "./network.js"
+import { drawSeries } from "./series260.js"
+import { drawPhaseSpace } from "./phaseSpace.js"
+import { drawAttractor } from "./attractor.js"
+import { drawCollective } from "./collective.js"
+import { drawActivity } from "./activity.js"
+import { initTimeControls } from "./timeController.js"
+import { logEvent } from "./mtos_log.js"
+import { exportLog } from "./exportExperiment.js"
+import { drawAttractorMap } from "./attractorMap.js"
+import { drawClimateAtlas } from "./climateAtlasMap.js"
+import {
+    replayPlay,
+    replayPause,
+    replayStep,
+    replaySeek,
+    initReplay
+} from "./replay.js"
+import { drawField } from "./field.js"
+import { KinRegistry } from "./kinRegistry.js"
+
+function toPython(obj){
+    return JSON.stringify(obj)
+        .replace(/true/g, "True")
+        .replace(/false/g, "False")
+        .replace(/null/g, "None")
+}
+
+let pyodide = null
+let historyStack = []
+let fieldState = null
+let fieldMode = null
+let users = []
+let selectedAgent = null
+let selectedKin = null
+let selectionMemory = new Array(260).fill(0)
+
+// ===============================
+// INIT
+// ===============================
+export async function initMTOS(){
+
+    const status = document.getElementById("status")
+
+    pyodide = await loadPyodide()
+    await pyodide.loadPackage("numpy")
+
+    const code = await fetch("./MTOS_Engine.py?v=" + Date.now()).then(r => r.text())
+    pyodide.runPython(code)
+
+    status.innerText = "Ready"
+    window.exportLog = exportLog
+    window._logListener = (entry) => {
+
+    const el = document.getElementById("logStream")
+    if(!el) return
+
+    const row = document.createElement("div")
+
+    row.textContent =
+        new Date(entry.t).toLocaleTimeString() +
+        " | " +
+        entry.type +
+        " | " +
+        JSON.stringify(entry)
+
+    el.prepend(row)
+
+    // ограничение UI
+    if(el.children.length > 200){
+        el.removeChild(el.lastChild)
+    }
+}
+    window.removeUser = removeUser
+    window.removeConnection = removeConnection
+    window.removeConnectionHard = removeConnectionHard
+    window.addConnection = addConnection
+    window.attractorMode = "dynamic" // или "map"
+    window.networkMode = "interaction"
+    
+    window.toggleEditMode = () => {
+        window.networkMode = window.networkMode === "edit" ? "interaction" : "edit"
+    
+        const btn = document.getElementById("editBtn")
+        if(btn){
+            btn.innerText = window.networkMode === "edit" ? "EDIT ON" : "EDIT OFF"
+        }
+
+        console.log("Mode:", window.networkMode)
+    }
+    
+    window.replayPlay = replayPlay
+    window.replayPause = replayPause
+    window.replayStep = replayStep
+    window.replaySeek = replaySeek
+    window.networkMode = "interaction"
+    setTimeout(() => setNetworkMode("interaction"), 0)
+
+    initReplay()
+}
+
+// ===============================
+// USER MEMORY
+// ===============================
+function loadUsers(){
+    try{
+        const saved = localStorage.getItem("mtos_user_list")
+        if(!saved) return []
+
+        const parsed = JSON.parse(saved)
+        return Array.isArray(parsed) ? parsed : []
+    }catch(e){
+        return []
+    }
+}
+
+function saveUsers(list){
+    localStorage.setItem("mtos_user_list", JSON.stringify(list))
+}
+
+function addUser(list, name){
+
+    // страховка
+    if(!Array.isArray(list)){
+        list = []
+    }
+
+    if(name && !list.includes(name)){
+        list.push(name)
+    }
+
+    return list
+}
+
+function removeUser(name){
+
+    historyStack.push({
+        users: JSON.parse(localStorage.getItem("mtos_user_list") || "[]"),
+        memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    })
+
+    // 1. удаляем из списка имён
+    let list = loadUsers()
+    list = list.filter(u => u !== name)
+    saveUsers(list)
+
+    // 2. чистим память связей
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    const newMemory = {}
+
+    Object.keys(memory).forEach(key => {
+        const [a, b] = key.split("->")
+        if(a !== name && b !== name){
+            newMemory[key] = memory[key]
+        }
+    })
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(newMemory))
+
+    // 3. чистим жёсткие блокировки
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+    const newLocked = {}
+
+    Object.keys(locked).forEach(key => {
+        const [a, b] = key.split("->")
+        if(a !== name && b !== name){
+            newLocked[key] = locked[key]
+        }
+    })
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(newLocked))
+    window._lockedCache = newLocked
+
+    // 4. перезапуск
+    runMTOS()
+}
+
+function removeConnectionHard(a, b){
+
+    historyStack.push({
+        users: JSON.parse(localStorage.getItem("mtos_user_list") || "[]"),
+        memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    })
+
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+
+    delete memory[a + "->" + b]
+    delete memory[b + "->" + a]
+
+    memory[a + "->" + b] = 0
+    memory[b + "->" + a] = 0
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+
+    // 🔴 КЛЮЧ: ЖЁСТКАЯ БЛОКИРОВКА
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    locked[a + "->" + b] = true
+    locked[b + "->" + a] = true
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
+
+    window._lockedCache = locked
+
+    runMTOS()
+}
+
+function removeConnection(a, b){
+
+    historyStack.push({
+        users: JSON.parse(localStorage.getItem("mtos_user_list") || "[]"),
+        memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    })
+
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+
+    delete memory[a + "->" + b]
+    delete memory[b + "->" + a]
+
+    memory[a + "->" + b] = 0
+    memory[b + "->" + a] = 0
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+
+    // мягкое удаление — НЕ блокируем
+    window._lockedCache = null
+
+    runMTOS()
+}
+
+function addConnection(a, b, value = 1){
+
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    // 🔴 КЛЮЧЕВОЙ ФИЛЬТР
+    if(locked[a + "->" + b] || locked[b + "->" + a]){
+        console.log("BLOCKED:", a, b)
+        return
+    }
+
+    memory[a + "->" + b] = value
+    memory[b + "->" + a] = value
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+
+    delete locked[a + "->" + b]
+    delete locked[b + "->" + a]
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
+
+    window._lockedCache = null
+
+    runMTOS()
+}
+
+window.addConnection = addConnection
+
+function lockConnection(a, b){
+
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    locked[a + "->" + b] = true
+    locked[b + "->" + a] = true
+
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(locked))
+}
+
+function undo(){
+
+    const last = historyStack.pop()
+    if(!last) return
+
+    localStorage.setItem("mtos_user_list", JSON.stringify(last.users))
+    localStorage.setItem("collective_relations_memory", JSON.stringify(last.memory))
+
+    runMTOS()
+}
+
+window.undoMTOS = undo
+
+// ===============================
+// RUN
+// ===============================
+export async function runMTOS(){
+
+    const status = document.getElementById("status")
+
+    const name  = document.getElementById("name").value.trim()
+    const year  = +document.getElementById("year").value
+    const month = +document.getElementById("month").value
+    const day   = +document.getElementById("day").value
+    if(!year || !month || !day){
+        document.getElementById("status").innerText = "Enter date"
+        return
+    }
+
+    try{
+
+        status.innerText = "Running..."
+        logEvent("run_start", { name, year, month, day })
+
+        // ===============================
+        // USERS MEMORY
+        // ===============================
+        let userList = loadUsers()
+        userList = addUser(userList, name)
+        saveUsers(userList)
+
+        pyodide.runPython(`
+        import datetime
+        
+        birth = datetime.date(${year}, ${month}, ${day})
+        kin, tone, seal, i = kin_from_date(birth)
+        register_user(${JSON.stringify(name)}, birth, kin, tone, seal)
+        `)
+
+        // ===============================
+        // PYTHON CORE
+        // ===============================
+        const result = JSON.parse(pyodide.runPython(`
+import json
+
+weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
+kin = mtos_current_kin_NEW(${JSON.stringify(name)},${year},${month},${day})
+pressure = mtos_pressure_map()
+
+safe_weather = [
+    w if isinstance(w, dict) and "attention" in w else {
+        "attention": 0.5,
+        "activity": 0.5,
+        "pressure": 0,
+        "conflict": 0
+    }
+    for w in weather
+]
+
+attention_values = [w["attention"] for w in safe_weather]
+
+attention = sum(attention_values) / 260
+noise = sum([abs(v - 0.5) for v in attention_values]) / 260
+lyapunov = noise * 2.5
+prediction = attention * (1 - noise)
+
+json.dumps({
+ "weather": safe_weather,
+ "pressure": pressure,
+ "kin": kin,
+ "attention": attention,
+ "noise": noise,
+ "entropy": entropy(attention_values),
+ "lyapunov": lyapunov,
+ "prediction": prediction,
+ "predictability": predictability(attention_values)
+})
+`))
+
+        const weather = result.weather
+        const now = new Date()
+        
+        const weatherToday = JSON.parse(pyodide.runPython(`
+import json
+weather = mtos_260_weather("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
+json.dumps(weather)
+`))
+        logEvent("python_result", {
+            kin: result.kin,
+            attention: result.attention,
+            noise: result.noise,
+            predictability: result.predictability
+        })
+        const pressure = result.pressure
+        const userKin = result.kin
+
+        // ===============================
+        // TODAY
+        // ===============================
+
+        const todayKin = Number(pyodide.runPython(`
+        mtos_current_kin_NEW("today",${now.getFullYear()},${now.getMonth()+1},${now.getDate()})
+        `))
+
+        window._weather = weather
+        window._weatherToday = weatherToday
+        window._pressure = pressure
+        window._userKin = userKin
+        window._todayKin = todayKin
+        window._date = { year, month, day }
+
+        // ===============================
+        // BUILD USERS
+        // ===============================
+        users = userList.map((uName) => {
+            const userData = JSON.parse(pyodide.runPython(`
+            import json
+            users_db = load_users()
+            json.dumps(users_db.get(${JSON.stringify(uName)}, {}))
+            `))
+                
+            let baseKin = null
+
+            if(userData && userData.birth){
+                const [yy, mm, dd] = userData.birth.split("-").map(Number)
+                    
+                baseKin = Number(pyodide.runPython(`
+                mtos_current_kin_NEW(${JSON.stringify(uName)}, ${yy}, ${mm}, ${dd})
+                `))
+            } else if(userData && userData.kin != null){
+                baseKin = Number(userData.kin)
+            }
+
+            if(!Number.isFinite(baseKin) || baseKin < 1 || baseKin > 260){
+                console.warn("BAD USER DATA:", uName, userData)
+                return null
+            }
+
+            const phase = (baseKin % 20) * Math.PI / 10
+                
+            return {
+                name: uName,
+                kin: baseKin,
+                baseKin: baseKin,
+                phase,
+                weight: 1
+            }
+        }).filter(Boolean)
+
+        // 1. Посмотрим в консоли, как РЕАЛЬНО выглядит один юзе
+        if (users.length > 0) {
+            console.log("DEBUG: Данные первого юзера:", users[0]);
+        }
+        
+        // 2. Пытаемся достать Кин (пробуем разные варианты написания)
+        const userKins = users.map(u => {
+            const k = u.kin || u.Kin || (u.attributes && u.attributes.kin);
+            return k ? k : "НЕ НАЙДЕН";
+        }).join(", ");
+        
+        console.log("USER KINS (fixed):", userKins);
+
+        // ===============================
+        // FIELD
+        // ===============================
+        const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+        const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+        
+        const prevUsers = JSON.parse(JSON.stringify(users))
+        const fieldResult = JSON.parse(pyodide.runPython(`
+        import json
+        users = ${JSON.stringify(users)}
+        f,s,u = mtos_multi_agents_field(
+            users,
+            ${year},
+            ${month},
+            ${day},
+            None,
+            None,
+            ${toPython(locked)},
+            ${toPython(memory)}
+        )
+        json.dumps([f,s,u])
+        `))
+
+        fieldState = fieldResult[0]
+        fieldMode  = fieldResult[1]
+        const updated = fieldResult[2]
+            
+        const prevMap = {}
+        prevUsers.forEach(u => {
+            prevMap[u.name] = u
+        })
+            
+        users = updated.map(u => {
+            return {
+                name: u.name,
+                kin: Number(u.kin),
+                baseKin: Number(u.baseKin ?? u.kin),
+                weight: u.weight,
+                phase: ((Number(u.baseKin ?? u.kin) % 20) * Math.PI / 10)
+            }
+        })
+
+        window.currentUsers = users
+        
+        logEvent("agents_update", {
+            users: users,
+            fieldState: fieldState,
+            weather: weather,
+            pressure: pressure,
+            userKin: userKin,
+            todayKin: todayKin
+            })
+
+        // ===============================
+        // UI STATE
+        // ===============================
+        renderCognitiveState(
+            userKin,
+            todayKin,
+            result.attention,
+            result.noise,
+            result.entropy,
+            result.lyapunov,
+            result.prediction,
+            result.predictability
+        )
+
+        // ===============================
+        // RENDER ВСЕГО
+        // ===============================
+        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
+
+        status.innerText = "Done"
+
+        // ===============================
+        // TIME CONTROL
+        // ===============================
+        let baseYear = year
+        let baseMonth = month
+        let baseDay = day
+
+        function step(offset){
+
+            const d = new Date(baseYear, baseMonth-1, baseDay)
+            d.setDate(d.getDate() + offset)
+
+            const y = d.getFullYear()
+            const m = d.getMonth()+1
+            const dd = d.getDate()
+
+            const result = JSON.parse(pyodide.runPython(`
+import json
+
+weather = mtos_260_weather(${JSON.stringify(name)},${y},${m},${dd})
+kin = mtos_current_kin_NEW(${JSON.stringify(name)},${y},${m},${dd})
+pressure = mtos_pressure_map()
+
+safe_weather = [
+    w if isinstance(w, dict) and "attention" in w else {
+        "attention": 0.5,
+        "activity": 0.5,
+        "pressure": 0,
+        "conflict": 0
+    }
+    for w in weather
+]
+
+attention_values = [w["attention"] for w in safe_weather]
+
+attention = sum(attention_values) / 260
+noise = sum([abs(v - 0.5) for v in attention_values]) / 260
+lyapunov = noise * 2.5
+prediction = attention * (1 - noise)
+
+json.dumps({
+ "weather": safe_weather,
+ "pressure": pressure,
+ "kin": kin,
+ "attention": attention,
+ "noise": noise,
+ "entropy": entropy(attention_values),
+ "lyapunov": lyapunov,
+ "prediction": prediction,
+ "predictability": predictability(attention_values)
+})
+`))
+
+            const weather = result.weather
+            const pressure = result.pressure
+            const currentKin = result.kin
+            logEvent("time_step", {
+                year: y,
+                month: m,
+                day: dd,
+                kin: currentKin
+            })
+
+            users = users.map((u) => ({
+                ...u,
+                kin: u.baseKin || u.kin,
+                baseKin: u.baseKin || u.kin,
+                phase: ((u.baseKin || u.kin) % 20) * Math.PI / 10
+            }))
+
+            const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+            const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+            
+            const prevUsers = JSON.parse(JSON.stringify(users))
+            const fieldResult = JSON.parse(pyodide.runPython(`
+            import json
+            users = ${JSON.stringify(users)}
+            f,s,u = mtos_multi_agents_field(
+            users,
+            ${y},
+            ${m},
+            ${dd},
+            ${fieldState ? toPython(fieldState) : "None"},
+            ${fieldMode ? toPython(fieldMode) : "None"},
+            ${toPython(locked)},
+            ${toPython(memory)}
+            )
+            json.dumps([f,s,u])
+            `))
+                
+            fieldState = fieldResult[0]
+            fieldMode  = fieldResult[1]
+            const updated = fieldResult[2]
+                
+            const prevMap = {}
+            prevUsers.forEach(u => {
+                prevMap[u.name] = u
+            })
+                
+            users = updated.map(u => {
+                return {
+                    name: u.name,
+                    kin: Number(u.kin),
+                    baseKin: Number(u.baseKin ?? u.kin),
+                    weight: u.weight,
+                    phase: ((Number(u.baseKin ?? u.kin) % 20) * Math.PI / 10)
+                }
+            })
+
+            window.currentUsers = users
+
+            logEvent("agents_update", {
+                users: users,
+                fieldState: fieldState,
+                weather: weather,
+                pressure: pressure,
+                userKin: userKin,
+                todayKin: todayKin
+            })
+
+            renderCognitiveState(
+                currentKin,
+                todayKin,
+                result.attention,
+                result.noise,
+                result.entropy,
+                result.lyapunov,
+                result.prediction,
+                result.predictability
+            )
+
+            renderAll(weather, weatherToday, pressure, currentKin, todayKin, y, m, dd)
+        }
+
+        initTimeControls(step)
+
+    }catch(e){
+        console.error(e)
+        status.innerText = "ERROR"
+    }
+
+    window.onKinSelect = (kin) => {
+        logEvent("kin_select", {
+            kin,
+            memory: selectionMemory[KinRegistry.toIndex(kin)]
+        })
+        // ===============================
+        // MEMORY UPDATE
+        // ===============================
+        
+        selectedKin = kin
+        window.selectedKin = kin
+            
+        renderAll(
+            window._weather,
+            window._weatherToday,
+            window._pressure,
+            window._userKin,
+            window._todayKin,
+            window._date.year,
+            window._date.month,
+            window._date.day
+        )
+    }
+}
+
+// ===============================
+// RENDER ALL
+// ===============================
+function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day){
+
+    drawWeatherMap(
+        "weatherMap",
+        weather,
+        userKin,
+        todayKin,
+        pressure,
+        fieldState,
+        selectedAgent,
+        window._attractorField
+    )
+
+// ===============================
+// FIELD
+// ===============================
+
+const fieldModeCurrent = window.fieldMode || "hybrid"
+
+const safeWeather = Array.isArray(weather) ? weather : []
+
+let activity = safeWeather.map(w => 
+    w && typeof w.attention === "number" ? w.attention : 0.5
+)
+
+// 🔥 КРИТИЧЕСКИЙ ФИКС — УБИРАЕМ RETURN
+if(!safeWeather.length){
+    console.log("FIELD FALLBACK: using empty grid")
+
+    activity = new Array(260).fill(0.5)
+}
+
+    const globalCounts = new Array(260).fill(0)
+    const usersByKin = {}
+        
+    const sourceUsers = Array.isArray(users) ? users : []
+    const sourceWeather = Array.isArray(weather) ? weather : []
+    const sourceField = Array.isArray(fieldState) ? fieldState : []
+
+    if(sourceUsers.length){
+        sourceUsers.forEach(u=>{
+            const i = KinRegistry.toIndex(u.kin)
+            if(i >= 0 && i < 260){
+                globalCounts[i]++
+            }
+                
+            const k = KinRegistry.fromIndex(
+                KinRegistry.toIndex(u.kin)
+            )
+                
+            if(!usersByKin[k]){
+                usersByKin[k] = []
+            }
+            usersByKin[k].push(u)
+        })
+    }
+    
+    drawField(
+        "fieldMap",
+        sourceUsers,
+        fieldModeCurrent,
+        sourceWeather,
+        sourceField
+    )
+    
+    updateFieldLegend(fieldModeCurrent)
+
+    const now = new Date()
+
+    drawSeries("seriesMap", weatherToday, now.getFullYear(), now.getMonth()+1, now.getDate())
+    drawPhaseSpace("phaseMap", weather, selectedKin)
+    
+    let matrix = null
+        
+    if(window.attractorMode === "structure"){
+        const matrix2D = JSON.parse(pyodide.runPython(`
+    import json
+    json.dumps(mtos_climate_atlas())
+    `))
+        matrix = matrix2D.flat()
+            
+        drawClimateAtlas("attractorMap", matrix)
+    
+    }else if(window.attractorMode === "map"){
+        const matrix2D = JSON.parse(pyodide.runPython(`
+        import json
+        json.dumps(mtos_climate_atlas())
+        `))
+
+        matrix = matrix2D.flat()
+        window._matrix = matrix
+
+        const activeKin = selectedKin || userKin
+
+        drawAttractorMap("attractorMap", matrix, {
+            selectedSeal: activeKin ? (activeKin - 1) % 20 : null,
+            labels: SEALS,
+            meanings: SEAL_MEANING
+        })
+        
+    }else{
+        drawAttractor(
+            "attractorMap",
+            users,
+            [],
+            selectedKin
+        )
+    }
+
+    drawNetwork("networkMap", users, (agent)=>{
+        selectedAgent = agent
+        renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
+    }, matrix)
+
+    if(window.attractorMode === "map" && matrix){
+
+        const seal = ((selectedKin || userKin) - 1) % 20
+        const analysis = analyzeInteractions(matrix, seal)
+
+        const el = document.getElementById("interactionAnalysis")
+
+        if(el){
+            el.innerHTML = `
+            <div><b>Best interactions:</b></div>
+            ${analysis.best.map(x => `
+            🟢 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
+            `).join("<br>")}
+            
+            <div style="margin-top:8px;"><b>Worst interactions:</b></div>
+
+            ${analysis.worst.map(x => `
+            🔴 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
+            `).join("<br>")}
+            `
+        }
+    }
+    
+    drawCollective("collectiveMap", users)
+    drawActivity("activityMap", weather)
+}
+
+// ===============================
+// UI STATE
+// ===============================
+function renderCognitiveState(
+    userKin,
+    todayKin,
+    attention,
+    noise,
+    entropy,
+    lyapunov,
+    prediction,
+    predictability
+){
+
+    const userSeal = (userKin - 1) % 20
+    const todaySeal = (todayKin - 1) % 20
+        
+    const userSealName = SEALS[userSeal]
+    const todaySealName = SEALS[todaySeal]
+
+    const userMeaning = SEAL_MEANING[userSeal]
+    const todayMeaning = SEAL_MEANING[todaySeal]
+    
+    const el = document.getElementById("mtosSummary")
+    if(!el) return
+
+    el.innerHTML = `
+    <div>
+    <b>Today Kin:</b> ${todayKin} — ${todaySealName}<br>
+    <span style="color:#aaa">${todayMeaning}</span>
+    </div>
+    
+    <div style="margin-top:8px;">
+    <b>Your Kin:</b> ${userKin} — ${userSealName}<br>
+    <span style="color:#aaa">${userMeaning}</span>
+    </div>
+    
+    <div style="margin-top:10px;">
+    <b>Attention:</b> ${attention.toFixed(3)}<br>
+    <span style="color:#888">${interpretAttention(attention)}</span>
+    </div>
+    
+    <div>
+    <b>Noise:</b> ${noise.toFixed(3)}<br>
+    <span style="color:#888">${interpretNoise(noise)}</span>
+    </div>
+
+    <div>
+    <b>Entropy:</b> ${entropy.toFixed(3)}<br>
+    <span style="color:#888">${getEntropyDescription(entropy)}</span>
+    </div>
+    
+    <div>
+    <b>Lyapunov:</b> ${lyapunov.toFixed(3)}<br>
+    <span style="color:#888">${interpretLyapunov(lyapunov)}</span>
+    </div>
+    
+    <div>
+    <b>Prediction:</b> ${prediction.toFixed(3)}<br>
+    <span style="color:#888">${interpretPrediction(prediction)}</span>
+    </div>
+    
+    <div style="color:lime; margin-top:6px;">
+    <b>Predictability:</b> ${predictability} days<br>
+    <span style="color:#8f8">${interpretPredictability(predictability)}</span>
+    </div>
+    `
+}
+
+function getEntropyDescription(e){
+    
+    if(e > 2.5) return "high chaos, low structure"
+    if(e > 2.0) return "dynamic system, flexible"
+    if(e > 1.5) return "moderate complexity"
+    if(e > 1.0) return "structured, stable"
+    
+    return "low entropy, rigid system"
+}
+
+const SEALS = [
+"Dragon","Wind","Night","Seed","Serpent",
+"Worldbridger","Hand","Star","Moon","Dog",
+"Monkey","Human","Skywalker","Wizard","Eagle",
+"Warrior","Earth","Mirror","Storm","Sun"
+]
+
+const SEAL_MEANING = [
+"initiation, birth",
+"breath, communication",
+"inner world, intuition",
+"growth, potential",
+"instinct, life force",
+"transition, letting go",
+"action, healing",
+"harmony, beauty",
+"purification, flow",
+"loyalty, heart",
+"play, spontaneity",
+"choice, free will",
+"exploration, expansion",
+"time, depth",
+"vision, perspective",
+"strategy, intelligence",
+"synchronization, navigation",
+"structure, reflection",
+"transformation, energy",
+"clarity, center"
+]
+
+window.SEALS = SEALS
+
+// ===============================
+// METRIC INTERPRETATION
+// ===============================
+
+function interpretAttention(a){
+    if(a > 0.7) return "high focus, stable attention"
+    if(a < 0.4) return "low focus, scattered attention"
+    return "balanced attention"
+}
+
+function interpretNoise(n){
+    if(n < 0.1) return "low noise, stable system"
+    if(n > 0.3) return "high noise, unstable dynamics"
+    return "moderate variability"
+}
+
+function interpretLyapunov(l){
+    if(l < 0.05) return "high stability"
+    if(l > 0.2) return "chaotic behavior"
+    return "sensitive but controlled"
+}
+
+function interpretPrediction(p){
+    if(p > 0.7) return "high predictability"
+    if(p < 0.4) return "low predictability"
+    return "moderate predictability"
+}
+
+function interpretPredictability(days){
+    if(days > 200) return "long stable horizon"
+    if(days < 50) return "short unstable horizon"
+    return "medium-term stability"
+}
+
+// ===============================
+// FIELD MODE UI
+// ===============================
+
+window.setFieldMode = (mode) => {
+
+    window.fieldMode = mode
+
+    const buttons = ["btnActivity","btnPressure","btnGlobal","btnHybrid"]
+
+    buttons.forEach(id=>{
+        const b = document.getElementById(id)
+        if(b){
+            b.style.background = "#111"
+            b.style.color = "#fff"
+        }
+    })
+
+    const activeMap = {
+        activity: "btnActivity",
+        pressure: "btnPressure",
+        global: "btnGlobal",
+        hybrid: "btnHybrid"
+    }
+
+    const active = document.getElementById(activeMap[mode])
+
+    if(active){
+        active.style.background = "#00ff88"
+        active.style.color = "#000"
+    }
+
+    runMTOS()
+}
+
+function analyzeInteractions(matrix, seal){
+
+    const size = 20
+    const start = seal * size
+    const row = matrix.slice(start, start + size)
+
+    const ranked = row
+        .map((v,i)=>({seal:i, value:v}))
+        .sort((a,b)=>b.value-a.value)
+
+    return {
+        best: ranked.slice(0,3),
+        worst: ranked.slice(-3).reverse()
+    }
+}
+
+window.setNetworkMode = (mode) => {
+
+    window.networkMode = mode
+
+    // сброс стилей
+    const buttons = ["modeNormal", "modeAttractor", "modeEdit"]
+
+    buttons.forEach(id => {
+        const btn = document.getElementById(id)
+        if(btn){
+            btn.style.background = "#111"
+            btn.style.color = "#fff"
+        }
+    })
+
+    // активная кнопка
+    const activeMap = {
+        interaction: "modeNormal",
+        attractor: "modeAttractor",
+        edit: "modeEdit"
+    }
+
+    const activeBtn = document.getElementById(activeMap[mode])
+
+    if(activeBtn){
+        activeBtn.style.background = "#00ff88"
+        activeBtn.style.color = "#000"
+    }
+
+    if(window._weather){
+    renderAll(
+        window._weather,
+        window._weatherToday,
+        window._pressure,
+        window._userKin,
+        window._todayKin,
+        window._date.year,
+        window._date.month,
+        window._date.day
+    )
+}
+}
+
+function renderAttractorOnly(){
+
+    if(!window._weather) return
+
+    let matrix = null
+
+    if(window.attractorMode === "map"){
+
+        const matrix = window._matrix
+        if(!matrix) return
+
+        const activeKin = selectedKin || window._userKin
+        if(!activeKin) return
+
+        drawAttractorMap("attractorMap", matrix, {
+            selectedSeal: activeKin ? (activeKin - 1) % 20 : null,
+            labels: SEALS,
+            meanings: SEAL_MEANING
+        })
+
+        // 🔥 анализ тоже обновляем
+        const seal = (activeKin - 1) % 20
+        const analysis = analyzeInteractions(matrix, seal)
+
+        const el = document.getElementById("interactionAnalysis")
+
+        if(el){
+            el.innerHTML = `
+            <div><b>Best interactions:</b></div>
+            ${analysis.best.map(x => `
+            🟢 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
+            `).join("<br>")}
+            
+            <div style="margin-top:8px;"><b>Worst interactions:</b></div>
+
+            ${analysis.worst.map(x => `
+            🔴 ${SEALS[x.seal]} (${SEAL_MEANING[x.seal]}) → ${x.value.toFixed(2)}
+            `).join("<br>")}
+            `
+        }
+
+    }else{
+        drawAttractor(
+            "attractorMap",
+            users,
+            [],
+            selectedKin
+        )
+    }
+}
+
+function updateFieldLegend(mode){
+    const el = document.getElementById("fieldLegend")
+    if(!el) return
+
+    const modeTitle = {
+        activity: "Activity",
+        pressure: "Pressure",
+        global: "Global",
+        hybrid: "Hybrid"
+    }[mode] || "Global"
+
+    const modeText = {
+        activity: "Activity mode reads the field through attention / activation values.",
+        pressure: "Pressure mode reads the field through pressure / conflict / field tension values.",
+        global: "Global mode reads the field as participant distribution across kin.",
+        hybrid: "Hybrid mode combines activity, pressure, and field intensity into one synthetic reading."
+    }[mode] || "Global mode reads the field as participant distribution across kin."
+
+    el.innerHTML = `
+    <div style="
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        text-align:center;
+    ">
+    
+    <div style="margin-bottom:8px;"><b>About Field</b></div>
+    
+    <div style="margin-bottom:8px; max-width:700px;">
+        Field is a 13×20 toroidal kin map (260 states). Each cell is one kin.
+        The sequence is not linear: kin moves diagonally and wraps across the edges.
+        The right edge connects to the left, and the bottom connects to the top, so the structure behaves like a torus.
+    </div>
+
+    <div style="margin-bottom:8px; max-width:700px;">
+        <b>How to read the map</b><br>
+        • Fill color = participant density in the kin.<br>
+        • Inner frame = state type derived from real field/weather values.<br>
+        • White outer frame = selected kin.<br>
+        • Number inside cell = participant count.<br>
+        • Dashed diagonal = 20-kin toroidal trace (10 back, selected, 9 forward).<br>
+        • Click a kin to see full information about the people and values inside it.
+    </div>
+
+    <div style="margin-bottom:8px;">
+        <b>Current mode: ${modeTitle}</b><br>
+        ${modeText}
+    </div>
+
+    <div style="max-width:700px;">
+        <b>State types</b><br>
+        <span style="color:#22c55e;">Cluster</span> — dense multi-user concentration.<br>
+        <span style="color:#ef4444;">Pressure</span> — high pressure / conflict / tension.<br>
+        <span style="color:#38bdf8;">Active</span> — high attention / activation.<br>
+        <span style="color:#a855f7;">Resonance</span> — strong hybrid combination.<br>
+        <span style="color:#f59e0b;">Stable</span> — neutral stable presence.<br>
+        <span style="color:#ffffff;">Event</span> — spike / threshold event.
+    </div>
+
+    </div>
+    `
+}
+
+function hashCode(str){
+    let hash = 0
+    for(let i = 0; i < str.length; i++){
+        hash = (hash << 5) - hash + str.charCodeAt(i)
+        hash |= 0
+    }
+    return hash
+}
