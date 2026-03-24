@@ -740,9 +740,7 @@ if(!safeWeather.length){
             usersByKin[k].push(u)
         })
     }
-    const canvas = document.getElementById("fieldMap")
-        
-    drawField(canvas, sourceUsers || [], fieldModeCurrent)
+    drawField("fieldMap", sourceUsers || [], fieldModeCurrent)
     
     updateFieldLegend(fieldModeCurrent)
 
