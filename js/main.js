@@ -104,27 +104,19 @@ export async function initMTOS(){
 // USER MEMORY
 // ===============================
 function loadUsers(){
-
     try{
-        const saved = localStorage.getItem("mtos_users")
-
+        const saved = localStorage.getItem("mtos_user_list")
         if(!saved) return []
 
         const parsed = JSON.parse(saved)
-
-        // защита
-        if(Array.isArray(parsed)){
-            return parsed
-        }else{
-            return []
-        }
-
+        return Array.isArray(parsed) ? parsed : []
     }catch(e){
         return []
     }
 }
+
 function saveUsers(list){
-    localStorage.setItem("mtos_users", JSON.stringify(list))
+    localStorage.setItem("mtos_user_list", JSON.stringify(list))
 }
 
 function addUser(list, name){
@@ -144,24 +136,21 @@ function addUser(list, name){
 function removeUser(name){
 
     historyStack.push({
-        users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
+        users: JSON.parse(localStorage.getItem("mtos_user_list") || "[]"),
         memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
     })
 
-    // 1. удаляем из списка
+    // 1. удаляем из списка имён
     let list = loadUsers()
     list = list.filter(u => u !== name)
     saveUsers(list)
 
     // 2. чистим память связей
-    const memory = JSON.parse(localStorage.getItem("collective_relations_memory")) || {}
-
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
     const newMemory = {}
 
     Object.keys(memory).forEach(key => {
-
         const [a, b] = key.split("->")
-
         if(a !== name && b !== name){
             newMemory[key] = memory[key]
         }
@@ -169,23 +158,21 @@ function removeUser(name){
 
     localStorage.setItem("collective_relations_memory", JSON.stringify(newMemory))
 
-    // 3. пересборка системы
-    users = userList.map(uName=>{
-        const kin = Number(pyodide.runPython(`
-        mtos_current_kin_NEW("${uName}",${year},${month},${day})
-        `))
-            
-        const phase = (kin % 20) * Math.PI / 10
-            
-        return {
-            name: uName,
-            kin,
-            phase,
-            weight: 1
+    // 3. чистим жёсткие блокировки
+    const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+    const newLocked = {}
+
+    Object.keys(locked).forEach(key => {
+        const [a, b] = key.split("->")
+        if(a !== name && b !== name){
+            newLocked[key] = locked[key]
         }
     })
 
-    // 4. обновление UI
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(newLocked))
+    window._lockedCache = newLocked
+
+    // 4. перезапуск
     runMTOS()
 }
 
