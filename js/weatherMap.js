@@ -277,53 +277,62 @@ const legend = document.createElement("div")
 legend.style.marginTop = "15px"
 legend.style.fontSize = "12px"
 legend.style.color = "#aaa"
-legend.style.maxWidth = "500px"
+legend.style.maxWidth = "700px"
 legend.style.marginLeft = "auto"
 legend.style.marginRight = "auto"
-legend.style.textAlign = "left"    
+legend.style.textAlign = "center" 
     
 legend.innerHTML = `
-<div style="margin-bottom:8px;"><b>Mode:</b></div>
-
-<div id="modeButtons" style="
+<div style="
     display:flex;
-    justify-content:center;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-bottom:12px;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
 ">
-<button data-mode="full" onclick="setWeatherMode('full')">Full</button>
-<button data-mode="field" onclick="setWeatherMode('field')">Field</button>
-<button data-mode="lattice" onclick="setWeatherMode('lattice')">Lattice</button>
-<button data-mode="wave" onclick="setWeatherMode('wave')">Wave</button>
-<button data-mode="pressure" onclick="setWeatherMode('pressure')">Pressure</button>
-</div>
+    <div style="margin-bottom:8px;"><b>Mode:</b></div>
 
-<div style="font-size:11px; margin-bottom:10px;">
-Switch layers to explore system structure.
-</div>
+    <div id="modeButtons" style="
+        display:flex;
+        justify-content:center;
+        gap:6px;
+        flex-wrap:wrap;
+        margin-bottom:12px;
+    ">
+        <button data-mode="full" onclick="setWeatherMode('full')">Full</button>
+        <button data-mode="field" onclick="setWeatherMode('field')">Field</button>
+        <button data-mode="lattice" onclick="setWeatherMode('lattice')">Lattice</button>
+        <button data-mode="wave" onclick="setWeatherMode('wave')">Wave</button>
+        <button data-mode="pressure" onclick="setWeatherMode('pressure')">Pressure</button>
+    </div>
 
-<div style="margin-top:10px;"><b>Legend:</b></div>
+    <div style="font-size:11px; margin-bottom:10px; max-width:700px;">
+        Switch layers to explore system structure.
+    </div>
 
-<div>🔵 Low field — low Φ value (low activity)</div>
-<div>🟣 Medium — balanced state</div>
-<div>🔴 High field — high Φ value (strong concentration)</div>
+    <div style="margin-top:10px;"><b>Legend:</b></div>
 
-<div style="margin-top:10px;"><b>About this map:</b></div>
+    <div style="max-width:700px;">
+        🔵 Low field — low Φ value (low activity)<br>
+        🟣 Medium — balanced state<br>
+        🔴 High field — high Φ value (strong concentration)
+    </div>
 
-<div style="font-size:11px;">
-13×20 cognitive field (260 states).<br><br>
+    <div style="margin-top:10px;"><b>About this map:</b></div>
 
-Horizontal → Seal (1–20)<br>
-Vertical → Tone (1–13)<br><br>
+    <div style="font-size:11px; max-width:700px;">
+        13×20 cognitive field (260 states).<br><br>
 
-Layers:<br>
-• Field (Φ)<br>
-• Lattice (structure)<br>
-• Wave (agents)<br>
-• Pressure (stress)<br><br>
+        Horizontal → Seal (1–20)<br>
+        Vertical → Tone (1–13)<br><br>
 
-Click any cell to inspect.
+        Layers:<br>
+        • Field (Φ)<br>
+        • Lattice (structure)<br>
+        • Wave (agents)<br>
+        • Pressure (stress)<br><br>
+
+        Click any cell to inspect.
+    </div>
 </div>
 `
 
