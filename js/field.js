@@ -33,86 +33,6 @@ function getStrokeColor(mode) {
     return "#f59e0b"
 }
 
-function getModeColor(mode, count) {
-    if (count > 1) {
-        return densityColors[Math.min(count - 2, densityColors.length - 1)]
-    }
-
-    if (mode === "activity") return "#22c55e"
-    if (mode === "pressure") return "#ef4444"
-    if (mode === "hybrid") return "#7c3aed"
-    return "#f59e0b"
-}
-
-function ensurePopup(root) {
-    let popup = root.querySelector(".field-popup")
-
-    if (!popup) {
-        popup = document.createElement("div")
-        popup.className = "field-popup"
-        popup.style.position = "absolute"
-        popup.style.minWidth = "220px"
-        popup.style.maxWidth = "320px"
-        popup.style.background = "rgba(2, 6, 23, 0.96)"
-        popup.style.border = "1px solid #334155"
-        popup.style.borderRadius = "10px"
-        popup.style.padding = "10px 12px"
-        popup.style.color = "#e5e7eb"
-        popup.style.fontFamily = "monospace"
-        popup.style.fontSize = "12px"
-        popup.style.lineHeight = "1.45"
-        popup.style.boxShadow = "0 8px 24px rgba(0,0,0,0.45)"
-        popup.style.pointerEvents = "auto"
-        popup.style.display = "none"
-        popup.style.zIndex = "20"
-        root.appendChild(popup)
-    }
-
-    return popup
-}
-
-function showPopup(root, popup, x, y, kin, usersHere, mode, strokeColor) {
-    const names = usersHere.map(u => u.name).join("<br>") || "—"
-
-    popup.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-weight:bold;color:${strokeColor};">Kin ${kin}</div>
-            <button class="field-popup-close" style="
-                background:#111827;
-                color:#cbd5e1;
-                border:1px solid #334155;
-                border-radius:6px;
-                cursor:pointer;
-                font-size:11px;
-                padding:2px 6px;
-            ">×</button>
-        </div>
-        <div style="color:#94a3b8;margin-bottom:6px;">Mode: ${mode}</div>
-        <div style="margin-bottom:6px;">Users: <b>${usersHere.length}</b></div>
-        <div style="color:#cbd5e1;">${names}</div>
-    `
-
-    popup.style.display = "block"
-
-    const rootRect = root.getBoundingClientRect()
-
-    let left = x + 14
-    let top = y + 14
-
-    if (left + 320 > rootRect.width) left = x - 230
-    if (top + 180 > rootRect.height) top = y - 140
-
-    popup.style.left = `${Math.max(8, left)}px`
-    popup.style.top = `${Math.max(8, top)}px`
-
-    const closeBtn = popup.querySelector(".field-popup-close")
-    if (closeBtn) {
-        closeBtn.onclick = () => {
-            popup.style.display = "none"
-        }
-    }
-}
-
 function ensureFieldPopup(root) {
     let popup = root.querySelector(".field-popup")
 
@@ -217,10 +137,7 @@ export function drawField(rootOrId, users = [], mode = "global") {
     canvas.style.margin = "0 auto"
     root.appendChild(canvas)
 
-    root.style.position = "relative"
     const popup = ensureFieldPopup(root)
-
-    const popup = ensurePopup(root)
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
