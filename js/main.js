@@ -179,7 +179,7 @@ function removeUser(name){
 function removeConnectionHard(a, b){
 
     historyStack.push({
-        users: JSON.parse(localStorage.getItem("mtos_users") || "[]"),
+        users: JSON.parse(localStorage.getItem("mtos_user_list") || "[]"),
         memory: JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
     })
 
@@ -272,7 +272,7 @@ function undo(){
     const last = historyStack.pop()
     if(!last) return
 
-    localStorage.setItem("mtos_users", JSON.stringify(last.users))
+    localStorage.setItem("mtos_user_list", JSON.stringify(last.users))
     localStorage.setItem("collective_relations_memory", JSON.stringify(last.memory))
 
     runMTOS()
@@ -388,12 +388,8 @@ json.dumps(weather)
             const baseKin = Number(pyodide.runPython(`
             mtos_current_kin_NEW("${uName}",${year},${month},${day})
             `))
-                
-            const offset = (index * 17) % 260
-                
-            const kin = ((baseKin + offset - 1) % 260) + 1
 
-            const phase = (kin % 20) * Math.PI / 10
+            const phase = (baseKin % 20) * Math.PI / 10
                 
             return {
                 name: uName,
@@ -460,6 +456,8 @@ json.dumps(weather)
                 phase: prev ? prev.phase : u.phase
             }
         })
+
+        window.currentUsers = users
         
         logEvent("agents_update", {
             users: users,
@@ -560,11 +558,7 @@ json.dumps({
                 mtos_current_kin_NEW("${u.name}",${y},${m},${dd})
                 `))
 
-                const offset = (index * 17) % 260
-
-                const kin = ((baseKin + offset - 1) % 260) + 1
-
-                const phase = (kin % 20) * Math.PI / 10
+                const phase = (baseKin % 20) * Math.PI / 10
                     
                 return {
                     ...u,
@@ -614,6 +608,8 @@ json.dumps({
                     phase: prev ? prev.phase : u.phase
                 }
             })
+
+            window.currentUsers = users
 
             logEvent("agents_update", {
                 users: users,
