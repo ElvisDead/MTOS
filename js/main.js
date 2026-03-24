@@ -736,7 +736,13 @@ if(!safeWeather.length){
             usersByKin[k].push(u)
         })
     }
-    drawField("fieldMap", sourceUsers || [], fieldModeCurrent)
+    drawField(
+        "fieldMap",
+        sourceUsers || [],
+        fieldModeCurrent,
+        weather || [],
+        fieldResult || []
+    )
     
     updateFieldLegend(fieldModeCurrent)
 
@@ -1105,7 +1111,6 @@ function renderAttractorOnly(){
 }
 
 function updateFieldLegend(mode){
-
     const el = document.getElementById("fieldLegend")
     if(!el) return
 
@@ -1114,33 +1119,32 @@ function updateFieldLegend(mode){
         pressure: "Pressure",
         global: "Global",
         hybrid: "Hybrid"
-    }[mode] || "Hybrid"
+    }[mode] || "Global"
 
     const modeText = {
-        activity: "Frame = attention layer. It emphasizes where the field is read as active or energized.",
-        pressure: "Frame = pressure layer. It emphasizes zones of tension, compression, overload, or conflict.",
-        global: "Frame = population layer. It emphasizes simple distribution of participants across kin.",
-        hybrid: "Frame = mixed layer. It combines attention and pressure into one synthetic view."
-    }[mode] || "Frame = mixed layer. It combines attention and pressure into one synthetic view."
+        activity: "Activity mode reads the field through attention / activation values.",
+        pressure: "Pressure mode reads the field through pressure / conflict / field tension values.",
+        global: "Global mode reads the field as participant distribution across kin.",
+        hybrid: "Hybrid mode combines activity, pressure, and field intensity into one synthetic reading."
+    }[mode] || "Global mode reads the field as participant distribution across kin."
 
     el.innerHTML = `
-        <div style="margin-bottom:8px;">
-            <b>About Field</b>
-        </div>
+        <div style="margin-bottom:8px;"><b>About Field</b></div>
 
         <div style="margin-bottom:8px;">
             Field is a 13×20 toroidal kin map (260 states). Each cell is one kin.
-            Vertical axis = tone (1–13). The grid is not linear: kin sequence moves diagonally and wraps through the edges.
-            Because the right edge connects to the left, and the bottom connects to the top, the structure behaves like a torus rather than a flat table.
+            The sequence is not linear: kin moves diagonally and wraps across the edges.
+            The right edge connects to the left, and the bottom connects to the top, so the structure behaves like a torus.
         </div>
 
         <div style="margin-bottom:8px;">
-            <b>How to read it</b><br>
-            • Fill color = how many participants are inside the kin.<br>
-            • Frame color = currently selected mode.<br>
-            • Number inside the cell = participant count.<br>
-            • Click a kin to open full information about the people in that kin.<br>
-            • The highlighted diagonal shows the local kin trajectory around the selected kin.
+            <b>How to read the map</b><br>
+            • Fill color = participant density in the kin.<br>
+            • Inner frame = state type derived from real field/weather values.<br>
+            • White outer frame = selected kin.<br>
+            • Number inside cell = participant count.<br>
+            • Dashed diagonal = 20-kin toroidal trace (10 back, selected, 9 forward).<br>
+            • Click a kin to see full information about the people and values inside it.
         </div>
 
         <div style="margin-bottom:8px;">
@@ -1149,11 +1153,13 @@ function updateFieldLegend(mode){
         </div>
 
         <div>
-            <b>Modes</b><br>
-            • <span style="color:#22c55e;">Activity</span> — attention / activation reading.<br>
-            • <span style="color:#ef4444;">Pressure</span> — tension / compression reading.<br>
-            • <span style="color:#f59e0b;">Global</span> — simple user distribution per kin.<br>
-            • <span style="color:#7c3aed;">Hybrid</span> — combined attention × pressure reading.
+            <b>State types</b><br>
+            <span style="color:#22c55e;">Cluster</span> — dense multi-user concentration.<br>
+            <span style="color:#ef4444;">Pressure</span> — high pressure / conflict / tension.<br>
+            <span style="color:#38bdf8;">Active</span> — high attention / activation.<br>
+            <span style="color:#a855f7;">Resonance</span> — strong hybrid combination.<br>
+            <span style="color:#f59e0b;">Stable</span> — neutral stable presence.<br>
+            <span style="color:#ffffff;">Event</span> — spike / threshold event.
         </div>
     `
 }
