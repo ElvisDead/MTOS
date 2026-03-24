@@ -308,6 +308,14 @@ export async function runMTOS(){
         userList = addUser(userList, name)
         saveUsers(userList)
 
+        pyodide.runPython(`
+        import datetime
+        
+        birth = datetime.date(${year}, ${month}, ${day})
+        kin, tone, seal, i = kin_from_date(birth)
+        register_user(${JSON.stringify(name)}, birth, kin, tone, seal)
+        `)
+
         // ===============================
         // PYTHON CORE
         // ===============================
@@ -390,18 +398,11 @@ json.dumps(weather)
             json.dumps(users_db.get(${JSON.stringify(uName)}, {}))
             `))
                 
-            let baseKin = 1
+            const baseKin =
+                (userData && typeof userData.kin === "number")
+                ? userData.kin
+                : 1
                 
-            if(userData && userData.birth){
-                const [yy, mm, dd] = userData.birth.split("-").map(Number)
-                    
-                baseKin = Number(pyodide.runPython(`
-                mtos_current_kin_NEW(${JSON.stringify(uName)}, ${yy}, ${mm}, ${dd})
-                `))
-            } else if(typeof userData.kin === "number"){
-                baseKin = userData.kin
-            }
-
             const phase = (baseKin % 20) * Math.PI / 10
                 
             return {
@@ -565,34 +566,12 @@ json.dumps({
                 kin: currentKin
             })
 
-            users = users.map((u) => {
-                const userData = JSON.parse(pyodide.runPython(`
-                import json
-                users_db = load_users()
-                json.dumps(users_db.get(${JSON.stringify(u.name)}, {}))
-                `))
-                    
-                let baseKin = u.baseKin || u.kin || 1
-                    
-                if(userData && userData.birth){
-                    const [yy, mm, ddBirth] = userData.birth.split("-").map(Number)
-                        
-                    baseKin = Number(pyodide.runPython(`
-                    mtos_current_kin_NEW(${JSON.stringify(u.name)}, ${yy}, ${mm}, ${ddBirth})
-                    `))
-                } else if(typeof userData.kin === "number"){
-                    baseKin = userData.kin
-                }
-                
-                const phase = (baseKin % 20) * Math.PI / 10
-                    
-                return {
-                    ...u,
-                    kin: baseKin,
-                    baseKin: baseKin,
-                    phase
-                }
-            })
+            users = users.map((u) => ({
+                ...u,
+                kin: u.baseKin || u.kin,
+                baseKin: u.baseKin || u.kin,
+                phase: ((u.baseKin || u.kin) % 20) * Math.PI / 10
+            }))
 
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
             const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
