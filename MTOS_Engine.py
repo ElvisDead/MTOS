@@ -919,36 +919,32 @@ def mtos_260_weather(name,year,month,day):
     if USE_CACHE:
         cache = load_weather_cache()
         key = f"{name}_{today}"
-        
+
         if key in cache:
             cached = cache[key]
-            
+
             if not isinstance(cached, list):
                 cached = []
-                
-                cached = [
-                    w if isinstance(w, dict) and "attention" in w else {
-                        "attention": 0.5,
-                        "activity": 0.5,
-                        "pressure": 0,
-                        "conflict": 0
-                    }
-                    for w in cached
-                ]
-                
-                if len(cached) < 260:
-                    cached += [{
-                        "attention": 0.5,
-                        "activity": 0.5,
-                        "pressure": 0,
-                        "conflict": 0
-                    }] * (260 - len(cached))
-                    
-                    return cached[:260]
 
-    # защита от битого кэша
-    if key in cache and not isinstance(cache[key], list):
-        del cache[key]
+            cached = [
+                w if isinstance(w, dict) and "attention" in w else {
+                    "attention": 0.5,
+                    "activity": 0.5,
+                    "pressure": 0,
+                    "conflict": 0
+                }
+                for w in cached
+            ]
+
+            if len(cached) < 260:
+                cached += [{
+                    "attention": 0.5,
+                    "activity": 0.5,
+                    "pressure": 0,
+                    "conflict": 0
+                }] * (260 - len(cached))
+
+            return cached[:260]
 
     birth=datetime.date(year,month,day)
 
@@ -1757,12 +1753,17 @@ def mtos_multi_agents_field(users, year, month, day, prev_field=None, prev_state
     # ===============================
     # 1. БАЗОВЫЙ ВКЛАД
     # ===============================
+    weather_cache = {}
+    
     for user in users:
 
         name = user["name"]
         weight = user.get("weight", 1.0)
+        
+        if name not in weather_cache:
+            weather_cache[name] = mtos_260_weather(name, year, month, day)
 
-        weather = mtos_260_weather(name, year, month, day)
+        weather = weather_cache[name]
         kin = user["kin"] - 1
 
         kin_list.append(kin)
