@@ -1,3 +1,5 @@
+import { KinRegistry } from "./kinRegistry.js"
+
 export function drawNetwork(id, users, onSelect, matrix = null){
 
     const root = document.getElementById(id)
