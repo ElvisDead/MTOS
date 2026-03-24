@@ -967,16 +967,19 @@ def mtos_260_weather(name,year,month,day):
     # 🔥 ДОСТРАИВАЕМ ПРОПУЩЕННЫЕ
     full_weather = [None]*260
 
-    for i in range(0,260,4):
-        full_weather[i] = weather[i]
+    full_weather = [None]*260
+    # заполняем известные точки
+    for k in range(0,260,4):
+        full_weather[k] = weather[k]
+    # интерполяция пропусков
+    for k in range(260):
+        if full_weather[k] is None:
+            left = (k//4)*4
+            right = min(left+4, 259)
+            
+            full_weather[k] = full_weather[left] or full_weather[right] or {"attention":0.5}
         
-        for i in range(260):
-            if full_weather[i] is None:
-                left = (i//4)*4
-                right = min(left+4, 259)
-                full_weather[i] = full_weather[left] or full_weather[right]
-                
-                weather = full_weather
+    weather = full_weather
                 
                 if USE_CACHE:
                     cache[key] = weather
@@ -994,7 +997,7 @@ def mtos_260_weather(name,year,month,day):
     global_data = load_global_field()
     prev_field = np.array(global_data["field"])
 
-    new_field_input = np.array([w["attention"] for w in weather])
+    new_field_input = np.array([w["attention"] if w and "attention" in w else 0.5 for w in weather])
 
     # инерция (память системы)
     INERTIA = 0.6
@@ -1068,6 +1071,11 @@ def mtos_260_weather(name,year,month,day):
     save_global_field({
         "field": field.tolist()
     })
+
+    weather = [
+        w if (w and "attention" in w) else {"attention":0.5}
+        for w in weather
+    ]
 
     return weather
 
