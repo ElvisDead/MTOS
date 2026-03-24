@@ -6,18 +6,18 @@ const seals = [
 ]
 
 const densityColors = [
-    "#a855f7", // 1
-    "#8b5cf6", // 2
-    "#6366f1", // 3
-    "#3b82f6", // 4
-    "#06b6d4", // 5
-    "#14b8a6", // 6
-    "#10b981", // 7
-    "#84cc16", // 8
-    "#eab308", // 9
-    "#f59e0b", // 10
-    "#f97316", // 11
-    "#ef4444"  // 12+
+    "#c084fc", // 2
+    "#8b5cf6", // 3
+    "#6366f1", // 4
+    "#3b82f6", // 5
+    "#06b6d4", // 6
+    "#14b8a6", // 7
+    "#10b981", // 8
+    "#84cc16", // 9
+    "#eab308", // 10
+    "#f59e0b", // 11
+    "#f97316", // 12
+    "#ef4444"  // 13+
 ]
 
 export function drawField(rootOrId, users = [], mode = "global") {
@@ -88,7 +88,8 @@ export function drawField(rootOrId, users = [], mode = "global") {
                     } else if (mode === "pressure") {
                         ctx.fillStyle = "#ef4444"
                     } else if (mode === "hybrid") {
-                        ctx.fillStyle = "#a855f7"
+                        ctx.fillStyle = "#7c3aed"
+                    }
                     } else {
                         ctx.fillStyle = "#f59e0b"
                     }
