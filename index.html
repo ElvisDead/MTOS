@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<style>
+
+#app {
+    position: relative;
+    z-index: 1;
+}
+    
+body {
+    margin: 0;
+    background: black;
+    position: relative;
+}
+
+/* общий класс */
+.mayan-border {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 140px;
+
+    background-repeat: repeat-y;
+    background-size: contain;
+
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* левая */
+.mayan-left {
+    left: 0;
+    background-image: url("./mayan-left.png");
+    background-position: left top;
+}
+
+/* правая */
+.mayan-right {
+    right: 0;
+    background-image: url("./mayan-left.png");
+    background-position: right top;
+}
+</style>
+
+<style>
+
+.mayan-card {
+    position: relative;
+    max-width: 980px;
+    margin: 18px auto;
+    padding: 18px 56px;
+    box-sizing: border-box;
+    background: #000;
+    border: 1px solid #222;
+    overflow: hidden;
+}
+
+.mayan-card::before,
+.mayan-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 42px;
+    background-image: url("./mayan-left.png");
+    background-repeat: repeat-y;
+    background-size: 42px auto;
+    opacity: 0.95;
+    pointer-events: none;
+}
+
+.mayan-card::before {
+    left: 0;
+}
+
+.mayan-card::after {
+    right: 0;
+    transform: scaleX(-1);
+}
+
+/* чтобы карты не расползались */
+#seriesBlock,
+#networkMap,
+#collective {
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+#weatherMap{
+    max-width: 1100px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+.today-card{
+    max-width:800px;
+    margin:20px auto;
+    padding:20px;
+    border:1px solid #333;
+    background:#050505;
+    border-radius:12px;
+}
+
+.today-top{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+}
+
+.today-user, .today-day{
+    flex:1;
+    padding:12px;
+    border:1px solid #222;
+    border-radius:8px;
+    background:#000;
+}
+
+.label{
+    font-size:11px;
+    color:#666;
+    margin-bottom:6px;
+}
+
+.value{
+    font-size:16px;
+    color:#fff;
+}
+
+.today-state{
+    margin-top:20px;
+    padding:14px;
+    border:1px solid #222;
+    border-radius:8px;
+    background:#000;
+}
+
+.state-main{
+    font-size:22px;
+    font-weight:bold;
+    color:#00ff88;
+}
+
+.state-sub{
+    font-size:12px;
+    color:#888;
+    margin-top:6px;
+}
+
+</style>
+    
+<meta charset="UTF-8">
+<title>MTOS FULL SYSTEM</title>
+
+<style>
+
+    
+body{
+    background:#000;
+    color:#fff;
+    font-family:Arial;
+    text-align:center;
+}
+
+h1{
+    margin-top:20px;
+}
+
+input{
+    width:120px;
+    padding:5px;
+    margin:5px;
+}
+
+button{
+    padding:6px 12px;
+    margin-top:10px;
+    cursor:pointer;
+}
+
+.section{
+    margin-top:40px;
+}
+
+canvas{
+    background:#111;
+}
+
+#networkMap{
+    margin-top:20px;
+}
+
+.app-shell{
+    width:min(1180px, calc(100vw - 80px));
+    margin:0 auto;
+    padding:20px 0 40px;
+    box-sizing:border-box;
+}
+
+.topbar{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    margin-top:12px;
+    margin-bottom:20px;
+}
+
+.brand{
+    font-size:56px;
+    font-weight:700;
+    letter-spacing:1px;
+    color:#f5f5f5;
+}
+
+.controls-panel{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:12px;
+    width:100%;
+}
+
+.controls-panel input{
+    width:150px;
+    padding:12px 14px;
+    border:1px solid #2a2a2a;
+    background:#dfe4ee;
+    color:#111;
+    font-size:22px;
+    box-sizing:border-box;
+}
+
+.controls-panel button{
+    padding:12px 18px;
+    border:1px solid #444;
+    background:#efefef;
+    color:#111;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.status-pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:110px;
+    padding:6px 12px;
+    border:1px solid #2c2c2c;
+    border-radius:999px;
+    background:#0c0c0c;
+    color:#bdbdbd;
+    font-size:14px;
+}
+
+.hero-panel{
+    max-width:980px;
+    margin:0 auto 18px;
+    padding:18px 22px;
+    border:1px solid #262626;
+    border-radius:16px;
+    background:linear-gradient(180deg, #060606 0%, #0a0a0a 100%);
+    box-sizing:border-box;
+}
+
+.quick-metrics{
+    max-width:980px;
+    margin:0 auto 18px;
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:12px;
+}
+
+.metric-card{
+    border:1px solid #262626;
+    border-radius:14px;
+    background:#080808;
+    padding:14px 16px;
+    text-align:left;
+}
+
+.metric-label{
+    color:#7e7e7e;
+    font-size:11px;
+    letter-spacing:0.08em;
+    margin-bottom:6px;
+}
+
+.metric-value{
+    color:#f5f5f5;
+    font-size:24px;
+    font-weight:700;
+}
+
+.metric-sub{
+    color:#8c8c8c;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.section-title{
+    font-size:13px;
+    letter-spacing:0.12em;
+    color:#7f7f7f;
+    margin-bottom:14px;
+}
+
+.hero-grid{
+    display:grid;
+    grid-template-columns:1.15fr 1.15fr 1fr;
+    gap:14px;
+    align-items:stretch;
+}
+
+.hero-card{
+    border:1px solid #242424;
+    border-radius:14px;
+    background:#050505;
+    padding:14px 16px;
+    text-align:left;
+}
+
+.hero-label{
+    color:#7b7b7b;
+    font-size:11px;
+    letter-spacing:0.08em;
+    margin-bottom:8px;
+}
+
+.hero-main{
+    color:#ffffff;
+    font-size:24px;
+    font-weight:700;
+    line-height:1.15;
+}
+
+.hero-sub{
+    color:#a3a3a3;
+    font-size:13px;
+    margin-top:8px;
+    line-height:1.45;
+}
+
+.hero-accent{
+    color:#00ff88;
+}
+
+.decision-box{
+    margin-top:14px;
+    padding:14px 16px;
+    border:1px solid #2c2c2c;
+    border-radius:14px;
+    background:#040404;
+}
+
+.hero-note{
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.hero-note:last-child{
+    border-bottom: none;
+}
+
+.decision-box .hero-note{
+    color:#d6d6d6;
+}
+
+.decision-box b{
+    color:#ffffff;
+}
+
+@media (max-width: 900px){
+    .decision-main{
+        font-size:20px;
+    }
+}
+
+.decision-title{
+    color:#00ff88;
+    font-size:12px;
+    letter-spacing:0.12em;
+    margin-bottom:6px;
+}
+
+.decision-main{
+    color:#ffffff;
+    font-size:24px;
+    font-weight:700;
+}
+
+.decision-sub{
+    color:#8e8e8e;
+    font-size:13px;
+    margin-top:6px;
+}
+
+.hero-notes{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    text-align:left;
+    font-size:13px;
+    color:#d2d2d2;
+}
+
+.hero-note b{
+    color:#ffffff;
+}
+
+@media (max-width: 900px){
+    .app-shell{
+        width:min(100vw - 24px, 1180px);
+    }
+
+    .brand{
+        font-size:42px;
+    }
+
+    .hero-grid{
+        grid-template-columns:1fr;
+    }
+
+    .quick-metrics{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .controls-panel input{
+        width:calc(50% - 12px);
+        min-width:120px;
+        font-size:18px;
+    }
+}
+
+@media (max-width: 560px){
+    .quick-metrics{
+        grid-template-columns:1fr;
+    }
+
+    .controls-panel{
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .controls-panel input,
+    .controls-panel button{
+        width:min(320px, 100%);
+    }
+}
+</style>
+
+<style>
+.attr-panel{
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 16px;
+    color: #e5e7eb;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+.attr-header{
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.attr-headline{
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #ffffff;
+}
+
+.attr-subline{
+    font-size: 14px;
+    color: #a3a3a3;
+    line-height: 1.5;
+}
+
+.attr-advice{
+    margin: 0 auto 18px;
+    max-width: 760px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #d4d4d4;
+}
+
+.attr-sections{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.attr-box{
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: left;
+}
+
+.attr-title{
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.positive-title{
+    color: #86efac;
+}
+
+.negative-title{
+    color: #fca5a5;
+}
+
+.attr-item{
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.attr-item:last-child{
+    border-bottom: none;
+}
+
+.attr-item.positive .attr-name{
+    color: #86efac;
+}
+
+.attr-item.negative .attr-name{
+    color: #fca5a5;
+}
+
+.attr-name{
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.attr-meta{
+    font-size: 13px;
+    color: #9ca3af;
+    line-height: 1.4;
+}
+
+.attr-empty{
+    color: #6b7280;
+    font-size: 14px;
+}
+
+@media (max-width: 720px){
+    .attr-sections{
+        grid-template-columns: 1fr;
+    }
+
+    .attr-headline{
+        font-size: 22px;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="mayan-border mayan-left"></div>
+<div class="mayan-border mayan-right"></div>
+
+<div id="app">
+
+    <div class="app-shell">
+
+        <header class="topbar">
+            <div class="brand">MTOS</div>
+
+            <div class="controls-panel">
+                <input id="name" placeholder="Name">
+                <input id="year" placeholder="Year">
+                <input id="month" placeholder="Month">
+                <input id="day" placeholder="Day">
+                <button onclick="runMTOS()">START / NEW DAY</button>
+            </div>
+
+            
+
+            <div id="status" class="status-pill">Idle</div>
+        </header>
+
+        <section id="todayBlock" class="hero-panel"></section>
+
+        <div id="todayPanel"></div>
+
+        <section id="quickMetrics" class="quick-metrics"></section>
+
+        <section class="mayan-card">
+            <div class="section-title">WEATHER</div>
+            <div id="weatherMap"></div>
+        </section>
+
+        <section class="mayan-card">
+            <div class="section-title">NETWORK</div>
+            <div id="networkMap"></div>
+        </section>
+
+        <section class="mayan-card">
+            <div class="section-title">COLLECTIVE</div>
+            <div id="collective"></div>
+        </section>
+
+        <section class="mayan-card">
+    <div class="section-title">ATTRACTOR</div>
+    <div id="attractorMap" style="display:none;"></div>
+    <div id="interactionAnalysis"></div>
+</section>
+
+        <section class="mayan-card">
+            <div class="section-title">SERIES</div>
+            <div id="seriesBlock"></div>
+        </section>
+
+        <section class="mayan-card">
+    <div class="section-title">TOOLS</div>
+
+    <div style="
+        display:flex;
+        gap:10px;
+        justify-content:center;
+        flex-wrap:wrap;
+        margin-bottom:14px;
+    ">
+        <button onclick="exportLog()">EXPORT EVENT LOG</button>
+        <button onclick="showMTOSLogs()">SHOW LOGS</button>
+        <button onclick="hideMTOSLogs()">HIDE LOGS</button>
+        <button onclick="clearMTOSLogs()">CLEAR LOGS</button>
+        <button onclick="showDailySnapshots()">SHOW DAILY SNAPSHOTS</button>
+    </div>
+
+    <div id="timeControls" style="
+        display:flex;
+        gap:8px;
+        justify-content:center;
+        margin-bottom:14px;
+        flex-wrap:wrap;
+    "></div>
+
+    <div style="
+        max-width:860px;
+        margin:0 auto 14px;
+        text-align:center;
+    ">
+        <input
+            id="replaySlider"
+            type="range"
+            min="0"
+            max="0"
+            value="0"
+            style="width:min(760px, 100%);"
+            oninput="replaySeek(this.value)"
+        >
+    </div>
+
+    <div
+        id="logPanel"
+        style="
+            display:none;
+            max-width:860px;
+            margin:0 auto;
+            border:1px solid #222;
+            border-radius:12px;
+            background:#050505;
+            padding:12px;
+            box-sizing:border-box;
+        "
+    >
+        <div style="
+            color:#9ca3af;
+            font-size:12px;
+            margin-bottom:10px;
+            text-align:left;
+        ">
+            Event log stream
+        </div>
+
+        <div
+            id="logStream"
+            style="
+                max-height:340px;
+                overflow:auto;
+                text-align:left;
+                font-family:monospace;
+                font-size:12px;
+                line-height:1.45;
+                color:#d1d5db;
+                background:#020202;
+                border:1px solid #1f2937;
+                border-radius:10px;
+                padding:10px;
+            "
+        ></div>
+    </div>
+
+    <div
+        id="snapshotPanel"
+        style="
+            display:none;
+            max-width:860px;
+            margin:14px auto 0;
+            border:1px solid #222;
+            border-radius:12px;
+            background:#050505;
+            padding:12px;
+            box-sizing:border-box;
+        "
+    >
+        <div style="
+            color:#9ca3af;
+            font-size:12px;
+            margin-bottom:10px;
+            text-align:left;
+        ">
+            Daily snapshots
+        </div>
+
+        <div
+            id="snapshotStream"
+            style="
+                max-height:340px;
+                overflow:auto;
+                text-align:left;
+                font-family:monospace;
+                font-size:12px;
+                line-height:1.45;
+                color:#d1d5db;
+                background:#020202;
+                border:1px solid #1f2937;
+                border-radius:10px;
+                padding:10px;
+            "
+        ></div>
+    </div>
+</section>
+
+    </div>
+
+</div>
+
+
+
+<!-- SCRIPTS -->
+<script type="module">
+import { initMTOS, runMTOS } from "./js/main.js"
+import { replaySeek } from "./js/replay.js"
+
+window.initMTOS = initMTOS
+window.runMTOS = runMTOS
+window.replaySeek = replaySeek
+
+window.showMTOSLogs = function(){
+    const panel = document.getElementById("logPanel")
+    if(panel) panel.style.display = "block"
+}
+
+window.hideMTOSLogs = function(){
+    const panel = document.getElementById("logPanel")
+    if(panel) panel.style.display = "none"
+}
+
+window.clearMTOSLogs = function(){
+    localStorage.removeItem("mtos_log")
+    window.MTOS_LOG = []
+
+    const logStream = document.getElementById("logStream")
+    if(logStream) logStream.innerHTML = ""
+
+    const snapshotStream = document.getElementById("snapshotStream")
+    if(snapshotStream) snapshotStream.innerHTML = ""
+}
+
+window.showDailySnapshots = function(){
+    const panel = document.getElementById("snapshotPanel")
+    const stream = document.getElementById("snapshotStream")
+
+    if(panel) panel.style.display = "block"
+    if(!stream) return
+
+    let rows = []
+    try{
+        rows = JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+        if(!Array.isArray(rows)) rows = []
+    }catch(e){
+        rows = []
+    }
+
+    if(!rows.length){
+        stream.innerHTML = '<div style="color:#888;">No daily snapshots yet</div>'
+        return
+    }
+
+    stream.innerHTML = rows
+        .slice()
+        .reverse()
+        .map(row => {
+            return `
+                <div style="padding:8px 0;border-bottom:1px solid #111;">
+                    <div><b>${row.day || "?"}</b> · ${row.name || "?"}</div>
+                    <div>userKin: ${row.userKin ?? "?"} · todayKin: ${row.todayKin ?? "?"}</div>
+                    <div>mode: ${row.recommendedMode ?? "?"} · label: ${row.dayLabel ?? "?"}</div>
+                    <div>attention: ${Number(row.attention ?? 0).toFixed(2)} · entropy: ${Number(row.entropy ?? 0).toFixed(2)} · predictability: ${Number(row.predictability ?? 0).toFixed(2)}</div>
+                </div>
+            `
+        })
+        .join("")
+}
+
+initMTOS()
+</script>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+
+</body>
+</html>
