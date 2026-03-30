@@ -3891,3 +3891,62 @@ function renderTodayBlock(data){
     </div>
     `
 }
+
+window.getAccuracy = function(){
+
+    const logs = window.MTOS_LOG || []
+
+    const feedback = logs.filter(e => e.type === "user_feedback")
+
+    if(!feedback.length) return "0%"
+
+    const correct = feedback.filter(
+        e => e.predictedState === e.realState
+    ).length
+
+    return (correct / feedback.length * 100).toFixed(1) + "%"
+}
+
+function alreadyConfirmedYesterday(){
+
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    const day = yesterday.toISOString().slice(0,10)
+
+    const logs = window.MTOS_LOG || []
+
+    return logs.some(e =>
+        e.type === "user_feedback" &&
+        e.day === day
+    )
+}
+
+function showSimplePrompt(){
+    return
+}
+
+window.confirmYesterday = function(realState){
+
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    const day = yesterday.toISOString().slice(0,10)
+
+    const logs = window.MTOS_LOG || []
+
+    const predicted = logs
+        .filter(e => e.type === "daily_snapshot" && e.day === day)
+        .slice(-1)[0]?.dayLabel || "UNKNOWN"
+
+    logEvent("user_feedback", {
+        day,
+        predictedState: predicted,
+        realState
+    })
+
+    console.log("Yesterday confirmed:", realState)
+
+    const el = document.getElementById("mtosPrompt")
+    if(el) el.remove()
+}
