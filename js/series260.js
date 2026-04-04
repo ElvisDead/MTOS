@@ -42,13 +42,47 @@ export function drawSeries(id, weather, year, month, day){
         const innerW = width - padLeft - padRight
         const innerH = height - padTop - padBottom
 
-        const data = weather.slice(0, length).map(w => w.attention)
+let data = weather.slice(0, length).map(w => w.attention)
 
-        const min = Math.min(...data)
-        const max = Math.max(...data)
-        const range = max - min || 1
+if (title === "Φ series" && Array.isArray(window.mtosMetabolicMetrics?.phiSeries)) {
+    data = window.mtosMetabolicMetrics.phiSeries.slice(0, length)
+}
 
-        const norm = data.map(v => (v - min) / range)
+if (title === "T series" && Array.isArray(window.mtosMetabolicMetrics?.temperatureSeries)) {
+    data = window.mtosMetabolicMetrics.temperatureSeries.slice(0, length)
+}
+
+if (title === "Consistency series" && Array.isArray(window.mtosMetabolicMetrics?.consistencySeries)) {
+    data = window.mtosMetabolicMetrics.consistencySeries.slice(0, length)
+}
+
+if (!Array.isArray(data) || !data.length) {
+    data = new Array(length).fill(0)
+}
+
+data = data.map(v => {
+    const n = Number(v)
+    if (!Number.isFinite(n)) return 0
+    return Math.max(0, Math.min(1, n))
+})
+
+const axisMin = 0
+const axisMax = 1
+const axisRange = 1
+
+const localMin = Math.min(...data)
+const localMax = Math.max(...data)
+const localRangeRaw = localMax - localMin
+
+const localRange = localRangeRaw < 0.0001 ? 0.0001 : localRangeRaw
+
+const visualPad = Math.max(0.02, localRange * 0.35)
+
+const visualMin = Math.max(axisMin, localMin - visualPad)
+const visualMax = Math.min(axisMax, localMax + visualPad)
+const visualRange = Math.max(0.0001, visualMax - visualMin)
+
+const norm = data.map(v => (v - visualMin) / visualRange)
 
         // ===== Y GRID =====
         ctx.strokeStyle = "#333"
@@ -56,17 +90,17 @@ export function drawSeries(id, weather, year, month, day){
         ctx.font = "10px Arial"
 
         for(let i=0;i<=4;i++){
-            const v = i / 4
-            const y = padTop + innerH - v * innerH
+    const v = i / 4
+    const y = padTop + innerH - v * innerH
 
-            ctx.beginPath()
-            ctx.moveTo(padLeft, y)
-            ctx.lineTo(width - padRight, y)
-            ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(padLeft, y)
+    ctx.lineTo(width - padRight, y)
+    ctx.stroke()
 
-            const val = (min + v * range).toFixed(2)
-            ctx.fillText(val, 5, y + 3)
-        }
+    const val = (visualMin + v * visualRange).toFixed(2)
+    ctx.fillText(val, 5, y + 3)
+}
 
         // ===== X GRID + DATES =====
         const steps = Math.min(length, 6)
@@ -130,8 +164,11 @@ export function drawSeries(id, weather, year, month, day){
     }
 
     root.appendChild(drawBlock(7, "7 days"))
-    root.appendChild(drawBlock(30, "30 days"))
-    root.appendChild(drawBlock(260, "260 days"))
+root.appendChild(drawBlock(30, "30 days"))
+root.appendChild(drawBlock(260, "260 days"))
+root.appendChild(drawBlock(30, "Φ series"))
+root.appendChild(drawBlock(30, "T series"))
+root.appendChild(drawBlock(30, "Consistency series"))
 
     // ===============================
     // DESCRIPTION (ENGLISH)
@@ -145,15 +182,18 @@ export function drawSeries(id, weather, year, month, day){
     desc.style.lineHeight = "1.4"
 
     desc.innerText = `
-These charts represent the temporal evolution of attention within the 260-phase cognitive cycle.
+These charts represent temporal dynamics inside the 260-state cognitive cycle.
 
-• 7 days — short-term fluctuations and immediate dynamics
-• 30 days — mid-range stability and behavioral patterns
-• 260 days — full cycle structure (complete phase space traversal)
+• 7 days — short-term attention dynamics
+• 30 days — medium-range behavioral drift
+• 260 days — full-cycle attention structure
 
-Values are normalized per window, meaning each chart highlights relative changes rather than absolute magnitude.
+• Φ series — metabolic intensity / integrated cognitive load
+• T series — processing temperature / activation intensity
+• Consistency series — internal coherence of the current regime
 
-The system reflects how attention distributes over time under internal pressure, noise, and structural constraints of the cognitive field.
+All charts are displayed on a fixed 0..1 scale for visual comparison.
+
 `
 
     root.appendChild(desc)

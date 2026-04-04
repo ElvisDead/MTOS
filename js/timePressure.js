@@ -93,27 +93,40 @@ function getPressureColor(value) {
 }
 
 function getPressureDescription(value) {
-    const label = getPressureLabel(value)
+    const v = clamp01(value)
+    const mode = getRecommendedTemporalMode(v)
 
-    if (label === "critical") {
-        return "Time compression is extreme. The system should reduce branching and avoid unnecessary interaction."
+    if (mode === "BREAKDOWN") {
+        return "Temporal overload is near collapse. The system should cut branches immediately."
     }
-    if (label === "high") {
-        return "The system is under strong temporal load. Execution is preferred over exploration."
+    if (mode === "CRISIS") {
+        return "Time compression is extreme. Only priority paths should remain active."
     }
-    if (label === "moderate") {
-        return "The system feels temporal friction, but still keeps room for adaptation."
+    if (mode === "SURGE") {
+        return "The system is in a hard acceleration band. Strong action is possible, but errors scale quickly."
+    }
+    if (mode === "FOCUS") {
+        return "The system is under directed temporal load. Execution is stronger than exploration."
+    }
+    if (mode === "FLOW") {
+        return "The system has moderate temporal friction, but keeps adaptive movement."
+    }
+    if (mode === "DRIFT") {
+        return "The system is lightly driven. Motion exists, but commitment is still weak."
     }
 
-    return "Temporal pressure is low. The system can afford exploration and softer transitions."
+    return "Temporal pressure is low. The system can afford exploration and soft transitions."
 }
 
 function getRecommendedTemporalMode(value) {
     const v = clamp01(value)
 
-    if (v >= 0.82) return "CRISIS"
-    if (v >= 0.62) return "FOCUS"
-    if (v >= 0.34) return "FLOW"
+    if (v >= 0.90) return "BREAKDOWN"
+    if (v >= 0.78) return "CRISIS"
+    if (v >= 0.64) return "SURGE"
+    if (v >= 0.50) return "FOCUS"
+    if (v >= 0.36) return "FLOW"
+    if (v >= 0.20) return "DRIFT"
     return "EXPLORE"
 }
 
@@ -133,6 +146,11 @@ function buildTimePressureComponents(input = {}) {
     const networkDensity = clamp01(input.networkDensity ?? 0)
     const idleHours = Math.max(0, safeNumber(input.idleHours ?? 0))
 
+    const attractorType = String(input.attractorType ?? "unknown").toLowerCase()
+    const networkSupport = clamp01(input.networkSupport ?? 0)
+    const realContacts = Math.max(0, safeNumber(input.realContacts ?? 0))
+    const realContactWeight = clamp01((safeNumber(input.realContactWeight ?? 0)) / 3)
+
     const uncertainty =
         noise * 0.30 +
         entropy * 0.30 +
@@ -146,26 +164,47 @@ function buildTimePressureComponents(input = {}) {
         Math.abs(field - 0.5) * 0.12 +
         attractorIntensity * 0.14
 
-    const networkLoad =
-        networkConflict * 0.65 +
-        networkDensity * 0.35
+    let attractorLoad = attractorIntensity
+if (attractorType === "chaos") {
+    attractorLoad = clamp01(attractorIntensity * 1.35)
+} else if (attractorType === "trend") {
+    attractorLoad = clamp01(attractorIntensity * 1.15)
+} else if (attractorType === "stable") {
+    attractorLoad = clamp01(attractorIntensity * 0.75)
+} else if (attractorType === "cycle") {
+    attractorLoad = clamp01(attractorIntensity * 0.95)
+}
 
-    const idleLoad = clamp01(idleHours / 48)
+const networkLoad =
+    networkConflict * 0.58 +
+    networkDensity * 0.22 +
+    (1 - networkSupport) * 0.20
+
+const contactLoad =
+    realContacts >= 4
+        ? clamp01(0.18 + (realContacts - 3) * 0.08 + realContactWeight * 0.18)
+        : clamp01(realContactWeight * 0.08)
+
+const idleLoad = clamp01(idleHours / 48)
 
     const overload =
-        activity * 0.18 +
-        pressure * 0.26 +
-        conflict * 0.18 +
-        networkLoad * 0.14 +
-        uncertainty * 0.12 +
-        idleLoad * 0.12
+    activity * 0.16 +
+    pressure * 0.24 +
+    conflict * 0.16 +
+    networkLoad * 0.16 +
+    uncertainty * 0.10 +
+    idleLoad * 0.08 +
+    attractorLoad * 0.10 +
+    contactLoad * 0.10
 
-    const fatigue =
-        (1 - attention) * 0.22 +
-        (1 - stability) * 0.24 +
-        pressure * 0.18 +
-        idleLoad * 0.20 +
-        uncertainty * 0.16
+const fatigue =
+    (1 - attention) * 0.20 +
+    (1 - stability) * 0.22 +
+    pressure * 0.18 +
+    idleLoad * 0.16 +
+    uncertainty * 0.12 +
+    attractorLoad * 0.06 +
+    contactLoad * 0.06
 
     return {
         attention,
@@ -183,11 +222,13 @@ function buildTimePressureComponents(input = {}) {
         networkDensity,
         idleHours,
         uncertainty: clamp01(uncertainty),
-        instability: clamp01(instability),
-        networkLoad: clamp01(networkLoad),
-        idleLoad: clamp01(idleLoad),
-        overload: clamp01(overload),
-        fatigue: clamp01(fatigue)
+instability: clamp01(instability),
+networkLoad: clamp01(networkLoad),
+attractorLoad: clamp01(attractorLoad),
+contactLoad: clamp01(contactLoad),
+idleLoad: clamp01(idleLoad),
+overload: clamp01(overload),
+fatigue: clamp01(fatigue)
     }
 }
 

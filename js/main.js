@@ -39,8 +39,14 @@ import {
 import { drawFieldLinear } from "./fieldLinear.js"
 import { drawFieldTorus } from "./fieldTorus.js"
 
+import "./stateBus.js"
+import "./eventEngine.js"
+import "./memoryLoop.js"
+
 import { resolveTodayMode } from "./decisionEngine.js"
 import { renderTodayPanel } from "./todayPanel.js"
+
+import { renderHumanLayerV2 } from "./humanLayer.js"
 
 function toPython(obj) {
     return JSON.stringify(obj)
@@ -58,7 +64,9 @@ let selectedAgent = null
 let selectedKin = null
 let selectionMemory = new Array(260).fill(0)
 
-
+function clamp01(x){
+    return Math.max(0, Math.min(1, Number(x)))
+}
 
 // ===============================
 // INIT
@@ -124,7 +132,100 @@ export async function initMTOS() {
     setTimeout(() => setNetworkMode("interaction"), 0)
 
     initReplay()
+
+    window.addEventListener("mtos:state-updated", () => {
+    })
 }
+
+function applyTodayContactsToAttractorField(field, users){
+    if (!Array.isArray(field) || !users || !window.isTodayContact) {
+        return field
+    }
+
+    const boosted = [...field]
+
+    for (let i = 0; i < users.length; i++) {
+        for (let j = 0; j < users.length; j++) {
+            if (i === j) continue
+
+            const u1 = users[i]
+            const u2 = users[j]
+
+            if (!u1 || !u2 || !window.isTodayContact(u1.name, u2.name)) continue
+
+            const kinA = Number(u1.kin)
+            const kinB = Number(u2.kin)
+
+            if (Number.isFinite(kinA) && kinA >= 1 && kinA <= 260) {
+                boosted[kinA - 1] = Math.min(1, Number(boosted[kinA - 1] ?? 0.5) + 0.12)
+            }
+
+            if (Number.isFinite(kinB) && kinB >= 1 && kinB <= 260) {
+                boosted[kinB - 1] = Math.min(1, Number(boosted[kinB - 1] ?? 0.5) + 0.12)
+            }
+        }
+    }
+
+    return boosted
+}
+
+function classifyRelation(score){
+    if (score >= 0.6) return "ultra"
+    if (score >= 0.15) return "support"
+    if (score <= -0.15) return "conflict"
+    return "neutral"
+}
+
+window.classifyRelation = classifyRelation
+
+window.classifyRelation = classifyRelation
+
+function applyTodayContactsToDayState(dayState, users, dayKey = null){
+    const ds = dayState && typeof dayState === "object"
+        ? { ...dayState }
+        : {}
+
+    const contacts = loadTodayContacts(dayKey)
+    const activePairs = Object.values(contacts || {}).filter(Boolean)
+
+    if (!activePairs.length) {
+        ds.realContacts = 0
+        ds.realContactWeight = 0
+        return ds
+    }
+
+    let totalWeight = 0
+    let hits = 0
+
+    activePairs.forEach(item => {
+        const weight = Number(item?.weight ?? 1)
+        totalWeight += weight
+
+        const a = String(item?.a || "")
+        const b = String(item?.b || "")
+
+        if (Array.isArray(users) && users.some(u => u?.name === a) && users.some(u => u?.name === b)) {
+            hits += 1
+        }
+    })
+
+    ds.realContacts = hits
+    ds.realContactWeight = Number(totalWeight.toFixed(3))
+
+    ds.field = Math.max(0, Math.min(1, Number(ds.field ?? 0.5) + hits * 0.04 + totalWeight * 0.03))
+    ds.stability = Math.max(0, Math.min(1, Number(ds.stability ?? 0.5) + hits * 0.03))
+    ds.dayIndex = Number(Math.max(-1, Math.min(1, Number(ds.dayIndex ?? 0) + hits * 0.05)).toFixed(3))
+
+    if (hits > 0) {
+        ds.dayDesc = String(ds.dayDesc || "") + ` Real contacts today: ${hits}.`
+    }
+
+    return ds
+}
+
+window.applyTodayContactsToDayState = applyTodayContactsToDayState
+
+window.applyTodayContactsToAttractorField = applyTodayContactsToAttractorField
 
 // ===============================
 // USER MEMORY
@@ -330,11 +431,984 @@ function shiftWeatherArray(weather, offsetDays = 0) {
 }
 
 const MTOS_MEMORY_KEY = "mtos_memory_layers_v1"
+const MTOS_AUTO_FEEDBACK_KEY = "mtos_auto_feedback_v1"
 
-function clamp01(v) {
+const MTOS_TODAY_CONTACTS_KEY = "mtos_today_contacts_v2"
+const MTOS_RELATION_FEEDBACK_KEY = "mtos_relation_feedback_v1"
+const MTOS_FEEDBACK_ACK_KEY = "mtos_feedback_ack_v1"
+
+const MTOS_CONTACT_TTL_MS = 24 * 60 * 60 * 1000
+
+function getDayKeyFromParts(year, month, day){
+    const y = Number(year || 0)
+    const m = String(Number(month || 0)).padStart(2, "0")
+    const d = String(Number(day || 0)).padStart(2, "0")
+
+    if (!y || m === "00" || d === "00") {
+        return new Date().toISOString().slice(0, 10)
+    }
+
+    return `${y}-${m}-${d}`
+}
+
+function loadTodayContactsDB(){
+    try{
+        const raw = localStorage.getItem(MTOS_TODAY_CONTACTS_KEY)
+        const parsed = raw ? JSON.parse(raw) : {}
+        return parsed && typeof parsed === "object" ? parsed : {}
+    }catch(e){
+        return {}
+    }
+}
+
+function saveTodayContactsDB(db){
+    localStorage.setItem(MTOS_TODAY_CONTACTS_KEY, JSON.stringify(db))
+}
+
+function makePairKey(a, b){
+    return [String(a || "").trim(), String(b || "").trim()].sort().join("::")
+}
+
+function cleanupExpiredTodayContacts(db = null){
+    const source = db && typeof db === "object" ? db : loadTodayContactsDB()
+    const now = Date.now()
+    const next = {}
+    let changed = false
+
+    Object.keys(source).forEach(dayKey => {
+        const row = source[dayKey]
+        if (!row || typeof row !== "object") {
+            changed = true
+            return
+        }
+
+        const cleanedRow = {}
+
+        Object.entries(row).forEach(([pairKey, item]) => {
+            const t = Number(item?.t ?? 0)
+
+            if (!t || (now - t) > MTOS_CONTACT_TTL_MS) {
+                changed = true
+                return
+            }
+
+            cleanedRow[pairKey] = item
+        })
+
+        if (Object.keys(cleanedRow).length > 0) {
+            next[dayKey] = cleanedRow
+        } else if (Object.keys(row).length > 0) {
+            changed = true
+        }
+    })
+
+    if (changed) {
+        saveTodayContactsDB(next)
+    }
+
+    return next
+}
+
+function findActiveTodayContactRecord(a, b){
+    const db = cleanupExpiredTodayContacts()
+    const pairKey = makePairKey(a, b)
+
+    for (const dayKey of Object.keys(db)) {
+        const row = db[dayKey]
+        if (row && row[pairKey]) {
+            return {
+                dayKey,
+                item: row[pairKey]
+            }
+        }
+    }
+
+    return null
+}
+
+function loadTodayContacts(dayKey = null){
+    const db = cleanupExpiredTodayContacts()
+
+    if (dayKey) {
+        const row = db[dayKey]
+        return row && typeof row === "object" ? row : {}
+    }
+
+    const merged = {}
+
+    Object.values(db).forEach(row => {
+        if (!row || typeof row !== "object") return
+
+        Object.entries(row).forEach(([pairKey, item]) => {
+            if (!merged[pairKey] || Number(item?.t ?? 0) > Number(merged[pairKey]?.t ?? 0)) {
+                merged[pairKey] = item
+            }
+        })
+    })
+
+    return merged
+}
+
+function isTodayContact(a, b){
+    return !!findActiveTodayContactRecord(a, b)
+}
+
+function markTodayContact(a, b, dayKey = getCurrentRunDay()){
+    if (!a || !b || a === b) return
+
+    const db = cleanupExpiredTodayContacts()
+
+    const existing = findActiveTodayContactRecord(a, b)
+    if (existing?.dayKey && db[existing.dayKey]) {
+        delete db[existing.dayKey][makePairKey(a, b)]
+        if (!Object.keys(db[existing.dayKey]).length) {
+            delete db[existing.dayKey]
+        }
+    }
+
+    if (!db[dayKey] || typeof db[dayKey] !== "object") {
+        db[dayKey] = {}
+    }
+
+    const key = makePairKey(a, b)
+
+    db[dayKey][key] = {
+        a,
+        b,
+        t: Date.now(),
+        expiresAt: Date.now() + MTOS_CONTACT_TTL_MS,
+        weight: 1
+    }
+
+    saveTodayContactsDB(db)
+
+    if (typeof window.registerMTOSOutcome === "function") {
+        window.registerMTOSOutcome({
+            relationId: `${a}->${b}`,
+            outcome: "good",
+            value: 0.15
+        })
+    }
+
+    runMTOS()
+}
+
+function unmarkTodayContact(a, b){
+    const db = cleanupExpiredTodayContacts()
+    const pairKey = makePairKey(a, b)
+    let changed = false
+
+    Object.keys(db).forEach(dayKey => {
+        if (db[dayKey] && db[dayKey][pairKey]) {
+            delete db[dayKey][pairKey]
+            changed = true
+
+            if (!Object.keys(db[dayKey]).length) {
+                delete db[dayKey]
+            }
+        }
+    })
+
+    if (changed) {
+        saveTodayContactsDB(db)
+        runMTOS()
+    }
+}
+
+function buildEffectiveRelationMemory(baseMemory, dayKey = getCurrentRunDay()){
+    const memory = { ...(baseMemory || {}) }
+    const contacts = loadTodayContacts(dayKey)
+
+    Object.values(contacts).forEach(item => {
+        if (!item?.a || !item?.b) return
+
+        const a = item.a
+        const b = item.b
+        const boost = 1.75
+
+        const k1 = `${a}->${b}`
+        const k2 = `${b}->${a}`
+
+        memory[k1] = Math.max(Number(memory[k1] ?? 0), boost)
+        memory[k2] = Math.max(Number(memory[k2] ?? 0), boost)
+    })
+
+    return memory
+}
+
+window.markTodayContact = markTodayContact
+window.unmarkTodayContact = unmarkTodayContact
+window.isTodayContact = isTodayContact
+window.loadTodayContacts = loadTodayContacts
+
+function resolveSharedRelationScore(baseScore, attractorState = null, timePressureState = null){
+    let score = Number(baseScore ?? 0)
+
+    const tp = timePressureState || window.mtosTimePressureSummary || window.mtosTimePressure || {
+        pressure: 0,
+        urgency: 0,
+        label: "low",
+        temporalMode: "EXPLORE"
+    }
+
+    const pressure = Number(tp.pressure ?? tp.value ?? 0)
+    const attractor = attractorState || window.mtosAttractorState || {
+        type: "unknown",
+        intensity: 0
+    }
+
+    if (pressure >= 0.82) {
+        if (score > 0) {
+            score *= (1 - 0.22 * pressure)
+        } else if (score < 0) {
+            score *= (1 + 0.26 * pressure)
+        }
+
+        if (Math.abs(score) < 0.2) {
+            score *= (1 - 0.14 * pressure)
+        }
+    }
+    else if (pressure >= 0.62) {
+        if (score > 0) {
+            score *= (1 - 0.12 * pressure)
+        } else if (score < 0) {
+            score *= (1 + 0.16 * pressure)
+        }
+    }
+    else if (pressure < 0.34) {
+        if (score > 0) {
+            score *= (1 + 0.05 * (1 - pressure))
+        }
+    }
+
+    const type = String(attractor?.type || "unknown")
+    const intensity = Number(attractor?.intensity ?? 0)
+
+    if (type === "chaos") {
+        if (score > 0) {
+            score *= (1 - 0.15 * intensity)
+        } else if (score < 0) {
+            score *= (1 + 0.18 * intensity)
+        }
+    } else if (type === "cycle") {
+        score *= (1 + 0.08 * intensity)
+    } else if (type === "trend") {
+        if (Math.abs(score) > 0.3) {
+            score *= (1 + 0.12 * intensity)
+        }
+    } else if (type === "stable") {
+        score *= (1 - 0.05 * intensity)
+    }
+
+    return Math.max(-1, Math.min(1, Number(score.toFixed(4))))
+}
+
+window.resolveSharedRelationScore = resolveSharedRelationScore
+
+window.cleanupExpiredTodayContacts = cleanupExpiredTodayContacts
+
+function clampHuman01(v){
     const n = Number(v)
     if (!Number.isFinite(n)) return 0
     return Math.max(0, Math.min(1, n))
+}
+
+function getCurrentUserName(){
+    return document.getElementById("name")?.value?.trim() || ""
+}
+
+window.getCurrentUserName = getCurrentUserName
+
+function getCurrentRunDay(){
+    const y = Number(window._date?.year || 0)
+    const m = Number(window._date?.month || 0)
+    const d = Number(window._date?.day || 0)
+
+    if (!y || !m || !d) {
+        return new Date().toISOString().slice(0, 10)
+    }
+
+    const dt = new Date(Date.UTC(y, m - 1, d))
+    return dt.toISOString().slice(0, 10)
+}
+
+window.getCurrentRunDay = getCurrentRunDay
+
+function loadHumanFeedback(){
+    try{
+        const raw = localStorage.getItem(MTOS_AUTO_FEEDBACK_KEY)
+        const parsed = raw ? JSON.parse(raw) : {}
+        return parsed && typeof parsed === "object" ? parsed : {}
+    }catch(e){
+        return {}
+    }
+}
+
+function saveHumanFeedback(state){
+    localStorage.setItem(MTOS_AUTO_FEEDBACK_KEY, JSON.stringify(state))
+}
+
+function getHumanFeedbackFor(day, name){
+    const db = loadHumanFeedback()
+    return db[`${day}__${name}`] || null
+}
+
+function setHumanFeedbackFor(day, name, value){
+    if (!day || !name) return null
+
+    const allowed = ["good", "neutral", "bad"]
+    const safeValue = allowed.includes(String(value).toLowerCase())
+        ? String(value).toLowerCase()
+        : "neutral"
+
+    const db = loadHumanFeedback()
+    const key = `${day}__${name}`
+
+    db[key] = {
+        ...(db[key] || {}),
+        day,
+        name,
+        value: safeValue,
+        t: Date.now(),
+
+        userKin: Number(window._userKin || 0),
+        todayKin: Number(window._todayKin || 0),
+
+        label: String(window.mtosDayState?.dayLabel || "UNKNOWN"),
+        mode: String(window.mtosDecision?.mode || "UNKNOWN"),
+
+        attention: Number(window.mtosDayState?.attention ?? 0.5),
+        activity: Number(window.mtosDayState?.activity ?? 0.5),
+        pressure: Number(window.mtosDayState?.pressure ?? 0),
+        conflict: Number(window.mtosDayState?.conflict ?? 0),
+        stability: Number(window.mtosDayState?.stability ?? 0.5),
+        field: Number(window.mtosDayState?.field ?? 0.5),
+
+        attractorType: String(window.mtosAttractorState?.type || "unknown"),
+        attractorIntensity: Number(window.mtosAttractorState?.intensity ?? 0),
+
+        temporalMode: String(window.mtosTimePressureSummary?.temporalMode || "EXPLORE"),
+        timePressure: Number(window.mtosTimePressureSummary?.value ?? 0),
+
+        auto: false,
+
+        ...computeFeedbackStateSignature(window.mtosDayState || {})
+    }
+
+    saveHumanFeedback(db)
+    enrichSnapshotsWithFeedbackContext()
+
+    return db[key]
+}
+
+window.setHumanFeedbackFor = setHumanFeedbackFor
+
+function loadRelationFeedback(){
+    try{
+        const raw = localStorage.getItem(MTOS_RELATION_FEEDBACK_KEY)
+        const parsed = raw ? JSON.parse(raw) : {}
+        return parsed && typeof parsed === "object" ? parsed : {}
+    }catch(e){
+        return {}
+    }
+}
+
+function saveRelationFeedback(state){
+    localStorage.setItem(MTOS_RELATION_FEEDBACK_KEY, JSON.stringify(state))
+}
+
+function getRelationFeedbackKey(day, a, b){
+    const left = String(a || "").trim()
+    const right = String(b || "").trim()
+    if (!day || !left || !right) return ""
+    return `${day}__${[left, right].sort().join("::")}`
+}
+
+function setRelationFeedbackFor(day, a, b, value){
+    const safeValue = ["good", "neutral", "bad"].includes(String(value).toLowerCase())
+        ? String(value).toLowerCase()
+        : "neutral"
+
+    const key = getRelationFeedbackKey(day, a, b)
+    if (!key) return null
+
+    const db = loadRelationFeedback()
+
+    db[key] = {
+        day,
+        a: String(a || "").trim(),
+        b: String(b || "").trim(),
+        value: safeValue,
+        t: Date.now()
+    }
+
+    saveRelationFeedback(db)
+
+    try{
+        localStorage.setItem(MTOS_FEEDBACK_ACK_KEY, JSON.stringify({
+            t: Date.now(),
+            value: safeValue,
+            a: String(a || "").trim(),
+            b: String(b || "").trim()
+        }))
+    }catch(e){}
+
+    return db[key]
+}
+
+function getRelationFeedbackFor(day, a, b){
+    const key = getRelationFeedbackKey(day, a, b)
+    if (!key) return null
+    const db = loadRelationFeedback()
+    return db[key] || null
+}
+
+function getRelationFeedbackScalar(day, a, b){
+    const row = getRelationFeedbackFor(day, a, b)
+    if (!row) return 0
+
+    if (row.value === "good") return 0.22
+    if (row.value === "bad") return -0.22
+    return 0
+}
+
+function getFeedbackAck(){
+    try{
+        const raw = localStorage.getItem(MTOS_FEEDBACK_ACK_KEY)
+        const parsed = raw ? JSON.parse(raw) : null
+        return parsed && typeof parsed === "object" ? parsed : null
+    }catch(e){
+        return null
+    }
+}
+
+window.setRelationFeedbackFor = setRelationFeedbackFor
+window.getRelationFeedbackFor = getRelationFeedbackFor
+window.getRelationFeedbackScalar = getRelationFeedbackScalar
+window.getFeedbackAck = getFeedbackAck
+
+window.registerMTOSOutcome = function(payload = {}){
+    const day = getCurrentRunDay()
+    const name = getCurrentUserName()
+
+    if (!day || !name) return
+
+    const outcome = String(payload.outcome || "neutral").toLowerCase()
+    setHumanFeedbackFor(day, name, outcome)
+
+    logEvent("mtos_outcome_feedback", {
+        day,
+        name,
+        outcome,
+        relationId: String(payload.relationId || ""),
+        value: Number(payload.value ?? 0)
+    })
+
+    if (window._rerenderMTOS) {
+        window._rerenderMTOS()
+    } else {
+        renderDecisionSummaryPanel("humanLayer")
+    }
+}
+
+function evaluateGoalAutoFeedback(user, ds, decision){
+    const goal = String(user?.goal || "stability").toLowerCase()
+    const goalWeight = Math.max(0, Math.min(1, Number(user?.goalWeight ?? 0.65)))
+
+    const attention = clampHuman01(Number(ds?.attention ?? 0.5))
+    const pressure = clampHuman01(Number(ds?.pressure ?? 0))
+    const conflict = clampHuman01(Number(ds?.conflict ?? 0))
+    const stability = clampHuman01(Number(ds?.stability ?? 0.5))
+    const field = clampHuman01(Number(ds?.field ?? 0.5))
+    const support = clampHuman01(Number(window.mtosNetworkFeedback?.supportRatio ?? 0))
+    const conflictRatio = clampHuman01(Number(window.mtosNetworkFeedback?.conflictRatio ?? 0))
+
+    let score = 0.5
+
+    if (goal === "stability") {
+        score =
+            stability * 0.42 +
+            (1 - pressure) * 0.24 +
+            (1 - conflict) * 0.18 +
+            field * 0.16
+    } else if (goal === "growth") {
+        score =
+            attention * 0.34 +
+            field * 0.26 +
+            Math.min(pressure, 0.62) * 0.14 +
+            stability * 0.14 +
+            (1 - conflict) * 0.12
+    } else if (goal === "social") {
+        score =
+            support * 0.34 +
+            (1 - conflictRatio) * 0.24 +
+            attention * 0.18 +
+            field * 0.12 +
+            (1 - conflict) * 0.12
+    } else if (goal === "explore") {
+        score =
+            field * 0.28 +
+            attention * 0.22 +
+            (1 - conflict) * 0.14 +
+            Math.min(pressure, 0.68) * 0.16 +
+            stability * 0.20
+    }
+
+    const mode = String(decision?.mode || "").toUpperCase()
+
+    if (goal === "stability" && mode === "REST") score += 0.08 * goalWeight
+    if (goal === "growth" && mode === "FOCUS") score += 0.08 * goalWeight
+    if (goal === "social" && mode === "INTERACT") score += 0.08 * goalWeight
+    if (goal === "explore" && mode === "EXPLORE") score += 0.08 * goalWeight
+
+    score = Math.max(0, Math.min(1, score))
+
+    let value = "neutral"
+    if (score >= 0.68) value = "good"
+    else if (score <= 0.42) value = "bad"
+
+    return {
+        value,
+        score: Number(score.toFixed(3)),
+        goal,
+        goalWeight: Number(goalWeight.toFixed(3))
+    }
+}
+
+function storeAutoFeedbackForCurrentRun(name, user, ds, decision){
+    const day = getCurrentRunDay()
+    if (!name || !day || !user || !ds) return null
+
+    const db = loadHumanFeedback()
+    const key = `${day}__${name}`
+
+    const auto = evaluateGoalAutoFeedback(user, ds, decision)
+
+    db[key] = {
+        day,
+        name,
+        value: auto.value,
+        t: Date.now(),
+
+        userKin: Number(window._userKin || 0),
+        todayKin: Number(window._todayKin || 0),
+
+        label: String(window.mtosDayState?.dayLabel || "UNKNOWN"),
+        mode: String(decision?.mode || "UNKNOWN"),
+
+        attention: Number(ds.attention ?? 0.5),
+        activity: Number(ds.activity ?? 0.5),
+        pressure: Number(ds.pressure ?? 0),
+        conflict: Number(ds.conflict ?? 0),
+        stability: Number(ds.stability ?? 0.5),
+        field: Number(ds.field ?? 0.5),
+
+        attractorType: String(window.mtosAttractorState?.type || "unknown"),
+        attractorIntensity: Number(window.mtosAttractorState?.intensity ?? 0),
+
+        temporalMode: String(window.mtosTimePressureSummary?.temporalMode || "EXPLORE"),
+        timePressure: Number(window.mtosTimePressureSummary?.value ?? 0),
+
+        goal: auto.goal,
+        goalWeight: auto.goalWeight,
+        autoScore: auto.score,
+        auto: true,
+
+        ...computeFeedbackStateSignature(ds)
+    }
+
+    saveHumanFeedback(db)
+    enrichSnapshotsWithFeedbackContext()
+
+    return db[key]
+}
+
+function getSimpleHumanState(ds){
+    const label = String(ds?.dayLabel || "NEUTRAL").toUpperCase()
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+    const stability = Number(ds?.stability ?? 0.5)
+    const attention = Number(ds?.attention ?? 0.5)
+    const attractorType = String(window.mtosAttractorState?.type || "unknown")
+
+    if (label === "RECOVERY") return "RECOVERY"
+    if (label === "FATIGUE") return "HEAVY"
+    if (attractorType === "chaos" || conflict >= 0.52 || pressure >= 0.70) return "CHAOTIC"
+    if (label === "FOCUS" || (attention >= 0.70 && stability >= 0.60)) return "FOCUSED"
+    if (label === "FLOW") return "LIGHT"
+    return "BALANCED"
+}
+
+function getSimpleHumanColor(state){
+    if (state === "FOCUSED") return "#00ff88"
+    if (state === "LIGHT") return "#66ccff"
+    if (state === "HEAVY") return "#ffb347"
+    if (state === "CHAOTIC") return "#ff6666"
+    if (state === "RECOVERY") return "#c084fc"
+    return "#d1d5db"
+}
+
+function getSimpleWhy(ds){
+    const parts = []
+
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+    const stability = Number(ds?.stability ?? 0.5)
+    const attention = Number(ds?.attention ?? 0.5)
+    const attractorType = String(window.mtosAttractorState?.type || "unknown")
+    const timePressure = Number(window.mtosTimePressureSummary?.value ?? 0)
+
+    if (attention >= 0.68) parts.push("attention is strong")
+    else if (attention <= 0.40) parts.push("attention is scattered")
+
+    if (pressure >= 0.62) parts.push("pressure is elevated")
+    if (conflict >= 0.42) parts.push("internal conflict is visible")
+    if (stability >= 0.62) parts.push("stability is good")
+    else if (stability <= 0.42) parts.push("stability is weak")
+
+    if (attractorType && attractorType !== "unknown") {
+        parts.push(`attractor is ${attractorType}`)
+    }
+
+    if (timePressure >= 0.62) {
+        parts.push("time pressure is high")
+    }
+
+    if (!parts.length) {
+        parts.push("system is in a moderate balanced state")
+    }
+
+    return parts.join(" · ")
+}
+
+function loadDailySnapshotsForUser(name){
+    try{
+        const rows = JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+        if (!Array.isArray(rows)) return []
+
+        return rows
+            .filter(row => row && row.name === name)
+            .slice()
+            .sort((a, b) => String(b.day || "").localeCompare(String(a.day || "")))
+    }catch(e){
+        return []
+    }
+}
+
+function renderHumanHistory(name){
+    const rows = loadDailySnapshotsForUser(name).slice(0, 7)
+
+    if (!rows.length) {
+        return `
+            <div class="human-history-row">
+                <div class="human-history-date">—</div>
+                <div class="human-history-state">No snapshots yet</div>
+                <div class="human-history-mode">Run MTOS on different days to build history</div>
+            </div>
+        `
+    }
+
+    return rows.map(row => {
+        const fb = getHumanFeedbackFor(row.day, name)
+        const fbText = fb ? ` · feedback: ${fb.value}` : ""
+
+        return `
+            <div class="human-history-row">
+                <div class="human-history-date">${row.day || "?"}</div>
+                <div class="human-history-state">${row.dayLabel || "UNKNOWN"}${fbText}</div>
+                <div class="human-history-mode">${row.recommendedMode || "UNKNOWN"} · predictability ${Number(row.predictability ?? 0).toFixed(0)}</div>
+            </div>
+        `
+    }).join("")
+}
+
+function renderHumanLayer(data){
+
+    const el = document.getElementById("humanLayer")
+    if(!el) return
+
+    const mode = data.recommendedMode || "UNKNOWN"
+    const confidence = (data.trust || 0.5)
+
+    let action = ""
+    let avoid = ""
+
+    if(mode === "FOCUS"){
+        action = "Deep work. Work alone."
+        avoid = "Distractions. Social noise."
+    }
+    else if(mode === "SOCIAL"){
+        action = "Communicate. Build connections."
+        avoid = "Isolation."
+    }
+    else if(mode === "EXPLORE"){
+        action = "Try new things."
+        avoid = "Routine loops."
+    }
+    else if(mode === "REST"){
+        action = "Recover. Slow down."
+        avoid = "Overload."
+    }
+
+    el.innerHTML = `
+        <div class="mobile-card">
+
+            <div class="mobile-title">${mode}</div>
+            <div class="mobile-sub">Confidence: ${confidence.toFixed(2)}</div>
+
+            <div class="mobile-section">
+                <div class="mobile-label">DO</div>
+                <div class="mobile-text">${action}</div>
+            </div>
+
+            <div class="mobile-section">
+                <div class="mobile-label">AVOID</div>
+                <div class="mobile-text">${avoid}</div>
+            </div>
+
+        </div>
+    `
+}
+
+function feedbackValueToScore(value){
+    if (value === "good") return 1
+    if (value === "bad") return -1
+    return 0
+}
+
+function normalizeModeName(mode){
+    const m = String(mode || "").trim().toUpperCase()
+
+    if (m === "FOCUS") return "FOCUS"
+    if (m === "REST") return "REST"
+    if (m === "EXPLORE") return "EXPLORE"
+    if (m === "INTERACT") return "INTERACT"
+    if (m === "FLOW") return "EXPLORE"
+    if (m === "RECOVERY") return "REST"
+    if (m === "FATIGUE") return "REST"
+    if (m === "NEUTRAL") return "EXPLORE"
+
+    return m || "EXPLORE"
+}
+
+function loadAllHumanFeedbackRows(){
+    const db = loadHumanFeedback()
+    return Object.values(db || {}).filter(Boolean)
+}
+
+function computeFeedbackStateSignature(ds){
+    const attention = clampHuman01(Number(ds?.attention ?? 0.5))
+    const pressure = clampHuman01(Number(ds?.pressure ?? 0))
+    const conflict = clampHuman01(Number(ds?.conflict ?? 0))
+    const stability = clampHuman01(Number(ds?.stability ?? 0.5))
+    const attractorType = String(window.mtosAttractorState?.type || "unknown")
+    const temporalMode = String(window.mtosTimePressureSummary?.temporalMode || "EXPLORE").toUpperCase()
+
+    return {
+        attentionBand: Math.round(attention * 4),
+        pressureBand: Math.round(pressure * 4),
+        conflictBand: Math.round(conflict * 4),
+        stabilityBand: Math.round(stability * 4),
+        attractorType,
+        temporalMode
+    }
+}
+
+function isSimilarFeedbackState(a, b){
+    if (!a || !b) return false
+
+    const close =
+        Math.abs(Number(a.attentionBand ?? 0) - Number(b.attentionBand ?? 0)) <= 1 &&
+        Math.abs(Number(a.pressureBand ?? 0) - Number(b.pressureBand ?? 0)) <= 1 &&
+        Math.abs(Number(a.conflictBand ?? 0) - Number(b.conflictBand ?? 0)) <= 1 &&
+        Math.abs(Number(a.stabilityBand ?? 0) - Number(b.stabilityBand ?? 0)) <= 1
+
+    const sameAttractor =
+        String(a.attractorType || "unknown") === String(b.attractorType || "unknown")
+
+    const sameTemporal =
+        String(a.temporalMode || "EXPLORE") === String(b.temporalMode || "EXPLORE")
+
+    return close && sameAttractor && sameTemporal
+}
+
+function getFeedbackLearningSummary(name, ds){
+    const rows = loadAllHumanFeedbackRows()
+    const signature = computeFeedbackStateSignature(ds)
+
+    const summary = {
+        FOCUS: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
+        REST: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
+        EXPLORE: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
+        INTERACT: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 }
+    }
+
+    rows.forEach(row => {
+        if (!row || row.name !== name) return
+
+        const rowMode = normalizeModeName(row.mode)
+        if (!summary[rowMode]) return
+
+        const rowSignature = {
+            attentionBand: Math.round(clampHuman01(Number(row.attention ?? 0.5)) * 4),
+            pressureBand: Math.round(clampHuman01(Number(row.pressure ?? 0)) * 4),
+            conflictBand: Math.round(clampHuman01(Number(row.conflict ?? 0)) * 4),
+            stabilityBand: Math.round(clampHuman01(Number(row.stability ?? 0.5)) * 4),
+            attractorType: String(row.attractorType || "unknown"),
+            temporalMode: String(row.temporalMode || "EXPLORE").toUpperCase()
+        }
+
+        if (!isSimilarFeedbackState(signature, rowSignature)) return
+
+        const value = String(row.value || "neutral")
+        summary[rowMode].total += 1
+
+        if (value === "good") summary[rowMode].good += 1
+        else if (value === "bad") summary[rowMode].bad += 1
+        else summary[rowMode].neutral += 1
+    })
+
+    Object.keys(summary).forEach(mode => {
+        const item = summary[mode]
+        if (!item.total) {
+            item.score = 0
+            return
+        }
+
+        item.score =
+            (
+                item.good * 1.0 +
+                item.neutral * 0.15 -
+                item.bad * 1.2
+            ) / item.total
+    })
+
+    return summary
+}
+
+function enrichSnapshotsWithFeedbackContext(){
+    try{
+        const rows = JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+        if (!Array.isArray(rows) || !rows.length) return
+
+        const feedbackDb = loadHumanFeedback()
+        let changed = false
+
+        const next = rows.map(row => {
+            if (!row || !row.day || !row.name) return row
+
+            const key = `${row.day}__${row.name}`
+            const fb = feedbackDb[key]
+            if (!fb) return row
+
+            if (
+                row.feedbackValue === fb.value &&
+                row.feedbackAt &&
+                row.feedbackAt === fb.t
+            ) {
+                return row
+            }
+
+            changed = true
+
+            return {
+                ...row,
+                feedbackValue: fb.value,
+                feedbackAt: fb.t,
+                feedbackMode: fb.mode,
+                feedbackLabel: fb.label
+            }
+        })
+
+        if (changed) {
+            localStorage.setItem("mtos_daily_snapshots", JSON.stringify(next))
+        }
+    }catch(e){
+        console.warn("snapshot feedback enrich failed", e)
+    }
+}
+
+function applyFeedbackToDecision(baseDecision, name, ds){
+    const decision = baseDecision && typeof baseDecision === "object"
+        ? { ...baseDecision }
+        : { mode: "EXPLORE", text: "No decision", confidence: 0.5 }
+
+    const currentMode = normalizeModeName(decision.mode)
+    const summary = getFeedbackLearningSummary(name, ds)
+
+    const candidates = ["FOCUS", "REST", "EXPLORE", "INTERACT"].map(mode => {
+        const score = Number(summary[mode]?.score ?? 0)
+        return {
+            mode,
+            score,
+            total: Number(summary[mode]?.total ?? 0),
+            good: Number(summary[mode]?.good ?? 0),
+            bad: Number(summary[mode]?.bad ?? 0)
+        }
+    })
+
+    const currentCandidate = candidates.find(c => c.mode === currentMode) || {
+        mode: currentMode,
+        score: 0,
+        total: 0,
+        good: 0,
+        bad: 0
+    }
+
+    const bestCandidate = candidates
+        .slice()
+        .sort((a, b) => b.score - a.score)[0]
+
+    decision.feedbackLearning = {
+        current: currentCandidate,
+        best: bestCandidate,
+        candidates
+    }
+
+    decision.feedbackAdjusted = false
+    decision.feedbackReason = "No strong feedback pattern yet."
+
+    const enoughEvidenceForCurrent = currentCandidate.total >= 2
+    const strongNegativeCurrent = currentCandidate.score <= -0.35
+    const strongPositiveCurrent = currentCandidate.score >= 0.35
+
+    const alternativeBetter =
+        bestCandidate &&
+        bestCandidate.mode !== currentMode &&
+        bestCandidate.total >= 2 &&
+        bestCandidate.score >= 0.25 &&
+        (bestCandidate.score - currentCandidate.score) >= 0.40
+
+    if (enoughEvidenceForCurrent && strongNegativeCurrent && alternativeBetter) {
+        decision.mode = bestCandidate.mode
+        decision.feedbackAdjusted = true
+        decision.feedbackReason =
+            `Past feedback says ${currentMode} performs badly in similar states; switched to ${bestCandidate.mode}.`
+    } else if (enoughEvidenceForCurrent && strongNegativeCurrent) {
+        decision.confidence = Math.max(0.18, Number(decision.confidence ?? 0.5) - 0.22)
+        decision.feedbackAdjusted = true
+        decision.feedbackReason =
+            `Past feedback says ${currentMode} often performs badly in similar states; confidence reduced.`
+    } else if (enoughEvidenceForCurrent && strongPositiveCurrent) {
+        decision.confidence = Math.min(0.98, Number(decision.confidence ?? 0.5) + 0.10)
+        decision.feedbackAdjusted = true
+        decision.feedbackReason =
+            `Past feedback says ${currentMode} performs well in similar states; confidence increased.`
+    }
+
+    if (decision.feedbackAdjusted) {
+        if (decision.mode === "FOCUS") {
+            decision.text = "FOCUS — this mode has worked better for you in similar states."
+        } else if (decision.mode === "REST") {
+            decision.text = "REST — past feedback suggests recovery is safer here."
+        } else if (decision.mode === "EXPLORE") {
+            decision.text = "EXPLORE — flexible mode fits better than forcing execution."
+        } else if (decision.mode === "INTERACT") {
+            decision.text = "INTERACT — social/action mode has better past response here."
+        }
+    }
+
+    return decision
 }
 
 function loadMemoryLayers() {
@@ -602,6 +1676,8 @@ function saveAutoDailySnapshot({
 }) {
     const day = new Date().toISOString().slice(0, 10)
 
+    const feedback = getHumanFeedbackFor(day, name)
+
     if (!name || !userKin || !todayKin || !uiMetrics || !dayState) {
         return
     }
@@ -623,6 +1699,13 @@ function saveAutoDailySnapshot({
         dayScore: Number(dayState.dayScore ?? 0),
 
         recommendedMode: window.mtosAdaptiveMode?.mode || getRecommendedMode(dayState) || "UNKNOWN",
+
+        decisionMode: String(window.mtosDecision?.mode || "UNKNOWN"),
+decisionText: String(window.mtosDecision?.text || ""),
+feedbackAdjusted: Boolean(window.mtosDecision?.feedbackAdjusted || false),
+feedbackReason: String(window.mtosDecision?.feedbackReason || ""),
+feedbackValue: String(feedback?.value || ""),
+feedbackAt: Number(feedback?.t || 0),
 
         attention: Number(uiMetrics.attention ?? 0),
         noise: Number(uiMetrics.noise ?? 0),
@@ -654,6 +1737,22 @@ function saveAutoDailySnapshot({
 
 export async function runMTOS() {
 
+window.mtosMetabolicMetrics = {
+    P: 0.5,
+    V: 1.0,
+    T: 0.5,
+    phi: 0.5,
+    k: 1.0,
+    consistency: 0.5,
+    stability: 0.5,
+    pressureSeries: [],
+    temperatureSeries: [],
+    phiSeries: [],
+    kSeries: [],
+    consistencySeries: [],
+    stabilitySeries: []
+}
+
     const status = document.getElementById("status")
 
     const name = document.getElementById("name").value.trim()
@@ -663,9 +1762,9 @@ export async function runMTOS() {
 
         const runtimeKey = `${name}_${year}_${month}_${day}`
 
-    window._mtosRunCache = window._mtosRunCache || {}
+window._mtosRunCache = window._mtosRunCache || {}
 
-    if (window._mtosRunCache[runtimeKey]) {
+if (window._mtosRunCache[runtimeKey]) {
         const cached = window._mtosRunCache[runtimeKey]
 
         window._weather = cached.weather
@@ -679,6 +1778,29 @@ export async function runMTOS() {
         window.mtosUnifiedMetrics = cached.uiMetrics || null
         window.mtosDaySync = cached.daySync || null
         window.currentUsers = cached.users || []
+
+        window.mtosMetabolicMetrics = cached.metabolicMetrics || {
+    P: 0.5,
+    V: 1.0,
+    T: 0.5,
+    phi: 0.5,
+    k: 1.0,
+    consistency: 0.5,
+    stability: 0.5,
+    pressureSeries: [],
+    temperatureSeries: [],
+    phiSeries: [],
+    kSeries: [],
+    consistencySeries: [],
+    stabilitySeries: []
+}
+
+        window.mtosTimePressure = cached.timePressure || null
+        window.mtosTimePressureSummary = cached.timePressureSummary || {
+        value: 0,
+        label: "low",
+        temporalMode: "EXPLORE"
+    }
 
         window.mtosUserMeta = cached.userMeta || null
         window.mtosTodayMeta = cached.todayMeta || null
@@ -711,18 +1833,157 @@ export async function runMTOS() {
             day
         )
 
-        window._rerenderMTOS = () => {
-            renderAll(
-                window._weather,
-                window._weatherToday,
-                window._pressure,
-                window._userKin,
-                window._todayKin,
-                window._date.year,
-                window._date.month,
-                window._date.day
-            )
-        }
+if (window.mtosDecision) {
+    window.updateMTOSBranch("decision", {
+        mode: String(window.mtosDecision?.mode || "EXPLORE"),
+        action: String(
+            window.mtosDecision?.text ||
+            window.mtosDecision?.action ||
+            "Observe the field and avoid impulsive actions."
+        ),
+        reason: String(
+            window.mtosDecision?.feedbackReason ||
+            window.mtosDecision?.reason ||
+            window.mtosDecision?.why ||
+            "Derived from cached day state."
+        ),
+        confidence: Math.round(
+            Math.max(0, Math.min(1, Number(window.mtosDecision?.confidence ?? 0.5))) * 100
+        ),
+        targets: { primary: [], avoid: [], neutral: [] },
+        source: "human_decision_layer_cache",
+        createdAt: new Date().toISOString()
+    })
+}
+
+        const netRelations = Array.isArray(window.currentNetworkRelations)
+    ? window.applyMTOSMemoryToRelations(window.currentNetworkRelations)
+    : []
+
+const relationSummary = {
+    supportCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("support")).length,
+    conflictCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("conflict")).length,
+    ultraCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("ultra")).length
+}
+
+window.updateMTOSBranch("network", {
+    relations: netRelations,
+    relationSummary,
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? 0)
+})
+
+const resolvedCacheTargets = typeof window.resolveDecisionTargets === "function"
+    ? window.resolveDecisionTargets()
+    : { primary: [], avoid: [], neutral: [] }
+
+const cacheSelectedName = getSelectedDecisionTarget()
+
+const allCacheTargets = [
+    ...(Array.isArray(resolvedCacheTargets.primary) ? resolvedCacheTargets.primary : []),
+    ...(Array.isArray(resolvedCacheTargets.neutral) ? resolvedCacheTargets.neutral : []),
+    ...(Array.isArray(resolvedCacheTargets.avoid) ? resolvedCacheTargets.avoid : [])
+]
+
+const cacheSelectedTarget =
+    allCacheTargets.find(x => x.name === cacheSelectedName) ||
+    (resolvedCacheTargets.primary?.[0] || resolvedCacheTargets.neutral?.[0] || null)
+
+if (cacheSelectedTarget?.name) {
+    setSelectedDecisionTarget(cacheSelectedTarget.name)
+}
+
+window.updateMTOSBranch("decision", {
+    ...(window.MTOS_STATE?.decision || {}),
+    targets: resolvedCacheTargets,
+    selectedTarget: cacheSelectedTarget || null
+})
+
+window.updateMTOSBranch("collective", {
+    ...(window.mtosCollectiveState || {}),
+    stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? window.mtosCollectiveState?.timePressure ?? 0)
+})
+
+window.evaluateMTOSEvents()
+window.commitMTOSDecisionToMemory()
+
+renderSystemEventsPanel()
+renderSystemDecisionPanel()
+
+renderDecisionTargetsPanel()
+renderFieldTensionPanel()
+renderActionTracePanel()
+
+
+window._rerenderMTOS = () => {
+    renderAll(
+        window._weather,
+        window._weatherToday,
+        window._pressure,
+        window._userKin,
+        window._todayKin,
+        window._date.year,
+        window._date.month,
+        window._date.day
+    )
+
+    const netRelations = Array.isArray(window.currentNetworkRelations)
+        ? window.applyMTOSMemoryToRelations(window.currentNetworkRelations)
+        : []
+
+    const relationSummary = {
+        supportCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("support")).length,
+        conflictCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("conflict")).length,
+        ultraCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("ultra")).length
+    }
+
+    window.updateMTOSBranch("network", {
+        relations: netRelations,
+        relationSummary,
+        timePressure: Number(window.mtosTimePressureSummary?.value ?? 0)
+    })
+
+    const rerenderTargets = typeof window.resolveDecisionTargets === "function"
+    ? window.resolveDecisionTargets()
+    : { primary: [], avoid: [], neutral: [] }
+
+const rerenderSelectedName = getSelectedDecisionTarget()
+
+const allRerenderTargets = [
+    ...(Array.isArray(rerenderTargets.primary) ? rerenderTargets.primary : []),
+    ...(Array.isArray(rerenderTargets.neutral) ? rerenderTargets.neutral : []),
+    ...(Array.isArray(rerenderTargets.avoid) ? rerenderTargets.avoid : [])
+]
+
+const rerenderSelectedTarget =
+    allRerenderTargets.find(x => x.name === rerenderSelectedName) ||
+    (rerenderTargets.primary?.[0] || rerenderTargets.neutral?.[0] || null)
+
+if (rerenderSelectedTarget?.name) {
+    setSelectedDecisionTarget(rerenderSelectedTarget.name)
+}
+
+window.updateMTOSBranch("decision", {
+    ...(window.MTOS_STATE?.decision || {}),
+    targets: rerenderTargets,
+    selectedTarget: rerenderSelectedTarget || null
+})
+
+    window.updateMTOSBranch("collective", {
+        ...(window.mtosCollectiveState || {}),
+        stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
+        timePressure: Number(window.mtosTimePressureSummary?.value ?? window.mtosCollectiveState?.timePressure ?? 0)
+    })
+
+    window.evaluateMTOSEvents()
+    window.commitMTOSDecisionToMemory()
+
+    renderSystemEventsPanel()
+    renderSystemDecisionPanel()
+    renderDecisionTargetsPanel()
+    renderFieldTensionPanel()
+    renderActionTracePanel()
+}
 
         status.innerText = "Done (cache)"
         return
@@ -761,13 +2022,13 @@ export async function runMTOS() {
         // ===============================
         // PYTHON CORE
         // ===============================
-        const result = JSON.parse(pyodide.runPython(`
-
+const result = JSON.parse(pyodide.runPython(`
 import json
 import datetime
+import numpy as np
 
-weather = mtos_260_weather(${JSON.stringify(name)},${year},${month},${day})
-kin = mtos_current_kin_NEW(${JSON.stringify(name)},${year},${month},${day})
+weather = mtos_260_weather(${JSON.stringify(name)}, ${year}, ${month}, ${day})
+kin = mtos_current_kin_NEW(${JSON.stringify(name)}, ${year}, ${month}, ${day})
 pressure = mtos_pressure_map()
 
 safe_weather = [
@@ -780,30 +2041,52 @@ safe_weather = [
     for w in weather
 ]
 
-attention_values = [w["attention"] for w in safe_weather]
-
 birth = datetime.date(${year}, ${month}, ${day})
 _, tone, _, i = kin_from_date(birth)
 today = datetime.datetime.now(datetime.timezone.utc).date()
-series = simulate(i, tone, today, 260, ${JSON.stringify(name)}).tolist()
 
-attention = sum(attention_values) / 260
-noise = sum([abs(v - 0.5) for v in attention_values]) / 260
+metabolic = simulate(i, tone, today, 90, ${JSON.stringify(name)})
+
+series = metabolic["attention"].tolist()
+pressure_series = metabolic["pressure"].tolist()
+temperature_series = metabolic["temperature"].tolist()
+phi_series = metabolic["phi"].tolist()
+k_series = metabolic["k"].tolist()
+consistency_series = metabolic["consistency"].tolist()
+stability_series = metabolic["stability"].tolist()
+
+series_len = max(1, len(series))
+attention = sum(series) / series_len
+noise = sum([abs(v - 0.5) for v in series]) / series_len
 series_entropy = entropy(series)
 series_lyapunov = lyapunov(series)
 prediction = attention * (1 - noise)
 series_predictability = predictability(series)
 
 json.dumps({
- "weather": safe_weather,
- "pressure": pressure,
- "kin": kin,
- "attention": attention,
- "noise": noise,
- "entropy": series_entropy,
- "lyapunov": series_lyapunov,
- "prediction": prediction,
- "predictability": series_predictability
+    "weather": safe_weather,
+    "pressure": pressure,
+    "kin": kin,
+    "attention": attention,
+    "noise": noise,
+    "entropy": series_entropy,
+    "lyapunov": series_lyapunov,
+    "prediction": prediction,
+    "predictability": series_predictability,
+
+    "metabolic_pressure": pressure_series,
+    "metabolic_temperature": temperature_series,
+    "metabolic_phi": phi_series,
+    "metabolic_k": k_series,
+    "metabolic_consistency": consistency_series,
+    "metabolic_stability": stability_series,
+
+    "mean_phi": float(np.mean(metabolic["phi"])),
+    "mean_k": float(np.mean(metabolic["k"])),
+    "mean_temperature": float(np.mean(metabolic["temperature"])),
+    "mean_pressure": float(np.mean(metabolic["pressure"])),
+    "mean_consistency": float(np.mean(metabolic["consistency"])),
+    "mean_stability": float(np.mean(metabolic["stability"]))
 })
 `))
 
@@ -877,6 +2160,19 @@ window.mtosPhaseSummary = {
         window._todayKin = todayKin
         window._date = { year, month, day }
 
+        window.setMTOSState({
+            todayKin,
+            selectedKin: userKin,
+            weather: {
+                phi: Number(result.mean_phi ?? 0),
+                stability: Number(result.mean_stability ?? 0),
+                timePressure: 0,
+                raw: weather
+            },
+            events: [],
+            decision: null
+        })
+
                 const userMeta = JSON.parse(pyodide.runPython(`
 import json, datetime
 birth = datetime.date(${year}, ${month}, ${day})
@@ -907,48 +2203,65 @@ json.dumps({
         // ===============================
         // BUILD USERS
         // ===============================
-        users = userList.map((uName) => {
-            const userData = JSON.parse(pyodide.runPython(`
-            import json
-            users_db = load_users()
-            json.dumps(users_db.get(${JSON.stringify(uName)}, {}))
-            `))
+        const usersSnapshot = JSON.parse(pyodide.runPython(`
+import json
+users_db = load_users()
+json.dumps(users_db)
+`))
 
-            let baseKin = null
+users = userList.map((uName) => {
+    const userData = usersSnapshot?.[uName] || {}
 
-            if (userData && userData.birth) {
-                const [yy, mm, dd] = userData.birth.split("-").map(Number)
+    let baseKin = null
 
-                baseKin = Number(pyodide.runPython(`
-                mtos_current_kin_NEW(${JSON.stringify(uName)}, ${yy}, ${mm}, ${dd})
-                `))
-            } else if (userData && userData.kin != null) {
-                baseKin = Number(userData.kin)
-            }
+    if (userData && userData.kin != null) {
+        baseKin = Number(userData.kin)
+    }
 
-            if (!Number.isFinite(baseKin) || baseKin < 1 || baseKin > 260) {
-                console.warn("BAD USER DATA:", uName, userData)
-                return null
-            }
+    if ((!Number.isFinite(baseKin) || baseKin < 1 || baseKin > 260) && userData && userData.birth) {
+        const computedKin = Number(pyodide.runPython(`
+import datetime
+birth = datetime.date.fromisoformat(${JSON.stringify(userData.birth)})
+kin, tone, seal, i = kin_from_date(birth)
+kin
+`))
 
-            const weatherPhase =
-    Array.isArray(result.weather) && result.weather[baseKin - 1]
-        ? Number(result.weather[baseKin - 1].phase ?? 0)
-        : 0
+        if (Number.isFinite(computedKin)) {
+            baseKin = computedKin
+        }
+    }
 
-const phase = weatherPhase
+    if (!Number.isFinite(baseKin) || baseKin < 1 || baseKin > 260) {
+        console.warn("BAD USER DATA:", uName, userData)
+        return null
+    }
 
-            return {
-    name: uName,
-    kin: baseKin,
-    baseKin: baseKin,
-    phase,
-    weight: 1,
-    location: userData.location || userData.city || userData.country || "",
-    city: userData.city || "",
-    country: userData.country || ""
-}
-        }).filter(Boolean)
+    const phase =
+        Array.isArray(result.weather) && result.weather[baseKin - 1]
+            ? Number(result.weather[baseKin - 1].phase ?? 0)
+            : 0
+
+    return {
+        name: uName,
+        kin: baseKin,
+        baseKin,
+        phase,
+        weight: 1,
+
+        goal: String(userData.goal || (uName === name ? "stability" : "social")).toLowerCase(),
+        goalWeight: Number(userData.goalWeight ?? (uName === name ? 0.72 : 0.58)),
+
+        location: userData.location || userData.city || userData.country || "",
+        city: userData.city || "",
+        country: userData.country || ""
+    }
+}).filter(Boolean)
+
+        window._attractorField = applyTodayContactsToAttractorField(
+    window._attractorField,
+    users,
+    getDayKeyFromParts(year, month, day)
+)
 
         // 1. Посмотрим в консоли, как РЕАЛЬНО выглядит один юзе
                 // debug logs disabled for speed
@@ -957,7 +2270,8 @@ const phase = weatherPhase
         // FIELD
         // ===============================
         const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
-        const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+        const baseMemory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+        const memory = buildEffectiveRelationMemory(baseMemory, getDayKeyFromParts(year, month, day))
 
         const networkFeedback = window.mtosNetworkFeedback || {
             totalLinks: 0,
@@ -1008,10 +2322,17 @@ json.dumps([f,s,u])
         const evolvedDayState = resolveDynamicDayState(
     dayState,
     window.mtosNetworkFeedback,
-    window.mtosAttractorState
+    window.mtosAttractorState,
+    window.mtosCollectiveState
 )
 
-window.mtosDayState = evolvedDayState
+const evolvedDayStateWithContacts = applyTodayContactsToDayState(
+    evolvedDayState,
+    users,
+    getDayKeyFromParts(year, month, day)
+)
+
+window.mtosDayState = evolvedDayStateWithContacts
 
 const memoryLayers = updateMemoryLayers(
     name,
@@ -1028,54 +2349,137 @@ window.mtosMemoryInfluence = getMemoryInfluence(name, userKin)
                 ? Number(window._attractorField[userKin - 1] ?? 0.5)
                 : 0.5
 
-        evolvedDayState.attractorField = attractorAtUser
-        evolvedDayState.dayIndex = Number(
-            Math.max(-1, Math.min(1, evolvedDayState.dayIndex + (attractorAtUser - 0.5) * 0.25)).toFixed(3)
-        )
+       window.mtosDayState.attractorField = attractorAtUser
+window.mtosDayState.dayIndex = Number(
+    Math.max(-1, Math.min(1, window.mtosDayState.dayIndex + (attractorAtUser - 0.5) * 0.25)).toFixed(3)
+)
 
-        if (attractorAtUser > 0.72) {
-            evolvedDayState.dayDesc += " Strong attractor pull is present."
-        } else if (attractorAtUser < 0.28) {
-            evolvedDayState.dayDesc += " Weak attractor pull reduces coherence."
-        }
+if (attractorAtUser > 0.72) {
+    window.mtosDayState.dayDesc += " Strong attractor pull is present."
+} else if (attractorAtUser < 0.28) {
+    window.mtosDayState.dayDesc += " Weak attractor pull reduces coherence."
+}
 
-        window.mtosDayState = evolvedDayState
-
-        
-
-const uiMetrics = buildUnifiedMetrics(result, evolvedDayState)
+const uiMetrics = buildUnifiedMetrics(result, window.mtosDayState)
 window.mtosUnifiedMetrics = uiMetrics
 
+const metabolicMetrics = buildMetabolicMetrics(result, window.mtosDayState)
+window.mtosMetabolicMetrics = metabolicMetrics
+
+window.mtosUnifiedMetrics = {
+    ...uiMetrics,
+    phi: metabolicMetrics.phi,
+    k: metabolicMetrics.k,
+    temperature: metabolicMetrics.T,
+    pressureScalar: metabolicMetrics.P,
+    volume: metabolicMetrics.V,
+    consistency: metabolicMetrics.consistency,
+    metabolicStability: metabolicMetrics.stability
+}
+
 const timePressure = resolveTimePressure({
-    attention: evolvedDayState.attention,
-    activity: evolvedDayState.activity,
-    pressure: evolvedDayState.pressure,
-    conflict: evolvedDayState.conflict,
-    stability: evolvedDayState.stability,
-    field: evolvedDayState.field,
+    attention: window.mtosDayState.attention,
+    activity: window.mtosDayState.activity,
+    pressure: window.mtosDayState.pressure,
+    conflict: window.mtosDayState.conflict,
+    stability: window.mtosDayState.stability,
+    field: window.mtosDayState.field,
     entropy: uiMetrics.entropy,
     noise: uiMetrics.noise,
     prediction: uiMetrics.prediction,
     predictability: uiMetrics.predictability,
     attractorIntensity: Number(window.mtosAttractorState?.intensity ?? 0),
+    attractorType: String(window.mtosAttractorState?.type ?? "unknown"),
     networkConflict: Number(window.mtosNetworkFeedback?.conflictRatio ?? 0),
-    networkDensity: Number(window.mtosNetworkFeedback?.density ?? 0)
+    networkDensity: Number(window.mtosNetworkFeedback?.density ?? 0),
+    networkSupport: Number(window.mtosNetworkFeedback?.supportRatio ?? 0),
+    realContacts: Number(window.mtosDayState?.realContacts ?? 0),
+    realContactWeight: Number(window.mtosDayState?.realContactWeight ?? 0)
 })
 
 window.mtosTimePressure = timePressure
 window.mtosTimePressureSummary = getTimePressureSummary(timePressure)
 
+window.updateMTOSBranch("weather", {
+    phi: Number(result.mean_phi ?? 0),
+    stability: Number(result.mean_stability ?? window.mtosDayState?.stability ?? 0.5),
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? 0),
+    raw: weather
+})
+
+window.mtosSystemState = {
+    users: JSON.parse(JSON.stringify(users || [])),
+    weather: Array.isArray(weather) ? weather : [],
+    pressureMap: Array.isArray(pressure) ? pressure : [],
+    attractorField: Array.isArray(window._attractorField) ? window._attractorField : [],
+    dayState: window.mtosDayState || null,
+    timePressure: window.mtosTimePressure || null,
+    timePressureSummary: window.mtosTimePressureSummary || null,
+    attractorState: window.mtosAttractorState || null,
+    networkFeedback: window.mtosNetworkFeedback || null,
+    memoryLayers: window.mtosMemoryLayers || null,
+    todayKin: window._todayKin || null,
+    userKin: window._userKin || null,
+    date: window._date || null
+}
+
 window.mtosDayState = applyTimePressureToDayState(window.mtosDayState, timePressure)
 
-const decision = resolveTodayMode(
+const baseDecision = resolveTodayMode(
     window.mtosDayState,
     window.mtosTimePressureSummary,
     window.mtosMemoryLayers
 )
 
+const decision = applyFeedbackToDecision(
+    baseDecision,
+    name,
+    window.mtosDayState
+)
+
 window.mtosDecision = decision
 
-renderTodayPanel("todayPanel", decision)
+window.updateMTOSBranch("decision", {
+    mode: String(decision?.mode || "EXPLORE"),
+    action: String(
+        decision?.text ||
+        decision?.action ||
+        "Observe the field and avoid impulsive actions."
+    ),
+    reason: String(
+        decision?.feedbackReason ||
+        decision?.reason ||
+        decision?.why ||
+        "Derived from day state, time pressure, and memory."
+    ),
+    confidence: Math.round(
+        Math.max(0, Math.min(1, Number(decision?.confidence ?? 0.5))) * 100
+    ),
+    targets: { primary: [], avoid: [], neutral: [] },
+    source: "human_decision_layer",
+    createdAt: new Date().toISOString()
+})
+
+renderDecisionSummaryPanel("humanLayer")
+
+//renderUserPanel({
+    //dayState: window.mtosDayState || {},
+    //decision: window.mtosDecision || {},
+    //attractorState: window.mtosAttractorState || {},
+    //timePressureSummary: window.mtosTimePressureSummary || {},
+    //forecastStats: window.mtosForecastStats || {},
+    //snapshots: JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+//})
+
+const currentUserAgent = users.find(u => u.name === name) || null
+const autoFeedbackRow = storeAutoFeedbackForCurrentRun(
+    name,
+    currentUserAgent,
+    window.mtosDayState,
+    decision
+)
+
+window.mtosAutoFeedbackRow = autoFeedbackRow
 
 if (window.mtosAttractorState) {
     window.mtosAttractorState = applyTimePressureToAttractorState(
@@ -1170,21 +2574,30 @@ saveAutoDailySnapshot({
     const prev = (prevUsers || []).find(x => x.name === u.name) || {}
 
     return {
-        name: u.name,
-        kin: Number(u.kin),
-        baseKin: Number(u.baseKin ?? u.kin),
-        weight: u.weight,
-        location: u.location || prev.location || "",
-        city: u.city || prev.city || "",
-        country: u.country || prev.country || ""
-    }
+    name: u.name,
+    kin: Number(u.baseKin ?? u.kin),
+    baseKin: Number(u.baseKin ?? u.kin),
+
+    goal: String(u.goal || prev.goal || "stability").toLowerCase(),
+    goalWeight: Number(u.goalWeight ?? prev.goalWeight ?? 0.65),
+    goalScore: Number(u.goalScore ?? prev.goalScore ?? 0.5),
+    goalFeedback: String(u.goalFeedback || prev.goalFeedback || "neutral"),
+
+    location: u.location || prev.location || "",
+    city: u.city || prev.city || "",
+    country: u.country || prev.country || ""
+}
 })
 
         window.currentUsers = users
 
         window.mtosDaySync = getDaySyncInfo(users, todayKin)
 
-        saveNetworkState(users, memory)
+        try {
+    saveNetworkState(users, memory)
+} catch (e) {
+    console.warn("saveNetworkState skipped", e)
+}
 
         logEvent("agents_update", {
             users: users,
@@ -1216,7 +2629,65 @@ saveAutoDailySnapshot({
         // ===============================
         renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day)
 
-        window._rerenderMTOS = () => {
+        const netRelations = Array.isArray(window.currentNetworkRelations)
+            ? window.applyMTOSMemoryToRelations(window.currentNetworkRelations)
+            : []
+
+        const relationSummary = {
+            supportCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("support")).length,
+            conflictCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("conflict")).length,
+            ultraCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("ultra")).length
+        }
+
+        window.updateMTOSBranch("network", {
+    relations: netRelations,
+    relationSummary,
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? 0)
+})
+
+const resolvedTargets = typeof window.resolveDecisionTargets === "function"
+    ? window.resolveDecisionTargets()
+    : { primary: [], avoid: [], neutral: [] }
+
+const selectedTargetName = getSelectedDecisionTarget()
+
+const allResolvedTargets = [
+    ...(Array.isArray(resolvedTargets.primary) ? resolvedTargets.primary : []),
+    ...(Array.isArray(resolvedTargets.neutral) ? resolvedTargets.neutral : []),
+    ...(Array.isArray(resolvedTargets.avoid) ? resolvedTargets.avoid : [])
+]
+
+const selectedTarget =
+    allResolvedTargets.find(x => x.name === selectedTargetName) ||
+    (resolvedTargets.primary?.[0] || resolvedTargets.neutral?.[0] || null)
+
+if (selectedTarget?.name) {
+    setSelectedDecisionTarget(selectedTarget.name)
+}
+
+window.updateMTOSBranch("decision", {
+    ...(window.MTOS_STATE?.decision || {}),
+    targets: resolvedTargets,
+    selectedTarget: selectedTarget || null
+})
+
+window.updateMTOSBranch("collective", {
+    ...(window.mtosCollectiveState || {}),
+    stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? window.mtosCollectiveState?.timePressure ?? 0)
+})
+
+window.evaluateMTOSEvents()
+window.commitMTOSDecisionToMemory()
+
+renderSystemEventsPanel()
+renderSystemDecisionPanel()
+
+renderDecisionTargetsPanel()
+renderFieldTensionPanel()
+renderActionTracePanel()
+
+window._rerenderMTOS = () => {
     renderAll(
         window._weather,
         window._weatherToday,
@@ -1227,24 +2698,84 @@ saveAutoDailySnapshot({
         window._date.month,
         window._date.day
     )
+
+    const netRelations = Array.isArray(window.currentNetworkRelations)
+        ? window.applyMTOSMemoryToRelations(window.currentNetworkRelations)
+        : []
+
+    const relationSummary = {
+        supportCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("support")).length,
+        conflictCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("conflict")).length,
+        ultraCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("ultra")).length
+    }
+
+    window.updateMTOSBranch("network", {
+        relations: netRelations,
+        relationSummary,
+        timePressure: Number(window.mtosTimePressureSummary?.value ?? 0)
+    })
+
+    const rerenderTargets = typeof window.resolveDecisionTargets === "function"
+    ? window.resolveDecisionTargets()
+    : { primary: [], avoid: [], neutral: [] }
+
+const rerenderSelectedName = getSelectedDecisionTarget()
+
+const allRerenderTargets = [
+    ...(Array.isArray(rerenderTargets.primary) ? rerenderTargets.primary : []),
+    ...(Array.isArray(rerenderTargets.neutral) ? rerenderTargets.neutral : []),
+    ...(Array.isArray(rerenderTargets.avoid) ? rerenderTargets.avoid : [])
+]
+
+const rerenderSelectedTarget =
+    allRerenderTargets.find(x => x.name === rerenderSelectedName) ||
+    (rerenderTargets.primary?.[0] || rerenderTargets.neutral?.[0] || null)
+
+if (rerenderSelectedTarget?.name) {
+    setSelectedDecisionTarget(rerenderSelectedTarget.name)
 }
 
-                window._mtosRunCache[runtimeKey] = {
-            weather,
-            weatherToday,
-            pressure,
-            userKin,
-            todayKin,
-            attractorField: window._attractorField,
-            dayState: window.mtosDayState,
-            uiMetrics: window.mtosUnifiedMetrics,
-            daySync: window.mtosDaySync,
-            fieldState,
-            fieldMode,
-            userMeta,
-            todayMeta,
-            users: JSON.parse(JSON.stringify(users || []))
-        }
+window.updateMTOSBranch("decision", {
+    ...(window.MTOS_STATE?.decision || {}),
+    targets: rerenderTargets,
+    selectedTarget: rerenderSelectedTarget || null
+})
+
+    window.updateMTOSBranch("collective", {
+        ...(window.mtosCollectiveState || {}),
+        stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
+        timePressure: Number(window.mtosTimePressureSummary?.value ?? window.mtosCollectiveState?.timePressure ?? 0)
+    })
+
+    window.evaluateMTOSEvents()
+    window.commitMTOSDecisionToMemory()
+
+    renderSystemEventsPanel()
+    renderSystemDecisionPanel()
+    renderDecisionTargetsPanel()
+    renderFieldTensionPanel()
+    renderActionTracePanel()
+}
+
+window._mtosRunCache[runtimeKey] = {
+    weather,
+    weatherToday,
+    pressure,
+    userKin,
+    todayKin,
+    attractorField: window._attractorField,
+    dayState: window.mtosDayState,
+    uiMetrics: window.mtosUnifiedMetrics,
+    metabolicMetrics: window.mtosMetabolicMetrics,
+    daySync: window.mtosDaySync,
+    timePressure: window.mtosTimePressure || null,
+    timePressureSummary: window.mtosTimePressureSummary || null,
+    fieldState,
+    fieldMode,
+    userMeta,
+    todayMeta,
+    users: JSON.parse(JSON.stringify(users || []))
+}
 
         status.innerText = "Done"
 
@@ -1315,7 +2846,8 @@ users = users.map((u) => {
             
 
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
-            const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+            const baseMemory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+            const memory = buildEffectiveRelationMemory(baseMemory, getDayKeyFromParts(y, m, dd))
 
             const networkFeedback = window.mtosNetworkFeedback || {
                 totalLinks: 0,
@@ -1369,6 +2901,20 @@ json.dumps([f,s,u])
     window.mtosAttractorState
 )
 
+window._attractorField = applyTodayContactsToAttractorField(
+    window._attractorField,
+    users,
+    getDayKeyFromParts(y, m, dd)
+)
+
+const evolvedDayStateWithContacts = applyTodayContactsToDayState(
+    evolvedDayState,
+    users,
+    getDayKeyFromParts(y, m, dd)
+)
+
+window.mtosDayState = evolvedDayStateWithContacts
+
             const attractorAtUser =
                 Array.isArray(window._attractorField) && userKin >= 1 && userKin <= 260
                     ? Number(window._attractorField[userKin - 1] ?? 0.5)
@@ -1385,9 +2931,6 @@ json.dumps([f,s,u])
                 evolvedDayState.dayDesc += " Weak attractor pull reduces coherence."
             }
 
-            window.mtosDayState = evolvedDayState
-            
-
             const memoryLayers = updateMemoryLayers(
     name,
     currentKin,
@@ -1402,23 +2945,43 @@ const uiMetrics = buildUnifiedMetrics(result, evolvedDayState)
 window.mtosUnifiedMetrics = uiMetrics
 
 const timePressure = resolveTimePressure({
-    attention: evolvedDayState.attention,
-    activity: evolvedDayState.activity,
-    pressure: evolvedDayState.pressure,
-    conflict: evolvedDayState.conflict,
-    stability: evolvedDayState.stability,
-    field: evolvedDayState.field,
+    attention: window.mtosDayState.attention,
+    activity: window.mtosDayState.activity,
+    pressure: window.mtosDayState.pressure,
+    conflict: window.mtosDayState.conflict,
+    stability: window.mtosDayState.stability,
+    field: window.mtosDayState.field,
     entropy: uiMetrics.entropy,
     noise: uiMetrics.noise,
     prediction: uiMetrics.prediction,
     predictability: uiMetrics.predictability,
     attractorIntensity: Number(window.mtosAttractorState?.intensity ?? 0),
+    attractorType: String(window.mtosAttractorState?.type ?? "unknown"),
     networkConflict: Number(window.mtosNetworkFeedback?.conflictRatio ?? 0),
-    networkDensity: Number(window.mtosNetworkFeedback?.density ?? 0)
+    networkDensity: Number(window.mtosNetworkFeedback?.density ?? 0),
+    networkSupport: Number(window.mtosNetworkFeedback?.supportRatio ?? 0),
+    realContacts: Number(window.mtosDayState?.realContacts ?? 0),
+    realContactWeight: Number(window.mtosDayState?.realContactWeight ?? 0)
 })
 
 window.mtosTimePressure = timePressure
 window.mtosTimePressureSummary = getTimePressureSummary(timePressure)
+
+window.mtosSystemState = {
+    users: JSON.parse(JSON.stringify(users || [])),
+    weather: Array.isArray(weather) ? weather : [],
+    pressureMap: Array.isArray(pressure) ? pressure : [],
+    attractorField: Array.isArray(window._attractorField) ? window._attractorField : [],
+    dayState: window.mtosDayState || null,
+    timePressure: window.mtosTimePressure || null,
+    timePressureSummary: window.mtosTimePressureSummary || null,
+    attractorState: window.mtosAttractorState || null,
+    networkFeedback: window.mtosNetworkFeedback || null,
+    memoryLayers: window.mtosMemoryLayers || null,
+    todayKin: window._todayKin || null,
+    userKin: window._userKin || null,
+    date: window._date || null
+}
 
 window.mtosDayState = applyTimePressureToDayState(window.mtosDayState, timePressure)
 
@@ -1428,6 +2991,62 @@ if (window.mtosAttractorState) {
         timePressure
     )
 }
+
+const baseDecision = resolveTodayMode(
+    window.mtosDayState,
+    window.mtosTimePressureSummary,
+    window.mtosMemoryLayers
+)
+
+const stepDecision = applyFeedbackToDecision(
+    baseDecision,
+    name,
+    window.mtosDayState
+)
+
+window.mtosDecision = stepDecision
+
+window.updateMTOSBranch("decision", {
+    mode: String(stepDecision?.mode || "EXPLORE"),
+    action: String(
+        stepDecision?.text ||
+        stepDecision?.action ||
+        "Observe the field and avoid impulsive actions."
+    ),
+    reason: String(
+        stepDecision?.feedbackReason ||
+        stepDecision?.reason ||
+        stepDecision?.why ||
+        "Derived from day state, time pressure, and memory."
+    ),
+    confidence: Math.round(
+        Math.max(0, Math.min(1, Number(stepDecision?.confidence ?? 0.5))) * 100
+    ),
+    targets: { primary: [], avoid: [], neutral: [] },
+    source: "human_decision_layer",
+    createdAt: new Date().toISOString()
+})
+
+renderDecisionSummaryPanel("humanLayer")
+
+//renderUserPanel({
+    //dayState: window.mtosDayState || {},
+    //decision: window.mtosDecision || {},
+    //attractorState: window.mtosAttractorState || {},
+    //timePressureSummary: window.mtosTimePressureSummary || {},
+    //forecastStats: window.mtosForecastStats || {},
+    //snapshots: JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+//})
+
+const currentStepUserAgent = users.find(u => u.name === name) || null
+const autoFeedbackRow = storeAutoFeedbackForCurrentRun(
+    name,
+    currentStepUserAgent,
+    window.mtosDayState,
+    stepDecision
+)
+
+window.mtosAutoFeedbackRow = autoFeedbackRow
 
 const stepMetrics = computeBehaviorMetrics(window.MTOS_LOG)
 const stepTruth = computeAutoTruth(stepMetrics)
@@ -1521,21 +3140,30 @@ saveAutoDailySnapshot({
             : 0
 
     return {
-        name: u.name,
-        kin: kinForPhase,
-        baseKin: kinForPhase,
-        weight: u.weight,
-        phase: phaseFromWeather,
-        location: u.location || prev.location || "",
-        city: u.city || prev.city || "",
-        country: u.country || prev.country || ""
-    }
+    name: u.name,
+    kin: Number(u.kin),
+    baseKin: Number(u.baseKin ?? u.kin),
+    weight: Number(u.weight ?? 1),
+
+    goal: String(u.goal || prev.goal || "stability").toLowerCase(),
+    goalWeight: Number(u.goalWeight ?? prev.goalWeight ?? 0.65),
+    goalScore: Number(u.goalScore ?? prev.goalScore ?? 0.5),
+    goalFeedback: String(u.goalFeedback || prev.goalFeedback || "neutral"),
+
+    location: u.location || prev.location || "",
+    city: u.city || prev.city || "",
+    country: u.country || prev.country || ""
+}
 })
             window.currentUsers = users
 
             window.mtosDaySync = getDaySyncInfo(users, currentKin)
 
-            saveNetworkState(users, memory)
+            try {
+    saveNetworkState(users, memory)
+} catch (e) {
+    console.warn("saveNetworkState skipped", e)
+}
 
             logEvent("agents_update", {
                 users: users,
@@ -1560,6 +3188,65 @@ saveAutoDailySnapshot({
 )
 
             renderAll(weather, weatherToday, pressure, currentKin, currentKin, y, m, dd)
+
+            const netRelations = Array.isArray(window.currentNetworkRelations)
+                ? window.applyMTOSMemoryToRelations(window.currentNetworkRelations)
+                : []
+
+            const relationSummary = {
+                supportCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("support")).length,
+                conflictCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("conflict")).length,
+                ultraCount: netRelations.filter(x => String(x.type || "").toLowerCase().includes("ultra")).length
+            }
+
+            window.updateMTOSBranch("network", {
+    relations: netRelations,
+    relationSummary,
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? 0)
+})
+
+const resolvedStepTargets = typeof window.resolveDecisionTargets === "function"
+    ? window.resolveDecisionTargets()
+    : { primary: [], avoid: [], neutral: [] }
+
+const stepSelectedName = getSelectedDecisionTarget()
+
+const allStepTargets = [
+    ...(Array.isArray(resolvedStepTargets.primary) ? resolvedStepTargets.primary : []),
+    ...(Array.isArray(resolvedStepTargets.neutral) ? resolvedStepTargets.neutral : []),
+    ...(Array.isArray(resolvedStepTargets.avoid) ? resolvedStepTargets.avoid : [])
+]
+
+const stepSelectedTarget =
+    allStepTargets.find(x => x.name === stepSelectedName) ||
+    (resolvedStepTargets.primary?.[0] || resolvedStepTargets.neutral?.[0] || null)
+
+if (stepSelectedTarget?.name) {
+    setSelectedDecisionTarget(stepSelectedTarget.name)
+}
+
+window.updateMTOSBranch("decision", {
+    ...(window.MTOS_STATE?.decision || {}),
+    targets: resolvedStepTargets,
+    selectedTarget: stepSelectedTarget || null
+})
+
+window.updateMTOSBranch("collective", {
+    ...(window.mtosCollectiveState || {}),
+    stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
+    timePressure: Number(window.mtosTimePressureSummary?.value ?? window.mtosCollectiveState?.timePressure ?? 0)
+})
+
+window.evaluateMTOSEvents()
+window.commitMTOSDecisionToMemory()
+
+renderSystemEventsPanel()
+renderSystemDecisionPanel()
+
+renderDecisionTargetsPanel()
+renderFieldTensionPanel()
+renderActionTracePanel()
+
         }
 
         initTimeControls(step)
@@ -1570,28 +3257,16 @@ saveAutoDailySnapshot({
     }
 
     window.onKinSelect = (kin) => {
-        logEvent("kin_select", {
-            kin,
-            memory: selectionMemory[KinRegistry.toIndex(kin)]
-        })
-        // ===============================
-        // MEMORY UPDATE
-        // ===============================
+    logEvent("kin_select", {
+        kin,
+        memory: selectionMemory[KinRegistry.toIndex(kin)]
+    })
 
-        selectedKin = kin
-        window.selectedKin = kin
+    selectedKin = kin
+    window.selectedKin = kin
 
-        renderAll(
-            window._weather,
-            window._weatherToday,
-            window._pressure,
-            window._userKin,
-            window._todayKin,
-            window._date.year,
-            window._date.month,
-            window._date.day
-        )
-    }
+    renderAttractorOnly()
+}
 }
 
 // ===============================
@@ -1599,8 +3274,6 @@ saveAutoDailySnapshot({
 // ===============================
 
 function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, month, day) {
-
-    // WEATHER
     drawWeatherMap(
         "weatherMap",
         weather,
@@ -1612,7 +3285,6 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         window._attractorField
     )
 
-    // SERIES
     const now = new Date()
     drawSeries(
         "seriesBlock",
@@ -1622,19 +3294,9 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
         now.getDate()
     )
 
-    // NETWORK (геометрия)
-    drawNetwork(
-        "networkMap",
-        users,
-        () => {}
-    )
+    drawNetwork("networkMap", users, () => {}, window._matrix || null)
+    drawCollective("collective", users)
 
-    // COLLECTIVE
-    drawCollective(
-        "collective",
-        users
-    )
-        // ATTRACTOR 20×20 MAP
     renderAttractorOnly()
 }
 
@@ -1758,6 +3420,54 @@ function buildUnifiedMetrics(result, dayState) {
     }
 }
 
+function buildMetabolicMetrics(result, ds){
+    const userKin = Number(window._userKin || result?.kin || 1)
+    const idx = Math.max(0, Math.min(259, userKin - 1))
+
+    const pressureSeries = Array.isArray(result?.metabolic_pressure) ? result.metabolic_pressure : []
+    const temperatureSeries = Array.isArray(result?.metabolic_temperature) ? result.metabolic_temperature : []
+    const phiSeries = Array.isArray(result?.metabolic_phi) ? result.metabolic_phi : []
+    const kSeries = Array.isArray(result?.metabolic_k) ? result.metabolic_k : []
+    const consistencySeries = Array.isArray(result?.metabolic_consistency) ? result.metabolic_consistency : []
+    const stabilitySeries = Array.isArray(result?.metabolic_stability) ? result.metabolic_stability : []
+
+    const safe = (arr, fallback = 0) => {
+        const v = Number(arr?.[idx])
+        return Number.isFinite(v) ? v : fallback
+    }
+
+    const P = safe(pressureSeries, Number(ds?.pressure ?? 0))
+    const V = Math.max(0, Math.min(1, Number(ds?.attention ?? result?.attention ?? 0.5)))
+    const T = safe(temperatureSeries, 0.5)
+    const phi = safe(phiSeries, P * V)
+    const k = safe(kSeries, phi / Math.max(T, 1e-6))
+    const consistency = safe(consistencySeries, Math.abs(phi - k * T))
+    const stability = safe(stabilitySeries, Number(ds?.stability ?? 0.5))
+
+    return {
+    P: Number(result.mean_pressure ?? ds?.pressure ?? 0.5),
+    V: Number(ds?.attention ?? 0.5),
+    T: Number(result.mean_temperature ?? 0.5),
+    phi: Number(result.mean_phi ?? 0),
+    k: Number(result.mean_k ?? 0),
+    consistency: Number(result.mean_consistency ?? 0),
+
+    // ВОТ ЭТО ГЛАВНОЕ ↓↓↓
+
+    phiSeries: Array.isArray(result.metabolic_phi)
+        ? result.metabolic_phi.map(Number)
+        : [],
+
+    temperatureSeries: Array.isArray(result.metabolic_temperature)
+        ? result.metabolic_temperature.map(Number)
+        : [],
+
+    consistencySeries: Array.isArray(result.metabolic_consistency)
+        ? result.metabolic_consistency.map(Number)
+        : []
+}
+}
+
 function loadDayEvolutionMemory() {
     try {
         const raw = localStorage.getItem("mtos_day_evolution")
@@ -1793,7 +3503,7 @@ function saveDayEvolutionMemory(state) {
     }
 }
 
-function resolveDynamicDayState(dayState, networkFeedback, attractorState) {
+function resolveDynamicDayState(dayState, networkFeedback, attractorState, collectiveState = null) {
     const ds = dayState ? { ...dayState } : {}
 
     const attention = Number(ds.attention ?? 0.5)
@@ -1811,20 +3521,25 @@ function resolveDynamicDayState(dayState, networkFeedback, attractorState) {
     }
 
     const attractor = attractorState || {
-        type: "unknown",
-        intensity: 0,
-        score: 0
-    }
+    type: "unknown",
+    intensity: 0,
+    score: 0
+}
 
-    const memory = loadDayEvolutionMemory()
+const collective = collectiveState || {
+    temperature: 0.5,
+    relationsCount: 0
+}
 
-    let score =
-        attention * 0.28 +
-        activity * 0.18 +
-        stability * 0.22 +
-        field * 0.16 -
-        pressure * 0.22 -
-        conflict * 0.18
+const memory = loadDayEvolutionMemory()
+
+let score =
+    attention * 0.28 +
+    activity * 0.18 +
+    stability * 0.22 +
+    field * 0.16 -
+    pressure * 0.22 -
+    conflict * 0.18
 
     score += Number(network.supportRatio ?? 0) * 0.12
     score -= Number(network.conflictRatio ?? 0) * 0.16
@@ -1834,6 +3549,9 @@ function resolveDynamicDayState(dayState, networkFeedback, attractorState) {
     if (attractor.type === "stable") score += 0.06 * Number(attractor.intensity ?? 0)
     if (attractor.type === "chaos") score -= 0.14 * Number(attractor.intensity ?? 0)
     if (attractor.type === "trend") score += 0.03 * Number(attractor.intensity ?? 0)
+
+        score += (0.5 - Number(collective.temperature ?? 0.5)) * 0.10
+        score += Math.min(0.08, Number(collective.relationsCount ?? 0) * 0.002)
 
     const rawScore = score
 
@@ -1963,188 +3681,1270 @@ function renderCognitiveState(
     const el = document.getElementById("todayBlock")
     const quick = document.getElementById("quickMetrics")
 
-    if(!el) return
+    if (!el) return
 
-    if(!ds){
-        el.innerHTML = `<div class="hero-card"><div class="hero-main">NO DATA</div></div>`
-        if(quick) quick.innerHTML = ""
+    if (!ds) {
+        el.innerHTML = ""
+        if (quick) quick.innerHTML = ""
+        renderHumanLayer(null)
         return
     }
 
-    const userMeta = window.mtosUserMeta || {
-        kin: userKin,
-        tone: ((userKin - 1) % 13) + 1,
-        seal: "Unknown",
-        sealIndex: ((userKin - 1) % 20) + 1
+    // скрываем старый научный верхний блок
+    el.innerHTML = ""
+
+    // скрываем карточки ATTENTION / NOISE / ENTROPY / PREDICTABILITY / TIME PRESSURE / MODEL VALIDATION
+    if (quick) {
+        quick.innerHTML = ""
     }
 
-    const todayMeta = window.mtosTodayMeta || {
-        kin: todayKin,
-        tone: ((todayKin - 1) % 13) + 1,
-        seal: "Unknown",
-        sealIndex: ((todayKin - 1) % 20) + 1
+    // оставляем только большой Human Mode
+    renderHumanLayerV2(ds, {
+    name: getCurrentUserName(),
+    day: getCurrentRunDay(),
+    decision: window.mtosDecision || {},
+    attractorState: window.mtosAttractorState || {},
+    timePressureSummary: window.mtosTimePressureSummary || {},
+    forecastStats: window.mtosForecastStats || {},
+    snapshots: JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]"),
+    feedback: getHumanFeedbackFor(getCurrentRunDay(), getCurrentUserName()),
+    metabolic: window.mtosMetabolicMetrics || {}
+})
+renderDecisionSummaryPanel("humanLayer")
+}
+
+function getSimpleDayType(ds, tpSummary){
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+    const attention = Number(ds?.attention ?? 0.5)
+    const stability = Number(ds?.stability ?? 0.5)
+    const activity = Number(ds?.activity ?? 0.5)
+    const timePressure = Number(tpSummary?.value ?? ds?.timePressure ?? 0)
+
+    if (timePressure >= 0.82 || pressure >= 0.78) {
+        return { label: "HEAVY", color: "#ff7a59" }
     }
 
-    const label = ds.dayLabel || "UNKNOWN"
-    const mode = getRecommendedMode(ds)
-    const desc = getModeDescription(mode)
-    const guide = getModeActionGuide(mode)
-    const explanation = getDayExplanation(ds)
-    const decision = getDecisionOutput(ds)
-    const auto = window.mtosAutoModeFeedback || {}
-    const mem = window.mtosMemoryInfluence || { seal: 0, kin: 0, user: 0, total: 0 }
+    if (conflict >= 0.52) {
+        return { label: "TENSE", color: "#ff5c7a" }
+    }
 
-        const scientific = getScientificConfidence(ds, {
-        attention,
-        noise,
-        entropy,
-        lyapunov,
-        prediction,
-        predictability
+    if (attention >= 0.72 && stability >= 0.62 && pressure <= 0.42) {
+        return { label: "FOCUSED", color: "#00ff88" }
+    }
+
+    if (activity >= 0.64 && conflict <= 0.32 && pressure <= 0.52) {
+        return { label: "ACTIVE FLOW", color: "#66ccff" }
+    }
+
+    if (timePressure <= 0.28 && pressure <= 0.34 && conflict <= 0.24) {
+        return { label: "LIGHT", color: "#c084fc" }
+    }
+
+    return { label: "BALANCED", color: "#d1d5db" }
+}
+
+function getEnergyBand(ds){
+    const attention = Number(ds?.attention ?? 0.5)
+    const activity = Number(ds?.activity ?? attention)
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+
+    const energy =
+        attention * 0.40 +
+        activity * 0.30 +
+        (1 - pressure) * 0.18 +
+        (1 - conflict) * 0.12
+
+    if (energy >= 0.72) return { label: "High", value: energy }
+    if (energy >= 0.48) return { label: "Medium", value: energy }
+    return { label: "Low", value: energy }
+}
+
+function getRiskBand(ds, tpSummary, attractorState, networkFeedback){
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+    const tp = Number(tpSummary?.value ?? 0)
+    const attractorType = String(attractorState?.type || "unknown")
+    const netConflict = Number(networkFeedback?.conflictRatio ?? 0)
+
+    if (tp >= 0.82 || pressure >= 0.78) return "Overload risk"
+    if (conflict >= 0.52 || netConflict >= 0.45) return "Conflict spike"
+    if (attractorType === "chaos") return "Chaotic drift"
+    if (tp >= 0.62) return "Compression risk"
+    return "Manageable"
+}
+
+function getTodayAction(decision, ds, tpSummary, networkFeedback){
+    const mode = String(decision?.mode || "EXPLORE").toUpperCase()
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+    const support = Number(networkFeedback?.supportRatio ?? 0)
+    const conflictRatio = Number(networkFeedback?.conflictRatio ?? 0)
+    const tp = Number(tpSummary?.value ?? 0)
+
+    if (mode === "FOCUS") {
+        return {
+            title: "FOCUS",
+            doList: [
+                "Finish one main task",
+                "Work in one direction only",
+                "Close side branches"
+            ],
+            avoidList: [
+                "Multitasking",
+                "Random new commitments",
+                "Noisy communication"
+            ]
+        }
+    }
+
+    if (mode === "REST") {
+        return {
+            title: "REST",
+            doList: [
+                "Reduce load",
+                "Do maintenance only",
+                "Keep decisions reversible"
+            ],
+            avoidList: [
+                "Pressure-driven promises",
+                "Conflict escalation",
+                "Heavy planning"
+            ]
+        }
+    }
+
+    if (mode === "INTERACT") {
+        return {
+            title: "INTERACT",
+            doList: [
+                support >= 0.5 ? "Use strong connections today" : "Choose one safe contact",
+                "Clarify agreements",
+                "Resolve one social bottleneck"
+            ],
+            avoidList: [
+                conflictRatio >= 0.35 ? "Reactive arguments" : "Too many parallel contacts",
+                "Overexplaining",
+                "Emotional overreach"
+            ]
+        }
+    }
+
+    return {
+        title: "EXPLORE",
+        doList: [
+            tp >= 0.5 ? "Explore carefully, not widely" : "Try one new path",
+            "Collect signals",
+            "Test without full commitment"
+        ],
+        avoidList: [
+            pressure >= 0.62 ? "Hard commitments" : "Rigid routine",
+            "Forcing certainty too early",
+            conflict >= 0.42 ? "Sharp reactions" : "Overplanning"
+        ]
+    }
+}
+
+function buildWhyList(ds, tpSummary, attractorState, networkFeedback){
+    const items = []
+
+    const pressure = Number(ds?.pressure ?? 0)
+    const conflict = Number(ds?.conflict ?? 0)
+    const attention = Number(ds?.attention ?? 0.5)
+    const stability = Number(ds?.stability ?? 0.5)
+    const field = Number(ds?.field ?? 0.5)
+
+    const tpValue = Number(tpSummary?.value ?? 0)
+    const tpLabel = String(tpSummary?.label || "low")
+    const tpMode = String(tpSummary?.temporalMode || "EXPLORE")
+
+    const attractorType = String(attractorState?.type || "unknown")
+    const attractorIntensity = Number(attractorState?.intensity ?? 0)
+
+    const support = Number(networkFeedback?.supportRatio ?? 0)
+    const netConflict = Number(networkFeedback?.conflictRatio ?? 0)
+    const density = Number(networkFeedback?.density ?? 0)
+
+    if (tpValue >= 0.34) {
+        items.push(`Time pressure is ${tpLabel} (${tpValue.toFixed(2)}), mode ${tpMode}`)
+    }
+
+    if (pressure >= 0.58) {
+        items.push(`Internal pressure is elevated (${pressure.toFixed(2)})`)
+    } else if (pressure <= 0.30) {
+        items.push(`Pressure is relatively low (${pressure.toFixed(2)})`)
+    }
+
+    if (conflict >= 0.42 || netConflict >= 0.35) {
+        items.push(`Conflict is visible (${Math.max(conflict, netConflict).toFixed(2)})`)
+    }
+
+    if (attention >= 0.68) {
+        items.push(`Attention is strong (${attention.toFixed(2)})`)
+    } else if (attention <= 0.40) {
+        items.push(`Attention is scattered (${attention.toFixed(2)})`)
+    }
+
+    if (stability >= 0.62) {
+        items.push(`Stability is good (${stability.toFixed(2)})`)
+    } else if (stability <= 0.42) {
+        items.push(`Stability is weak (${stability.toFixed(2)})`)
+    }
+
+    if (field >= 0.60) {
+        items.push(`Field coherence is strong (${field.toFixed(2)})`)
+    }
+
+    if (attractorType !== "unknown") {
+        items.push(`Attractor is ${attractorType} (${attractorIntensity.toFixed(2)})`)
+    }
+
+    if (support >= 0.55) {
+        items.push(`Network support is favorable (${support.toFixed(2)})`)
+    } else if (density > 0 && netConflict >= 0.35) {
+        items.push(`Network friction is elevated (${netConflict.toFixed(2)})`)
+    }
+
+    return items.slice(0, 5)
+}
+
+function renderSystemEventsPanel(){
+    const root = document.getElementById("mtosEventPanel")
+    if(!root) return
+
+    const events = Array.isArray(window.MTOS_STATE?.events)
+        ? window.MTOS_STATE.events
+        : []
+
+    if(!events.length){
+        root.innerHTML = `
+            <div style="
+                max-width:860px;
+                margin:0 auto;
+                padding:14px;
+                border:1px solid rgba(255,255,255,0.08);
+                border-radius:16px;
+                background:rgba(255,255,255,0.03);
+                color:#e5e7eb;
+                text-align:left;
+            ">
+                <div style="font-size:18px;font-weight:700;color:#fff;">Background Mode</div>
+                <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
+                    Type: background • Level: low • Score: 0.18
+                </div>
+                <div style="font-size:14px;line-height:1.6;margin-top:8px;">
+                    No major event threshold reached.
+                </div>
+            </div>
+        `
+        return
+    }
+
+    root.innerHTML = `
+        <div style="
+            max-width:860px;
+            margin:0 auto;
+            display:grid;
+            gap:10px;
+        ">
+            ${events.map(e => `
+                <div style="
+                    padding:14px;
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:16px;
+                    background:rgba(255,255,255,0.03);
+                    color:#e5e7eb;
+                    text-align:left;
+                ">
+                    <div style="font-size:18px;font-weight:700;color:#fff;">${e.title}</div>
+                    <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
+                        Type: ${e.type} • Level: ${e.level} • Score: ${Number(e.score || 0).toFixed(2)}
+                    </div>
+                    <div style="font-size:14px;line-height:1.6;margin-top:8px;">
+                        ${e.description}
+                    </div>
+                </div>
+            `).join("")}
+        </div>
+    `
+}
+
+function renderSystemDecisionPanel(){
+    const root = document.getElementById("mtosDecisionPanel")
+    if(!root) return
+
+    const decision = window.MTOS_STATE?.decision || null
+    const selectedTarget = decision?.selectedTarget || null
+
+    if(!decision){
+        root.innerHTML = `
+            <div style="
+                max-width:860px;
+                margin:0 auto;
+                padding:14px;
+                border:1px solid rgba(255,255,255,0.08);
+                border-radius:16px;
+                background:rgba(255,255,255,0.03);
+                color:#9ca3af;
+            ">
+                No system decision yet
+            </div>
+        `
+        return
+    }
+
+    root.innerHTML = `
+        <div style="
+            max-width:860px;
+            margin:0 auto;
+            padding:18px;
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            background:
+                radial-gradient(circle at 12% 100%, rgba(0,255,136,0.08), transparent 25%),
+                radial-gradient(circle at 88% 100%, rgba(255,210,80,0.06), transparent 22%),
+                linear-gradient(180deg, rgba(8,10,14,0.98) 0%, rgba(4,6,9,1) 100%);
+            color:#f8fafc;
+            text-align:left;
+        ">
+            <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:8px;">
+                System Output
+            </div>
+            <div style="font-size:28px;font-weight:800;color:#00ff88;line-height:1.1;">
+                ${decision.mode || "EXPLORE"}
+            </div>
+            <div style="font-size:16px;line-height:1.7;color:#e5e7eb;margin-top:12px;">
+                ${decision.action || "Observe the field."}
+            </div>
+            <div style="font-size:13px;color:#9ca3af;margin-top:12px;">
+                Reason: ${decision.reason || "No reason"}
+            </div>
+            <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
+                Confidence: ${decision.confidence || 50}%
+            </div>
+            ${selectedTarget ? `
+    <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
+        Best target now: <span style="color:#00ff88;font-weight:700;">${selectedTarget.name}</span>
+        • ${selectedTarget.label}
+        • score ${Number(selectedTarget.score ?? 0).toFixed(2)}
+    </div>
+` : ""}
+        </div>
+    `
+}
+
+
+
+function resolveDecisionTargetsLocal(){
+    const currentName = getCurrentUserName()
+    const decision = window.MTOS_STATE?.decision || window.mtosDecision || {}
+    const mode = String(decision?.mode || "EXPLORE").toUpperCase()
+    const relations = Array.isArray(window.currentNetworkRelations)
+        ? window.currentNetworkRelations
+        : []
+
+    if (!currentName || !relations.length) {
+        return {
+            primary: [],
+            avoid: [],
+            neutral: []
+        }
+    }
+
+    const mapped = relations
+        .filter(r => r && (r.source === currentName || r.target === currentName))
+        .map(r => {
+            const other = r.source === currentName ? r.target : r.source
+            const score = Number(r.adjustedScore ?? r.score ?? r.displayScore ?? r.strength ?? 0)
+            const label = String(r.label || r.type || "neutral")
+            const isContact = !!r.isTodayRealContact
+            const urgency = Number(r.urgency ?? 0)
+            const timePressure = Number(r.timePressure ?? 0)
+
+            let priority = score
+
+            if (mode === "INTERACT") {
+                priority += isContact ? 0.22 : 0
+                priority += score > 0 ? 0.18 : -0.12
+            } else if (mode === "FOCUS") {
+                priority += score > 0 ? 0.08 : -0.18
+                priority -= urgency * 0.08
+            } else if (mode === "REST") {
+                priority -= Math.abs(score) * 0.18
+                priority -= urgency * 0.12
+            } else {
+                priority += score > 0 ? 0.06 : -0.06
+            }
+
+            return {
+                name: other,
+                score: Number(score.toFixed(3)),
+                label,
+                isTodayRealContact: isContact,
+                urgency: Number(urgency.toFixed(3)),
+                timePressure: Number(timePressure.toFixed(3)),
+                priority: Number(priority.toFixed(3))
+            }
+        })
+
+    const primary = mapped
+        .filter(x => x.score > 0.12)
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, 3)
+
+    const avoid = mapped
+        .filter(x => x.score < -0.12)
+        .sort((a, b) => a.priority - b.priority)
+        .slice(0, 3)
+
+    const used = new Set([
+        ...primary.map(x => x.name),
+        ...avoid.map(x => x.name)
+    ])
+
+    const neutral = mapped
+        .filter(x => !used.has(x.name))
+        .sort((a, b) => Math.abs(a.score) - Math.abs(b.score))
+        .slice(0, 3)
+
+    return { primary, avoid, neutral }
+}
+
+window.resolveDecisionTargets = resolveDecisionTargetsLocal
+
+const MTOS_SELECTED_TARGET_KEY = "mtos_selected_target_v1"
+
+function getSelectedDecisionTarget(){
+    try{
+        return localStorage.getItem(MTOS_SELECTED_TARGET_KEY) || ""
+    }catch(e){
+        return ""
+    }
+}
+
+function setSelectedDecisionTarget(name){
+    try{
+        if(!name){
+            localStorage.removeItem(MTOS_SELECTED_TARGET_KEY)
+            return
+        }
+        localStorage.setItem(MTOS_SELECTED_TARGET_KEY, String(name))
+    }catch(e){}
+}
+
+window.getSelectedDecisionTarget = getSelectedDecisionTarget
+window.setSelectedDecisionTarget = setSelectedDecisionTarget
+
+function renderDecisionTargetsPanel(){
+    const root = document.getElementById("mtosTargetsPanel")
+    if (!root) return
+
+    const targets =
+        window.MTOS_STATE?.decision?.targets && typeof window.MTOS_STATE.decision.targets === "object"
+            ? window.MTOS_STATE.decision.targets
+            : resolveDecisionTargetsLocal()
+
+    const currentName = window.getCurrentUserName ? window.getCurrentUserName() : ""
+    const selectedName = getSelectedDecisionTarget()
+
+    const renderList = (items, color, emptyText, groupName) => {
+        if (!Array.isArray(items) || !items.length) {
+            return `<div style="color:#94a3b8;font-size:13px;">${emptyText}</div>`
+        }
+
+        return items.map((item) => {
+            const isSelected = item.name === selectedName
+
+            return `
+                <div style="
+                    padding:10px 12px;
+                    border-radius:14px;
+                    background:${isSelected ? "rgba(0,255,136,0.08)" : "rgba(255,255,255,0.03)"};
+                    border:1px solid ${isSelected ? "rgba(0,255,136,0.24)" : "rgba(255,255,255,0.07)"};
+                    margin-bottom:8px;
+                    box-shadow:${isSelected ? "0 0 0 1px rgba(0,255,136,0.08) inset" : "none"};
+                ">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                        <div>
+                            <div style="font-size:15px;font-weight:700;color:${color};">
+                                ${item.name}
+                            </div>
+                            ${isSelected ? `
+                                <div style="font-size:11px;color:#00ff88;margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">
+                                    Selected target
+                                </div>
+                            ` : ""}
+                        </div>
+
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            ${
+                                groupName === "avoid"
+                                    ? ""
+                                    : `
+                                <button
+                                    type="button"
+                                    class="mtos-select-target-btn"
+                                    data-target-name="${String(item.name).replace(/"/g, "&quot;")}"
+                                    style="
+                                        padding:6px 10px;
+                                        border-radius:10px;
+                                        border:1px solid ${isSelected ? "rgba(0,255,136,0.35)" : "rgba(255,255,255,0.10)"};
+                                        background:${isSelected ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.05)"};
+                                        color:${isSelected ? "#00ff88" : "#f8fafc"};
+                                        cursor:pointer;
+                                        font-size:12px;
+                                        font-weight:700;
+                                    "
+                                >${isSelected ? "Selected" : "Select"}</button>
+
+                                <button
+                                    type="button"
+                                    class="mtos-contact-btn"
+                                    data-contact-name="${String(item.name).replace(/"/g, "&quot;")}"
+                                    data-current-name="${String(currentName).replace(/"/g, "&quot;")}"
+                                    style="
+                                        padding:6px 10px;
+                                        border-radius:10px;
+                                        border:1px solid ${item.isTodayRealContact ? "rgba(0,255,136,0.35)" : "rgba(255,255,255,0.10)"};
+                                        background:${item.isTodayRealContact ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.05)"};
+                                        color:${item.isTodayRealContact ? "#00ff88" : "#f8fafc"};
+                                        cursor:pointer;
+                                        font-size:12px;
+                                        font-weight:700;
+                                    "
+                                >${item.isTodayRealContact ? "Marked" : "Contact"}</button>
+                            `
+                            }
+                        </div>
+                    </div>
+
+                    <div style="font-size:12px;color:#cbd5e1;margin-top:6px;">
+                        ${item.label} • score ${Number(item.score ?? 0).toFixed(2)}
+                        ${item.isTodayRealContact ? " • real contact" : ""}
+                    </div>
+                </div>
+            `
+        }).join("")
+    }
+
+    root.innerHTML = `
+        <div style="
+            max-width:860px;
+            margin:0 auto;
+            padding:18px;
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            background:
+                radial-gradient(circle at 12% 100%, rgba(0,255,136,0.08), transparent 25%),
+                radial-gradient(circle at 88% 100%, rgba(255,210,80,0.06), transparent 22%),
+                linear-gradient(180deg, rgba(8,10,14,0.98) 0%, rgba(4,6,9,1) 100%);
+            color:#f8fafc;
+            text-align:left;
+        ">
+            <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:12px;">
+                Decision Targets
+            </div>
+
+            <div style="font-size:13px;color:#cbd5e1;margin-bottom:14px;">
+                Choose one target for today
+            </div>
+
+            <div style="
+                display:grid;
+                grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+                gap:14px;
+            ">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#00ff88;margin-bottom:10px;">Best contact now</div>
+                    ${renderList(targets.primary, "#00ff88", "No primary targets", "primary")}
+                </div>
+
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#ffb347;margin-bottom:10px;">Possible contacts</div>
+                    ${renderList(targets.neutral, "#ffb347", "No neutral targets", "neutral")}
+                </div>
+
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#ff6666;margin-bottom:10px;">Avoid today</div>
+                    ${renderList(targets.avoid, "#ff6666", "No avoid targets", "avoid")}
+                </div>
+            </div>
+        </div>
+    `
+
+    root.querySelectorAll(".mtos-select-target-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const targetName = btn.dataset.targetName || ""
+        if (!targetName) return
+
+        setSelectedDecisionTarget(targetName)
+
+        const currentTargets =
+            window.MTOS_STATE?.decision?.targets ||
+            resolveDecisionTargetsLocal()
+
+        const allTargets = [
+            ...(Array.isArray(currentTargets.primary) ? currentTargets.primary : []),
+            ...(Array.isArray(currentTargets.neutral) ? currentTargets.neutral : []),
+            ...(Array.isArray(currentTargets.avoid) ? currentTargets.avoid : [])
+        ]
+
+        const selectedTarget =
+            allTargets.find(x => x.name === targetName) || null
+
+        window.updateMTOSBranch("decision", {
+            ...(window.MTOS_STATE?.decision || {}),
+            targets: currentTargets,
+            selectedTarget
+        })
+
+        renderDecisionSummaryPanel("humanLayer")
+        renderSystemDecisionPanel()
+        renderDecisionTargetsPanel()
+        renderActionTracePanel()
     })
+})
 
-    const scientificWhy = getScientificExplanation(ds, {
-        attention,
-        noise,
-        entropy,
-        lyapunov,
-        prediction,
-        predictability
+    root.querySelectorAll(".mtos-contact-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const a = btn.dataset.currentName || (window.getCurrentUserName ? window.getCurrentUserName() : "")
+            const b = btn.dataset.contactName || ""
+            const isMarked = String(btn.textContent || "").trim().toLowerCase() === "marked"
+
+            if (!a || !b || a === b) return
+
+            if (isMarked) {
+                if (typeof window.unmarkTodayContact === "function") {
+                    window.unmarkTodayContact(a, b)
+                }
+            } else {
+                if (typeof window.markTodayContact === "function") {
+                    window.markTodayContact(a, b)
+                }
+            }
+        })
     })
+}
 
-    const validation = getScientificValidation()
+function renderFieldTensionPanel(){
+    const root = document.getElementById("mtosTensionPanel")
+    if (!root) return
 
-    const learning = getLearningSummary()
+    const ds = window.mtosDayState || {}
+    const tp = window.mtosTimePressureSummary || {}
+    const metabolic = window.mtosMetabolicMetrics || {}
+    const collective = window.mtosCollectiveState || {}
 
-    el.innerHTML = `
-<div class="hero-grid">
+    const pressure = Number(tp.value ?? ds.pressure ?? 0)
+    const stability = Number(ds.stability ?? collective.stability ?? 0.5)
+    const phi = Number(metabolic.phi ?? collective.phi ?? 0)
+    const k = Number(metabolic.k ?? collective.k ?? 0)
+    const consistency = Number(metabolic.consistency ?? collective.consistency ?? 0)
+    const temp = Number(metabolic.T ?? collective.temperature ?? 0.5)
 
-    <div class="hero-card">
-        <div class="hero-label">USER</div>
-        <div class="hero-main">Kin ${safeNum(userMeta.kin, userKin)}</div>
-        <div class="hero-sub">
-            ${safeText(userMeta.seal, "Unknown")} · Tone ${safeNum(userMeta.tone, ((userKin - 1) % 13) + 1)}<br>
-            Seal #${safeNum(userMeta.sealIndex, ((userKin - 1) % 20) + 1)}
-        </div>
-    </div>
+    const tensionLevel =
+        pressure >= 0.75 ? "HIGH" :
+        pressure >= 0.45 ? "MEDIUM" : "LOW"
 
-    <div class="hero-card">
-        <div class="hero-label">TODAY</div>
-        <div class="hero-main">Kin ${safeNum(todayMeta.kin, todayKin)}</div>
-        <div class="hero-sub">
-            ${safeText(todayMeta.seal, "Unknown")} · Tone ${safeNum(todayMeta.tone, ((todayKin - 1) % 13) + 1)}<br>
-            Seal #${safeNum(todayMeta.sealIndex, ((todayKin - 1) % 20) + 1)}
-        </div>
-    </div>
+    const gradientText =
+        consistency >= 0.22 ? "uneven" :
+        consistency >= 0.10 ? "mixed" : "stable"
 
-    <div class="hero-card">
-        <div class="hero-label">DAY STATE</div>
-        <div class="hero-main" style="color:${safeText(ds.dayColor, "#00ff88")}">
-            ${safeText(label, "UNKNOWN")} → ${safeText(mode, "UNKNOWN")}
-        </div>
-        <div class="hero-sub">
-            ${safeText(desc, "No description")}<br>
-            ${safeText(ds.dayDesc, "No state description")}<br>
-            Attractor: ${getAttractorLabel()}
-        </div>
-    </div>
-</div>
+    const toneColor =
+        pressure >= 0.75 ? "#ff6666" :
+        pressure >= 0.45 ? "#ffb347" : "#00ff88"
 
-<div class="decision-box">
-    <div class="decision-title">TODAY DECISION OUTPUT</div>
-    <div class="decision-main">${safeText(decision.text, "NO DATA")}</div>
-    <div class="decision-sub">
-        Confidence: ${safeNum(decision.confidence, 0).toFixed(2)}
-        · Scientific confidence: ${scientific.value.toFixed(2)}
-        · Calibration: ${scientific.calibration}
-        · Auto-feedback: ${safeText(auto.label ?? auto.result ?? "unknown", "unknown")}
-    </div>
-
-    <div class="hero-notes">
-        <div class="hero-note"><b>Do:</b> ${safeText(guide.doText, "—")}</div>
-        <div class="hero-note"><b>Avoid:</b> ${safeText(guide.avoidText, "—")}</div>
-        <div class="hero-note"><b>Risk:</b> ${safeText(guide.riskText, "—")}</div>
-        <div class="hero-note"><b>Why:</b> ${safeText(explanation, "—")}</div>
-        <div class="hero-note"><b>Memory:</b> seal ${safeNum(mem.seal, 0).toFixed(2)} · kin ${safeNum(mem.kin, 0).toFixed(2)} · user ${safeNum(mem.user, 0).toFixed(2)}</div>
-    </div>
-</div>
-
-<div class="decision-box" style="margin-top:12px;">
-    <div class="decision-title">MODEL EXPLANATION</div>
-    <div class="hero-notes">
-        ${scientificWhy.map(line => `<div class="hero-note">• ${line}</div>`).join("")}
-    </div>
-</div>
-
-<div class="decision-box" style="margin-top:12px;">
-    <div class="decision-title">VALIDATION</div>
-    <div class="hero-notes">
-        <div class="hero-note"><b>Forecasts:</b> total ${validation.total} · resolved ${validation.resolved} · pending ${validation.pending}</div>
-        <div class="hero-note"><b>Accuracy:</b> ${validation.correct}/${validation.resolved || 0} · hit rate ${validation.hitRate.toFixed(2)}</div>
-        <div class="hero-note"><b>Auto-evaluation:</b> ${validation.autoFeedback}</div>
-        <div class="hero-note"><b>Predictability horizon:</b> ${safeNum(predictability, 0)}</div>
-    </div>
-
-    <div class="decision-box" style="margin-top:12px;">
-    <div class="decision-title">SELF-LEARNING LOOP</div>
-    <div class="hero-notes">
-        <div class="hero-note"><b>Total learning steps:</b> ${learning.total}</div>
-        <div class="hero-note"><b>Successful:</b> ${learning.ok}</div>
-        <div class="hero-note"><b>Failed:</b> ${learning.bad}</div>
-        <div class="hero-note"><b>Learning rate:</b> ${learning.rate.toFixed(2)}</div>
-        <div class="hero-note"><b>Current learning signal:</b> ${safeNum(window.mtosLearningSignal ?? 0, 0).toFixed(2)}</div>
-    </div>
-</div>
-</div>
-`
-
-    if(quick){
-    quick.innerHTML = `
-        <div class="metric-card">
-            <div class="metric-label">ATTENTION</div>
-            <div class="metric-value">${attention.toFixed(2)}</div>
-            <div class="metric-sub">${interpretAttention(attention)}</div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-label">NOISE / PRESSURE</div>
-            <div class="metric-value">${noise.toFixed(2)}</div>
-            <div class="metric-sub">${interpretNoise(noise)}</div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-label">ENTROPY / λ</div>
-            <div class="metric-value">${entropy.toFixed(2)}</div>
-            <div class="metric-sub">
-                ${getEntropyDescription(entropy)} · λ ${lyapunov.toFixed(3)}
+    root.innerHTML = `
+        <div style="
+            max-width:860px;
+            margin:0 auto;
+            padding:18px;
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            background:
+                radial-gradient(circle at 12% 100%, rgba(0,255,136,0.08), transparent 25%),
+                radial-gradient(circle at 88% 100%, rgba(255,210,80,0.06), transparent 22%),
+                linear-gradient(180deg, rgba(8,10,14,0.98) 0%, rgba(4,6,9,1) 100%);
+            color:#f8fafc;
+            text-align:left;
+        ">
+            <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:12px;">
+                Field Tension
             </div>
-        </div>
 
-        <div class="metric-card">
-            <div class="metric-label">PREDICTABILITY</div>
-            <div class="metric-value">${predictability}</div>
-            <div class="metric-sub">
-                ${interpretPredictability(predictability)} · prediction ${prediction.toFixed(2)}
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;">
+                <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Pressure</div>
+                    <div style="margin-top:4px;font-size:18px;font-weight:700;color:${toneColor};">${pressure.toFixed(2)}</div>
+                </div>
+                <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Stability</div>
+                    <div style="margin-top:4px;font-size:18px;font-weight:700;">${stability.toFixed(2)}</div>
+                </div>
+                <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Φ</div>
+                    <div style="margin-top:4px;font-size:18px;font-weight:700;">${phi.toFixed(3)}</div>
+                </div>
+                <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">k</div>
+                    <div style="margin-top:4px;font-size:18px;font-weight:700;">${k.toFixed(3)}</div>
+                </div>
+                <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">T</div>
+                    <div style="margin-top:4px;font-size:18px;font-weight:700;">${temp.toFixed(2)}</div>
+                </div>
+                <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Consistency</div>
+                    <div style="margin-top:4px;font-size:18px;font-weight:700;">${consistency.toFixed(3)}</div>
+                </div>
             </div>
-        </div>
 
-        <div class="metric-card">
-            <div class="metric-label">TIME PRESSURE</div>
-            <div class="metric-value">${(window.mtosTimePressureSummary?.value ?? 0).toFixed(2)}</div>
-            <div class="metric-sub">
-                ${(window.mtosTimePressureSummary?.label ?? "low")} · ${(window.mtosTimePressureSummary?.temporalMode ?? "EXPLORE")}
+            <div style="font-size:15px;font-weight:700;color:${toneColor};">
+                ${tensionLevel} TENSION
             </div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-label">MODEL VALIDATION</div>
-            <div class="metric-value">${scientific.hitRate.toFixed(2)}</div>
-            <div class="metric-sub">
-                ${scientific.correct}/${scientific.resolved} resolved · calibration ${scientific.calibration}
+            <div style="font-size:13px;line-height:1.7;color:#cbd5e1;margin-top:8px;">
+                Gradient: <b>${gradientText}</b><br>
+                Temporal mode: <b>${tp.temporalMode || "EXPLORE"}</b><br>
+                Interpretation: ${
+                    pressure >= 0.75
+                        ? "Field is compressed. Actions amplify consequences."
+                        : pressure >= 0.45
+                        ? "Field is active. Choose direction carefully."
+                        : "Field is open enough for soft movement."
+                }
             </div>
         </div>
     `
 }
+
+function renderActionTracePanel(){
+    const root = document.getElementById("mtosTracePanel")
+    if (!root) return
+
+const decision = window.MTOS_STATE?.decision || window.mtosDecision || {}
+const mode = String(decision.mode || "EXPLORE").toUpperCase()
+const ds = window.mtosDayState || {}
+const net = window.mtosNetworkFeedback || {}
+const tp = window.mtosTimePressureSummary || {}
+const targets = window.MTOS_STATE?.decision?.targets || { primary: [], avoid: [], neutral: [] }
+const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
+
+    let title = `If ${mode}`
+    let lines = []
+    let confidence = "medium"
+
+    if (mode === "INTERACT") {
+    title = selectedTarget
+        ? `If you contact ${selectedTarget.name}:`
+        : "If you choose one of the primary contacts:"
+
+        if (selectedTarget) {
+    lines = [
+        `Contact ${selectedTarget.name} → ${selectedTarget.label}`,
+        Number(selectedTarget.score ?? 0) >= 0.75
+            ? "This target has very strong alignment today"
+            : "This target is supportive, but needs clean timing",
+        Number(tp.value ?? 0) >= 0.6
+            ? "Keep the interaction short and precise"
+            : "One direct contact is better than multiple parallel contacts"
+    ]
+} else {
+    const primaryNames = Array.isArray(targets.primary)
+        ? targets.primary.map(x => x.name).slice(0, 3)
+        : []
+
+    if (primaryNames.length) {
+        lines = primaryNames.map((name, i) => {
+            if (i === 0) return `Contact ${name} → strongest alignment`
+            if (i === 1) return `Contact ${name} → stable expansion`
+            return `Contact ${name} → safe reinforcement`
+        })
+    } else {
+        lines = [
+            `Network may expand (${Number(net.supportRatio ?? 0).toFixed(2)} support zone)`,
+            Number(ds.stability ?? 0.5) < 0.5
+                ? "Stability may dip if contact becomes reactive"
+                : "Constructive alignment is likely if contact stays clean",
+            Number(tp.value ?? 0) >= 0.6
+                ? "Parallel contacts may create overload"
+                : "One direct contact is favored over many weak contacts"
+        ]
+    }
+}
+
+        confidence = Number(tp.value ?? 0) >= 0.6 ? "medium" : "good"
+    } else if (mode === "FOCUS") {
+        lines = [
+            "Stability can improve through narrower execution",
+            "Network activity will likely compress",
+            "New external branches may reduce coherence"
+        ]
+        confidence = "good"
+    } else if (mode === "REST") {
+        lines = [
+            "Pressure can decrease if commitments are reduced",
+            "Opportunities remain, but active expansion slows down",
+            "Best effect comes from maintenance, not push"
+        ]
+        confidence = "good"
+    } else {
+        lines = [
+            "Signals may diversify before they stabilize",
+            "Useful paths can appear, but certainty stays low",
+            "Too many experiments may scatter energy"
+        ]
+        confidence = "medium"
+    }
+
+    root.innerHTML = `
+        <div style="
+            max-width:860px;
+            margin:0 auto;
+            padding:18px;
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            background:
+                radial-gradient(circle at 12% 100%, rgba(0,255,136,0.08), transparent 25%),
+                radial-gradient(circle at 88% 100%, rgba(255,210,80,0.06), transparent 22%),
+                linear-gradient(180deg, rgba(8,10,14,0.98) 0%, rgba(4,6,9,1) 100%);
+            color:#f8fafc;
+            text-align:left;
+        ">
+            <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:12px;">
+                Action Trace
+            </div>
+
+            <div style="font-size:20px;font-weight:800;color:#00ff88;line-height:1.15;margin-bottom:10px;">
+                ${title}
+            </div>
+
+            <div style="display:grid;gap:8px;">
+                ${lines.map(line => `
+                    <div style="
+                        padding:10px 12px;
+                        border-radius:14px;
+                        background:rgba(255,255,255,0.03);
+                        border:1px solid rgba(255,255,255,0.07);
+                        font-size:14px;
+                        line-height:1.6;
+                        color:#e5e7eb;
+                    ">→ ${line}</div>
+                `).join("")}
+            </div>
+
+            <div style="font-size:13px;color:#9ca3af;margin-top:12px;">
+                Confidence: ${confidence}
+            </div>
+        </div>
+    `
+}
+
+function renderDecisionSummaryPanel(targetId = "todayPanel"){
+    const root = document.getElementById(targetId)
+    if(!root) return
+
+    const ds = window.mtosDayState || {}
+    const decision = window.mtosDecision || {}
+    const tpSummary = window.mtosTimePressureSummary || {}
+    const attractorState = window.mtosAttractorState || {}
+    const networkFeedback = window.mtosNetworkFeedback || {}
+    const userMeta = window.mtosUserMeta || {}
+    const todayMeta = window.mtosTodayMeta || {}
+    const metabolic = window.mtosMetabolicMetrics || {}
+
+    const currentDay = getCurrentRunDay()
+const currentUser = getCurrentUserName()
+const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
+
+const currentFeedback = getHumanFeedbackFor(currentDay, currentUser)
+const currentFeedbackValue = String(currentFeedback?.value || "").toLowerCase()
+
+const currentRelationFeedback = selectedTarget
+    ? getRelationFeedbackFor(currentDay, currentUser, selectedTarget.name)
+    : null
+
+const currentRelationFeedbackValue = String(
+    currentRelationFeedback?.value || currentFeedbackValue || ""
+).toLowerCase()
+
+const feedbackAck = getFeedbackAck()
+const showAck =
+    feedbackAck &&
+    (Date.now() - Number(feedbackAck.t || 0)) < 7000
+
+    const dayType = getSimpleDayType(ds, tpSummary)
+    const energy = getEnergyBand(ds)
+    const risk = getRiskBand(ds, tpSummary, attractorState, networkFeedback)
+    const action = getTodayAction(decision, ds, tpSummary, networkFeedback)
+    const whyList = buildWhyList(ds, tpSummary, attractorState, networkFeedback)
+
+    const rawConfidence = Number(decision?.confidence)
+    const confidence = Number.isFinite(rawConfidence)
+        ? Math.max(0, Math.min(1, rawConfidence))
+        : 0.5
+
+    const confidencePct = Math.round(confidence * 100)
+
+    const phi = Number(metabolic?.phi ?? 0)
+    const k = Number(metabolic?.k ?? 0)
+    const T = Number(metabolic?.T ?? 0)
+    const P = Number(metabolic?.P ?? 0)
+    const V = Number(metabolic?.V ?? 0)
+    const consistency = Number(metabolic?.consistency ?? 0)
+
+    const nextStep =
+        action?.doList?.[0] ||
+        decision?.text ||
+        "Move one step without overcommitting."
+
+    const decisionBridge = (() => {
+        const label = String(ds?.dayLabel || "").toUpperCase()
+        const mode = String(decision?.mode || "").toUpperCase()
+
+        if (label === "FOCUS" && mode === "EXPLORE") {
+            return "State is coherent, but the system prefers soft exploration instead of hard fixation."
+        }
+
+        if (label === "FOCUS" && mode === "FOCUS") {
+            return "Both state and action align: this is a direct execution window."
+        }
+
+        if (label === "BALANCED" && mode === "EXPLORE") {
+            return "The field is stable enough to probe, test, and move without forcing commitment."
+        }
+
+        if (label === "RECOVERY" && mode === "REST") {
+            return "Recovery state and recommended mode are aligned: reduce pressure and restore coherence."
+        }
+
+        if (label === "FATIGUE" && mode === "REST") {
+            return "The system detects overload; the safest move is to reduce input and avoid escalation."
+        }
+
+        return decision?.text || "The mode is derived from the current balance of pressure, field, and stability."
+    })()
+
+    root.innerHTML = `
+        <div style="
+            max-width: 980px;
+            margin: 28px auto 0;
+            padding: 22px;
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 28px;
+            background:
+                radial-gradient(circle at 12% 100%, rgba(0,255,136,0.07), transparent 25%),
+                radial-gradient(circle at 88% 100%, rgba(255,210,80,0.06), transparent 22%),
+                linear-gradient(180deg, rgba(8,10,14,0.98) 0%, rgba(4,6,9,1) 100%);
+            box-shadow:
+                0 24px 60px rgba(0,0,0,0.34),
+                inset 0 0 0 1px rgba(255,255,255,0.02);
+            box-sizing: border-box;
+            color: #f8fafc;
+            font-family: Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+        ">
+            <div style="
+                font-size: 11px;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: #7f8792;
+                text-align: center;
+                margin-bottom: 18px;
+            ">Today Summary</div>
+
+            <div style="
+                display:grid;
+                grid-template-columns: repeat(12, minmax(0, 1fr));
+                gap: 14px;
+                align-items: stretch;
+            ">
+                <div style="
+                    grid-column: span 4;
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    min-height: 126px;
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
+                        Day Type
+                    </div>
+                    <div style="font-size:28px; font-weight:800; color:${dayType.color}; line-height:1.1;">
+                        ${dayType.label}
+                    </div>
+                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px;">
+                        Day index: ${Number(ds?.dayIndex ?? 0).toFixed(2)}
+                    </div>
+                    <div style="margin-top:10px; color:#94a3b8; font-size:12px; line-height:1.55;">
+                        ${ds?.dayDesc || "No description"}
+                    </div>
+                </div>
+
+                <div style="
+                    grid-column: span 4;
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    min-height: 126px;
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
+                        You Today
+                    </div>
+                    <div style="font-size:20px; font-weight:700; color:#ffffff; line-height:1.25;">
+                        Kin ${userMeta.kin ?? window._userKin ?? "—"} — ${ds?.dayLabel || "UNKNOWN"}
+                    </div>
+                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px; line-height:1.75;">
+                        Energy: <b>${energy.label}</b><br>
+                        Risk: <b>${risk}</b><br>
+                        Stability: <b>${Number(ds?.stability ?? 0.5).toFixed(2)}</b>
+                    </div>
+                </div>
+
+                <div style="
+                    grid-column: span 4;
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    min-height: 126px;
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
+                        Today Action
+                    </div>
+                    <div style="font-size:22px; font-weight:800; color:#00ff88; line-height:1.15;">
+                        ${action.title}
+                    </div>
+                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px; line-height:1.75;">
+                        Confidence: <b>${confidencePct}%</b><br>
+                        Next step: <b>${nextStep}</b>
+                    </div>
+                </div>
+
+                <div style="
+                    grid-column: span 8;
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    min-height: 118px;
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
+                        Decision Bridge
+                    </div>
+                    <div style="font-size:15px; font-weight:700; color:#ffffff; line-height:1.45; margin-bottom:10px;">
+                        ${decisionBridge}
+                    </div>
+                    <div style="
+                        display:grid;
+                        grid-template-columns: repeat(6, minmax(0, 1fr));
+                        gap:10px;
+                        margin-top:8px;
+                    ">
+                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">Φ</div>
+                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${phi.toFixed(3)}</div>
+                        </div>
+                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">P</div>
+                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${P.toFixed(2)}</div>
+                        </div>
+                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">V</div>
+                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${V.toFixed(2)}</div>
+                        </div>
+                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">T</div>
+                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${T.toFixed(2)}</div>
+                        </div>
+                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">k</div>
+                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${k.toFixed(3)}</div>
+                        </div>
+                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
+                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">Consistency</div>
+                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${consistency.toFixed(3)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="
+                    grid-column: span 4;
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    min-height: 118px;
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
+                        Today vs Day
+                    </div>
+                    <div style="font-size:18px; font-weight:700; color:#ffffff; line-height:1.25;">
+                        User Kin ${userMeta.kin ?? window._userKin ?? "—"} / Today Kin ${todayMeta.kin ?? window._todayKin ?? "—"}
+                    </div>
+                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px; line-height:1.7;">
+                        User seal: <b>${userMeta.seal ?? "—"}</b><br>
+                        Today seal: <b>${todayMeta.seal ?? "—"}</b><br>
+                        Temporal mode: <b>${tpSummary.temporalMode || "EXPLORE"}</b>
+                    </div>
+                </div>
+            </div>
+
+            <div style="
+                display:grid;
+                grid-template-columns: 1.2fr 1fr;
+                gap: 14px;
+                margin-top: 14px;
+            ">
+                <div style="
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
+                        Do / Avoid
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                        <div>
+                            <div style="font-weight:700; color:#00ff88; margin-bottom:8px;">Do</div>
+                            ${action.doList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.7;">• ${x}</div>`).join("")}
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:#ffb347; margin-bottom:8px;">Avoid</div>
+                            ${action.avoidList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.7;">• ${x}</div>`).join("")}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:20px;
+                    padding:16px;
+                    background:rgba(255,255,255,0.03);
+                    box-sizing:border-box;
+                ">
+                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
+                        Why This Day
+                    </div>
+                    ${whyList.length
+                        ? whyList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.75;">• ${x}</div>`).join("")
+                        : `<div style="color:#94a3b8; font-size:13px;">No dominant reason detected.</div>`
+                    }
+                </div>
+                </div>
+                            <div style="
+                margin-top:14px;
+                border:1px solid rgba(255,255,255,0.08);
+                border-radius:20px;
+                padding:16px;
+                background:rgba(255,255,255,0.03);
+                box-sizing:border-box;
+                text-align:left;
+            ">
+                <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
+                    Manual Feedback
+                </div>
+
+                <div style="font-size:14px; color:#cbd5e1; line-height:1.65; margin-bottom:12px;">
+                    ${selectedTarget
+                        ? `Was contact with <b style="color:#00ff88;">${selectedTarget.name}</b> actually useful today?`
+                        : `Was today's mode actually useful for you?`
+                    }
+                </div>
+
+                <div class="human-feedback">
+                    <button
+                        type="button"
+                        onclick="
+                            window.setHumanFeedbackFor(window.getCurrentRunDay(), window.getCurrentUserName(), 'good');
+                            if(window.MTOS_STATE?.decision?.selectedTarget){
+                                window.setRelationFeedbackFor(
+                                    window.getCurrentRunDay(),
+                                    window.getCurrentUserName(),
+                                    window.MTOS_STATE.decision.selectedTarget.name,
+                                    'good'
+                                );
+                            }
+                            window._rerenderMTOS && window._rerenderMTOS();
+                        "
+                        class="${currentRelationFeedbackValue === "good" ? "active" : ""}"
+                        style="${currentRelationFeedbackValue === "good" ? "border-color:#00ff88;color:#00ff88;" : ""}"
+                    >Good</button>
+
+                    <button
+                        type="button"
+                        onclick="
+                            window.setHumanFeedbackFor(window.getCurrentRunDay(), window.getCurrentUserName(), 'neutral');
+                            if(window.MTOS_STATE?.decision?.selectedTarget){
+                                window.setRelationFeedbackFor(
+                                    window.getCurrentRunDay(),
+                                    window.getCurrentUserName(),
+                                    window.MTOS_STATE.decision.selectedTarget.name,
+                                    'neutral'
+                                );
+                            }
+                            window._rerenderMTOS && window._rerenderMTOS();
+                        "
+                        class="${currentRelationFeedbackValue === "neutral" ? "active" : ""}"
+                        style="${currentRelationFeedbackValue === "neutral" ? "border-color:#d1d5db;color:#ffffff;" : ""}"
+                    >Neutral</button>
+
+                    <button
+                        type="button"
+                        onclick="
+                            window.setHumanFeedbackFor(window.getCurrentRunDay(), window.getCurrentUserName(), 'bad');
+                            if(window.MTOS_STATE?.decision?.selectedTarget){
+                                window.setRelationFeedbackFor(
+                                    window.getCurrentRunDay(),
+                                    window.getCurrentUserName(),
+                                    window.MTOS_STATE.decision.selectedTarget.name,
+                                    'bad'
+                                );
+                            }
+                            window._rerenderMTOS && window._rerenderMTOS();
+                        "
+                        class="${currentRelationFeedbackValue === "bad" ? "active" : ""}"
+                        style="${currentRelationFeedbackValue === "bad" ? "border-color:#ff6666;color:#ff6666;" : ""}"
+                    >Bad</button>
+                </div>
+
+                <div class="human-feedback-note">
+                    Manual feedback updates learning for similar states and also modifies the selected relation in Network / Collective.
+                </div>
+
+                ${showAck ? `
+                    <div style="
+                        margin-top:12px;
+                        display:inline-flex;
+                        align-items:center;
+                        gap:8px;
+                        padding:8px 12px;
+                        border:1px solid rgba(0,255,136,0.22);
+                        border-radius:999px;
+                        background:rgba(0,255,136,0.08);
+                        color:#00ff88;
+                        font-size:12px;
+                        font-weight:700;
+                    ">
+                        ✓ Feedback saved
+                        <span style="color:#cbd5e1;font-weight:400;">
+                            ${feedbackAck.a && feedbackAck.b ? `${feedbackAck.a} ↔ ${feedbackAck.b}` : ""}
+                            ${feedbackAck.value ? ` • ${String(feedbackAck.value).toUpperCase()}` : ""}
+                        </span>
+                    </div>
+                ` : ""}
+            </div>
+        </div>
+    `
 }
 
 function getEntropyDescription(e) {
@@ -2328,13 +5128,153 @@ function getEntropyDescription(e) {
 
     window.setNetworkMode = (mode) => {
 
-    window.networkMode = (mode === "edit") ? "edit" : "interaction"
+    if (mode === "edit") {
+        window.networkMode = "edit"
+    } else if (mode === "link") {
+        window.networkMode = "link"
+    } else if (mode === "contact") {
+        window.networkMode = "contact"
+    } else {
+        window.networkMode = "interaction"
+    }
 
-    const btn = document.getElementById("modeEdit")
-    if (btn) {
+    const btnEdit = document.getElementById("modeEdit")
+    const btnLink = document.getElementById("modeLink")
+    const btnContact = document.getElementById("modeContact")
+
+    if (btnEdit) {
         const isEdit = window.networkMode === "edit"
-        btn.style.background = isEdit ? "#00ff88" : "#111"
-        btn.style.color = isEdit ? "#000" : "#fff"
+        btnEdit.style.background = isEdit ? "#00ff88" : "#111"
+        btnEdit.style.color = isEdit ? "#000" : "#fff"
+    }
+
+    if (btnLink) {
+        const isLink = window.networkMode === "link"
+        btnLink.style.background = isLink ? "#66ccff" : "#111"
+        btnLink.style.color = isLink ? "#000" : "#fff"
+    }
+
+    if (btnContact) {
+        const isContact = window.networkMode === "contact"
+        btnContact.style.background = isContact ? "#ffd166" : "#111"
+        btnContact.style.color = isContact ? "#111" : "#fff"
+    }
+
+    if (window._weather) {
+        renderAll(
+            window._weather,
+            window._weatherToday,
+            window._pressure,
+            window._userKin,
+            window._todayKin,
+            window._date.year,
+            window._date.month,
+            window._date.day
+        )
+    }
+}
+
+window.networkRelationFilter = window.networkRelationFilter || "all"
+
+window.setNetworkRelationFilter = (filter) => {
+    window.networkRelationFilter = filter || "all"
+
+    if (window._rerenderMTOS) {
+        window._rerenderMTOS()
+    }
+}
+
+window.networkRelationFilter = window.networkRelationFilter || "all"
+
+window.setNetworkRelationFilter = (filter) => {
+    window.networkRelationFilter = filter || "all"
+
+    const ids = [
+        "relFilterAll",
+        "relFilterStrongSupport",
+        "relFilterWeakSupport",
+        "relFilterNeutral",
+        "relFilterTension",
+        "relFilterConflict",
+        "relFilterStrongConflict",
+        "relFilterContact"
+    ]
+
+    ids.forEach(id => {
+        const btn = document.getElementById(id)
+        if (!btn) return
+
+        btn.style.background = "rgba(255,255,255,0.04)"
+        btn.style.color = "#e5e7eb"
+        btn.style.borderColor = "rgba(255,255,255,0.12)"
+        btn.style.boxShadow = "0 8px 24px rgba(0,0,0,0.22)"
+    })
+
+    const activeMap = {
+        all: "relFilterAll",
+        strong_support: "relFilterStrongSupport",
+        weak_support: "relFilterWeakSupport",
+        neutral: "relFilterNeutral",
+        tension: "relFilterTension",
+        conflict: "relFilterConflict",
+        strong_conflict: "relFilterStrongConflict",
+        contact: "relFilterContact"
+    }
+
+    const active = document.getElementById(activeMap[window.networkRelationFilter])
+    if (active) {
+        active.style.background = "linear-gradient(90deg, rgba(0,255,136,0.90), rgba(110,255,190,0.86))"
+        active.style.color = "#04110d"
+        active.style.borderColor = "transparent"
+        active.style.boxShadow = "0 0 20px rgba(0,255,136,0.20)"
+    }
+
+    if (window._rerenderMTOS) {
+        window._rerenderMTOS()
+    }
+}
+
+window.setNetworkRelationFilter = (filter) => {
+    window.networkRelationFilter = filter || "all"
+
+    const ids = [
+        "relFilterAll",
+        "relFilterStrongSupport",
+        "relFilterWeakSupport",
+        "relFilterNeutral",
+        "relFilterTension",
+        "relFilterConflict",
+        "relFilterStrongConflict",
+        "relFilterContact"
+    ]
+
+    ids.forEach(id => {
+        const btn = document.getElementById(id)
+        if (!btn) return
+
+        btn.style.background = "rgba(255,255,255,0.04)"
+        btn.style.color = "#e5e7eb"
+        btn.style.borderColor = "rgba(255,255,255,0.12)"
+        btn.style.boxShadow = "0 8px 24px rgba(0,0,0,0.22)"
+    })
+
+    const activeMap = {
+        all: "relFilterAll",
+        strong_support: "relFilterStrongSupport",
+        weak_support: "relFilterWeakSupport",
+        neutral: "relFilterNeutral",
+        tension: "relFilterTension",
+        conflict: "relFilterConflict",
+        strong_conflict: "relFilterStrongConflict",
+        contact: "relFilterContact"
+    }
+
+    const active = document.getElementById(activeMap[window.networkRelationFilter])
+    if (active) {
+        active.style.background = "linear-gradient(90deg, rgba(0,255,136,0.90), rgba(110,255,190,0.86))"
+        active.style.color = "#04110d"
+        active.style.borderColor = "transparent"
+        active.style.boxShadow = "0 0 20px rgba(0,255,136,0.20)"
     }
 
     if (window._weather) {
@@ -2795,8 +5735,13 @@ const shortAdvice =
         return
     }
 
-    const matrix = buildTodayInfluenceMatrix(activeKin, users)
-    window._matrix = matrix
+    let matrix = buildTodayInfluenceMatrix(activeKin, users)
+
+    if (typeof applyTodayContactsToAttractorField === "function") {
+    matrix = applyTodayContactsToAttractorField(matrix, users)
+}
+
+window._matrix = matrix
 
     // полностью скрываем старую карту/движок
     mapEl.innerHTML = ""
@@ -3550,10 +6495,6 @@ function safeText(value, fallback = "unknown") {
 function safeNum(value, fallback = 0) {
     const n = Number(value)
     return Number.isFinite(n) ? n : fallback
-}
-
-function clamp01Local(v) {
-    return Math.max(0, Math.min(1, safeNum(v, 0)))
 }
 
 function wrapPhaseDelta(a, b) {

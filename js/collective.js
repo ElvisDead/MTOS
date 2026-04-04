@@ -1,3 +1,5 @@
+import { getRelationLabel } from "./relationTypes.js"
+
 export function drawCollective(id, users){
         function getTimePressureState(){
         const tp = window.mtosTimePressure || window.mtosTimePressureSummary || {}
@@ -88,6 +90,13 @@ temperature -= Math.max(0, -timePressureState.momentum) * 0.03
 
 temperature = Math.max(0.15, Math.min(0.95, temperature))
 
+const metabolic = window.mtosMetabolicMetrics || {}
+const collectivePressure = Number(metabolic.P ?? timePressureState.pressure ?? 0)
+const collectiveVolume = Number(metabolic.V ?? 0.5)
+const collectivePhi = Math.max(0, collectivePressure * collectiveVolume)
+const collectiveK = collectivePhi / Math.max(temperature, 1e-6)
+const collectiveConsistency = Math.abs(collectivePhi - collectiveK * temperature)
+
     let memory = {}
     const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
     try {
@@ -129,6 +138,17 @@ temperature = Math.max(0.15, Math.min(0.95, temperature))
     tempEl.style.marginBottom = "8px"
         
     box.appendChild(tempEl)
+
+    const metabolicEl = document.createElement("div")
+metabolicEl.innerText =
+    "Φ: " + collectivePhi.toFixed(3) +
+    " • k: " + collectiveK.toFixed(3) +
+    " • consistency: " + collectiveConsistency.toFixed(4)
+metabolicEl.style.color = "#888"
+metabolicEl.style.textAlign = "center"
+metabolicEl.style.marginBottom = "8px"
+
+box.appendChild(metabolicEl)
 
     const attractorIntensity = Number(attractorState?.intensity ?? 0)
 
@@ -199,69 +219,39 @@ box.appendChild(timePressureEl)
             if(locked[key]){
                 continue
             }
-            let score
                     
-            if(memory[key] !== undefined){
+            let score = 0
+let relationFeedbackScalar = 0
 
-                // если связь обнулена — полностью игнорируем
-                if(memory[key] === 0){
-                    continue
-                }
+if(memory[key] !== undefined){
 
-                const drift = 0
-                const decay = 0
-
-                score = memory[key] + drift + decay
-                score = Math.max(-1, Math.min(1, score))
-                // time pressure influence
-if (timePressureState.pressure >= 0.82) {
-    if (score > 0) {
-        score *= (1 - 0.22 * timePressureState.pressure)
-    } else if (score < 0) {
-        score *= (1 + 0.26 * timePressureState.pressure)
+    // если связь обнулена — полностью игнорируем
+    if(memory[key] === 0){
+        continue
     }
 
-    if (Math.abs(score) < 0.2) {
-        score *= (1 - 0.14 * timePressureState.pressure)
-    }
-}
-else if (timePressureState.pressure >= 0.62) {
-    if (score > 0) {
-        score *= (1 - 0.12 * timePressureState.pressure)
-    } else if (score < 0) {
-        score *= (1 + 0.16 * timePressureState.pressure)
-    }
-}
-else if (timePressureState.pressure < 0.34) {
-    if (score > 0) {
-        score *= (1 + 0.05 * (1 - timePressureState.pressure))
-    }
-}
+    const drift = 0
+    const decay = 0
 
-if ((attractorState?.type || "unknown") === "chaos") {
-    if (score > 0) {
-        score *= (1 - 0.15 * attractorState.intensity)
-    } else if (score < 0) {
-        score *= (1 + 0.18 * attractorState.intensity)
-    }
-} else if ((attractorState?.type || "unknown") === "cycle"){
-    score *= (1 + 0.08 * attractorState.intensity)
-}
+    score = memory[key] + drift + decay
+    score = Math.max(-1, Math.min(1, score))
 
-else if ((attractorState?.type || "unknown") === "trend") {
-    if (Math.abs(score) > 0.3) {
-        score *= (1 + 0.12 * attractorState.intensity)
-    }
-}
+    score = window.resolveSharedRelationScore
+        ? window.resolveSharedRelationScore(score, attractorState, timePressureState)
+        : Math.max(-1, Math.min(1, score))
 
-else if ((attractorState?.type || "unknown") === "stable") {
-    score *= (1 - 0.05 * attractorState.intensity)
-}
+    const feedbackDay =
+        typeof window.getCurrentRunDay === "function"
+            ? window.getCurrentRunDay()
+            : new Date().toISOString().slice(0, 10)
 
-score = Math.max(-1, Math.min(1, score))
-            }else{
+    relationFeedbackScalar =
+        typeof window.getRelationFeedbackScalar === "function"
+            ? Number(window.getRelationFeedbackScalar(feedbackDay, a.name, b.name) || 0)
+            : 0
 
-                // ❌ НИЧЕГО НЕ СОЗДАЁМ С НУЛЯ
+    score = Math.max(-1, Math.min(1, score + relationFeedbackScalar))
+}else{
                 continue
             }
 
@@ -291,10 +281,11 @@ if(memory[key] !== 0 && Math.random() < randomEventChance){
             score = memory[key]
 
             relations.push({
-                a: a.name,
-                b: b.name,
-                score: score
-            })
+    a: a.name,
+    b: b.name,
+    score: score,
+    relationFeedbackScalar
+})
         }
     }
 
@@ -302,106 +293,156 @@ if(memory[key] !== 0 && Math.random() < randomEventChance){
     relations.sort((x, y) => y.score - x.score)
 
     // ===== РЕНДЕР =====
-    relations.forEach(r => {
+relations.forEach(r => {
 
-        const {label, color} = getRelationLabel(r.score)
+    const { label, color } = getRelationLabel(r.score)
 
-        const row = document.createElement("div")
-        row.style.display = "grid"
-        row.style.gridTemplateColumns = "1fr auto 1fr"
-        row.style.alignItems = "center"
-        row.style.textAlign = "center"
-        row.style.padding = "6px 8px"
-        row.style.borderBottom = "1px solid #111"
+    const row = document.createElement("div")
+    row.style.display = "grid"
+    row.style.gridTemplateColumns = "1fr auto 1fr"
+    row.style.alignItems = "center"
+    row.style.textAlign = "center"
+    row.style.padding = "6px 8px"
+    row.style.borderBottom = "1px solid #111"
+    row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
+    row.style.fontSize = "13px"
+
+    row.title = "Score: " + r.score.toFixed(3)
+
+    row.style.cursor = "pointer"
+    row.onmouseenter = () => {
+        row.style.background = "rgba(255,255,255,0.15)"
+    }
+
+    row.onmouseleave = () => {
         row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
-        row.style.fontSize = "13px"
+    }
 
-        row.title = "Score: " + r.score.toFixed(3)
-        row.style.cursor = "pointer"
-        row.onmouseenter = () => {
-            row.style.background = "rgba(255,255,255,0.15)"
+    row.oncontextmenu = (e) => {
+        e.preventDefault()
+
+        const impact = -0.4 * (1 + timePressureState.pressure * 0.35)
+        const key = r.a + "->" + r.b
+
+        memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
+
+        temperature += Math.abs(impact) * (0.1 + timePressureState.urgency * 0.08)
+        temperature = Math.max(0, Math.min(1, temperature))
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+        localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
+
+        drawCollective(id, users)
+    }
+
+    row.onclick = (e) => {
+
+        const key = r.a + "->" + r.b
+
+        let impact = 0
+
+        if(e.shiftKey){
+            impact = -(memory[key] || 0) * (0.1 + timePressureState.pressure * 0.08)
+        }else{
+            impact = 0.3 * (1 - timePressureState.pressure * 0.18)
         }
 
-        row.onmouseleave = () => {
-            row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
-        }
-        
-        row.oncontextmenu = (e) => {
-            e.preventDefault()
-                
-            const impact = -0.4 * (1 + timePressureState.pressure * 0.35)
-                
-            const key = r.a + "->" + r.b
-                
-            memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
+        memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
 
-            //propagateImpact(memory, users, r.a, r.b, impact)
-                
-            temperature += Math.abs(impact) * (0.1 + timePressureState.urgency * 0.08)
-            temperature = Math.max(0, Math.min(1, temperature))
-                
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
-            localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
-                
-            drawCollective(id, users)
-        }
+        temperature += Math.abs(impact) * (0.1 + timePressureState.urgency * 0.08)
+        temperature = Math.max(0, Math.min(1, temperature))
 
-        row.onclick = (e) => {
-            
-            const key = r.a + "->" + r.b
-                
-            let impact = 0
-                
-            if(e.shiftKey){
-    impact = -(memory[key] || 0) * (0.1 + timePressureState.pressure * 0.08)
-}else{
-    impact = 0.3 * (1 - timePressureState.pressure * 0.18)
-}
-            
-            memory[key] = Math.max(-1, Math.min(1, (memory[key] || 0) + impact))
-                
-            //propagateImpact(memory, users, r.a, r.b, impact)
-                
-            temperature += Math.abs(impact) * (0.1 + timePressureState.urgency * 0.08)
-            temperature = Math.max(0, Math.min(1, temperature))
-                
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
-            localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
-                
-            drawCollective(id, users)
-        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
+        localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
 
-        const left = document.createElement("div")
-        left.innerText = r.a
-        left.style.textAlign = "right"
-        left.style.color = "#fff"
+        drawCollective(id, users)
+    }
 
-        const center = document.createElement("div")
-        center.innerText = "↔"
-        center.style.color = "#555"
+    const left = document.createElement("div")
+    left.innerText = r.a
+    left.style.textAlign = "right"
+    left.style.color = "#fff"
 
-        const right = document.createElement("div")
-        right.innerText = r.b
-        right.style.textAlign = "left"
-        right.style.color = "#fff"
+    const center = document.createElement("div")
+    center.innerText = "↔"
+    center.style.color = "#555"
 
-        const status = document.createElement("div")
-        status.innerText = label + " (" + r.score.toFixed(2) + ")"
-        status.style.color = color
-        status.style.fontWeight = "bold"
-        status.style.gridColumn = "1 / span 3"
-        status.style.marginTop = "2px"
+    const right = document.createElement("div")
+    right.innerText = r.b
+    right.style.textAlign = "left"
+    right.style.color = "#fff"
 
-        row.appendChild(left)
-        row.appendChild(center)
-        row.appendChild(right)
-        row.appendChild(status)
+    const status = document.createElement("div")
+    const feedbackDay =
+    typeof window.getCurrentRunDay === "function"
+        ? window.getCurrentRunDay()
+        : new Date().toISOString().slice(0, 10)
 
-        box.appendChild(row)
-    })
+const relationFeedback =
+    typeof window.getRelationFeedbackFor === "function"
+        ? window.getRelationFeedbackFor(feedbackDay, r.a, r.b)
+        : null
+
+status.innerText =
+    label +
+    " (" + r.score.toFixed(2) + ")" +
+    (relationFeedback ? ` • ${String(relationFeedback.value).toUpperCase()}` : "")
+    status.style.color = color
+    status.style.fontWeight = "bold"
+    status.style.gridColumn = "1 / span 3"
+    status.style.marginTop = "2px"
+
+    row.appendChild(left)
+    row.appendChild(center)
+    row.appendChild(right)
+    row.appendChild(status)
+
+    box.appendChild(row)
+})
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(memory))
     localStorage.setItem(TEMP_KEY, temperature.toFixed(3))
+
+window.mtosCollectiveMetabolism = {
+    phi: Number(collectivePhi.toFixed(4)),
+    k: Number(collectiveK.toFixed(4)),
+    consistency: Number(collectiveConsistency.toFixed(4)),
+    pressure: Number(collectivePressure.toFixed(4)),
+    volume: Number(collectiveVolume.toFixed(4)),
+    temperature: Number(temperature.toFixed(4))
+}
+
+const relationCount = relations.length
+const supportCount = relations.filter(r => Number(r.score) > 0.15).length
+const conflictCount = relations.filter(r => Number(r.score) < -0.15).length
+const neutralCount = relationCount - supportCount - conflictCount
+
+const supportRatio = relationCount > 0 ? supportCount / relationCount : 0
+const conflictRatio = relationCount > 0 ? conflictCount / relationCount : 0
+const neutrality = relationCount > 0 ? neutralCount / relationCount : 1
+
+window.mtosCollectiveState = {
+    relationCount,
+    supportCount,
+    conflictCount,
+    neutralCount,
+    supportRatio: Number(supportRatio.toFixed(4)),
+    conflictRatio: Number(conflictRatio.toFixed(4)),
+    neutrality: Number(neutrality.toFixed(4)),
+    temperature: Number(temperature.toFixed(4)),
+    pressure: Number(collectivePressure.toFixed(4)),
+    volume: Number(collectiveVolume.toFixed(4)),
+    phi: Number(collectivePhi.toFixed(4)),
+    k: Number(collectiveK.toFixed(4)),
+    consistency: Number(collectiveConsistency.toFixed(4)),
+    attractorType: String(attractorState?.type || "unknown"),
+    attractorIntensity: Number((attractorState?.intensity ?? 0).toFixed(4)),
+    timePressure: Number(timePressureState.pressure.toFixed(4)),
+    urgency: Number(timePressureState.urgency.toFixed(4)),
+    temporalMode: String(timePressureState.temporalMode || "EXPLORE"),
+    label: String(timePressureState.label || "low"),
+    updatedAt: new Date().toISOString()
+}
 
     root.appendChild(box)
 
@@ -417,47 +458,15 @@ if(memory[key] !== 0 && Math.random() < randomEventChance){
         "Shift + Click → Neutral (0)\n\n" +
         "The system reveals dynamic relationships between participants.\n" +
 "Connections evolve over time, influenced by user actions, internal dynamics, time pressure, and random events."
+
+description.innerText += "\n\n--- SYSTEM METRICS ---\n" +
+"Φ (energy) → strength of meaningful interactions\n" +
+"k (coherence) → how structured the system is\n" +
+"consistency → system stability (0 = balanced, >0 = unstable)\n\n" +
+"Attractor → dynamic pattern:\n" +
+"stable / cycle / trend / chaos / unknown\n"
         
     description.style.whiteSpace = "pre-line"
         
     root.appendChild(description)
-}
-
-
-// ===== ШКАЛА ОТНОШЕНИЙ =====
-function getRelationLabel(score){
-
-    if(score >= 0.9){
-        return {label:"Ultra Synergy", color:"#00ffd5"}
-    }
-
-    if(score >= 0.75){
-        return {label:"Strong", color:"#00cc66"}
-    }
-
-    if(score >= 0.6){
-        return {label:"Collaborate", color:"#33ff66"}
-    }
-
-    if(score >= 0.45){
-        return {label:"Support", color:"#99ff99"}
-    }
-
-    if(score >= 0.3){
-        return {label:"Weak Support", color:"#cccccc"}
-    }
-
-    if(score >= 0.15){
-        return {label:"Neutral", color:"#888888"}
-    }
-
-    if(score >= 0){
-        return {label:"Tension", color:"#ffcc00"}
-    }
-
-    if(score >= -0.3){
-        return {label:"Conflict", color:"#ff6600"}
-    }
-
-    return {label:"Strong Conflict", color:"#ff0000"}
 }

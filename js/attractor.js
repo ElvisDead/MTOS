@@ -1,5 +1,12 @@
 import { KinRegistry } from "./kinRegistry.js"
 
+let phi = 0
+let k = 1
+let consistency = 0
+let pressure = 0.5
+let volume = 0.5
+let temperature = 0.5
+
 export function drawAttractor(id, participants = [], relations = [], selectedKin = null){
 
         const FIELD_STORAGE_KEY = "mtos_persistent_field_v1"
@@ -28,6 +35,26 @@ export function drawAttractor(id, participants = [], relations = [], selectedKin
 
         return new Array(length).fill(fallback)
     }
+
+    const avgAbsField = average(field.map(v => Math.abs(v)))
+phi = Math.max(0, pressure * volume)
+k = phi / Math.max(temperature, 1e-6)
+consistency = Math.abs(phi - k * temperature)
+
+window.mtosAttractorMetabolism = {
+    pressure: Number(pressure.toFixed(4)),
+    volume: Number(volume.toFixed(4)),
+    temperature: Number(temperature.toFixed(4)),
+    phi: Number(phi.toFixed(4)),
+    k: Number(k.toFixed(4)),
+    consistency: Number(consistency.toFixed(6)),
+    fieldMean: Number(avgAbsField.toFixed(4)),
+    phase: phase + 1
+}
+
+phi = pressure * volume
+k = phi / Math.max(temperature, 1e-6)
+consistency = Math.abs(phi - k * temperature)
 
     function savePersistentArray(key, arr){
         try{
@@ -173,11 +200,9 @@ for (let i = 0; i < N; i++) {
     field[i] = clamp(field[i] / maxVal, -1.5, 1.5)
 }
 
-    let pressure = 0.5      // P
-    let temperature = 0.5   // T
-    let k = 1.0             // rhythm constant
-
-    let phase = 0           // 0–12 (13 фаз)
+volume = Math.max(0.1, Math.min(2.0, 1 + Math.abs(field.reduce((a,b)=>a+b,0)/N)))
+phi = pressure * volume
+consistency = Math.max(0, Math.min(1, 1 - temperature * 0.5))
 
     // =========================
     // HELPERS
@@ -244,6 +269,16 @@ temperature += networkDensity * 0.04
 pressure = Math.max(0.05, Math.min(1.5, pressure))
 temperature = Math.max(0.05, Math.min(1.5, temperature))
 
+const metabolic = window.mtosMetabolicMetrics || {}
+
+const extP = Number.isFinite(Number(metabolic.P)) ? Number(metabolic.P) : pressure
+const extT = Number.isFinite(Number(metabolic.T)) ? Number(metabolic.T) : temperature
+const extV = Number.isFinite(Number(metabolic.V)) ? Number(metabolic.V) : 0.5
+
+pressure = pressure * 0.72 + extP * 0.28
+temperature = temperature * 0.72 + extT * 0.28
+volume = volume * 0.70 + extV * 0.30
+
         for (let i = 0; i < N; i++) {
 
             const segment = getSegmentIndex(i)
@@ -277,6 +312,11 @@ let noise = (Math.random() - 0.5) * localTemp
             pressureEffect +
             noise +
             networkEffect
+
+            const localPhi = Math.max(0, localPressure * Math.max(0, Math.min(1, Math.abs(self))))
+            const thermalPenalty = localTemp * 0.06
+            value += localPhi * 0.10
+            value -= thermalPenalty
             // =========================
             // SELECTED KIN ATTRACTOR
             // =========================
@@ -397,6 +437,22 @@ window._attractorFieldRaw = [...field]
 window._attractorField = field.map(v => {
     return Math.max(0, Math.min(1, (v - minField) / range))
 })
+
+const avgAbsField = average(field.map(v => Math.abs(v)))
+phi = Math.max(0, pressure * volume)
+k = phi / Math.max(temperature, 1e-6)
+consistency = Math.abs(phi - k * temperature)
+
+window.mtosAttractorMetabolism = {
+    pressure: Number(pressure.toFixed(4)),
+    volume: Number(volume.toFixed(4)),
+    temperature: Number(temperature.toFixed(4)),
+    phi: Number(phi.toFixed(4)),
+    k: Number(k.toFixed(4)),
+    consistency: Number(consistency.toFixed(6)),
+    fieldMean: Number(avgAbsField.toFixed(4)),
+    phase: phase + 1
+}
 
         savePersistentArray(
             FIELD_STORAGE_KEY,
@@ -528,6 +584,11 @@ window._attractorSegments = new Array(N).fill(0).map((_, i) => {
         ctx.fillStyle = "#aaa"
         ctx.font = "10px monospace"
 
+        ctx.fillText(`Volume: ${volume.toFixed(2)}`, 10, 60)
+ctx.fillText(`Phi: ${phi.toFixed(3)}`, 10, 75)
+ctx.fillText(`k: ${k.toFixed(3)}`, 10, 90)
+ctx.fillText(`Consistency: ${consistency.toFixed(4)}`, 10, 105)
+
         const networkFeedback = window.mtosNetworkFeedback || {
             density: 0,
             meanStrength: 0,
@@ -535,9 +596,9 @@ window._attractorSegments = new Array(N).fill(0).map((_, i) => {
             supportRatio: 0
         }
         
-        ctx.fillText(`Phase: ${phase + 1}/13`, 10, 15)
-        ctx.fillText(`Pressure: ${pressure.toFixed(2)}`, 10, 30)
-        ctx.fillText(`Temperature: ${temperature.toFixed(2)}`, 10, 45)
+        ctx.fillText(`Phase: ${phase + 1}`, 10, 30)
+ctx.fillText(`Pressure: ${pressure.toFixed(2)}`, 10, 45)
+ctx.fillText(`Temperature: ${temperature.toFixed(2)}`, 10, 120)
         const segMeans = [0, 0, 0, 0]
 const segCounts = [0, 0, 0, 0]
 
@@ -694,4 +755,13 @@ This is not a static graph, but a living system.
     root.appendChild(description)
 
     loop()
+}
+
+window.mtosAttractorMetabolism = {
+    phi: Number(phi.toFixed(4)),
+    k: Number(k.toFixed(4)),
+    consistency: Number(consistency.toFixed(4)),
+    pressure: Number(pressure.toFixed(4)),
+    temperature: Number(temperature.toFixed(4)),
+    volume: Number(volume.toFixed(4))
 }

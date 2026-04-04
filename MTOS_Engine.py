@@ -160,6 +160,67 @@ KIN_MEMORY = [0.5]*260
 ARCHETYPE_WEIGHTS = [1.0]*20
 USER_MEMORY = {}
 
+def clamp_signed(x, lo=-1.0, hi=1.0):
+    return max(lo, min(float(x), hi))
+
+def metabolic_pressure(attention, fatigue, field, noise=0.0, conflict=0.0):
+    base = (
+        abs(attention - 0.5) * 0.32 +
+        fatigue * 0.28 +
+        abs(field - 0.5) * 0.22 +
+        abs(noise) * 0.10 +
+        conflict * 0.08
+    )
+    return clamp01(base)
+
+def metabolic_volume(attention):
+    return clamp01(attention)
+
+def metabolic_temperature(attention, fatigue, field, wave=0.0, noise=0.0):
+    t = (
+        0.22 +
+        attention * 0.26 +
+        fatigue * 0.18 +
+        abs(field - 0.5) * 0.18 +
+        abs(wave) * 0.10 +
+        abs(noise) * 0.06
+    )
+    return clamp01(t)
+
+def metabolic_phi(pressure, volume):
+    return max(0.0, float(pressure) * float(volume))
+
+def metabolic_k(phi, temperature):
+    phi = float(phi)
+    temperature = float(temperature)
+
+    raw = phi / max(temperature, 1e-6)
+
+    return raw * 0.92
+
+def metabolic_consistency(phi, k, temperature, pressure=0.0, stability=0.5):
+    phi = float(phi)
+    k = float(k)
+    temperature = float(temperature)
+    pressure = float(pressure)
+    stability = float(stability)
+
+    residual = abs(phi - k * temperature)
+    normalized = residual / max(abs(phi), 1e-6)
+
+    normalized += pressure * 0.18
+    normalized += (1.0 - stability) * 0.22
+
+    return min(1.0, normalized)
+
+def metabolic_stability(consistency, pressure, temperature):
+    s = 1.0 - (
+        consistency * 0.50 +
+        pressure * 0.25 +
+        temperature * 0.25
+    )
+    return clamp01(s)
+
 def update_seal_memory(seal_index,attention):
 
     global SEAL_MEMORY
@@ -878,8 +939,15 @@ def simulate(user_i,user_tone,start,days,user_name=None):
 
     a = 0.45 + learn
     f = 0.2
+    stability = 0.5
     
     series = []
+    pressure_series = []
+    temperature_series = []
+    phi_series = []
+    k_series = []
+    consistency_series = []
+    stability_series = []
 
     collective = collective_wave()
 
@@ -921,9 +989,53 @@ def simulate(user_i,user_tone,start,days,user_name=None):
         
         a = safe_value(a, 0.5)
         a = clamp01(a)
+        f = clamp01(f)
+        
+        conflict = clamp01(
+            abs(field - a) * 0.55 +
+            max(0.0, f - a) * 0.45
+        )
+        
+        P = metabolic_pressure(
+            attention=a,
+            fatigue=f,
+            field=field,
+            noise=env_noise,
+            conflict=conflict
+        )
+        
+        V = metabolic_volume(a)
+        
+        T = metabolic_temperature(
+            attention=a,
+            fatigue=f,
+            field=field,
+            wave=wave,
+            noise=env_noise
+        )
+        
+        Phi = metabolic_phi(P, V)
+        k_val = metabolic_k(Phi, T)
+        consistency = metabolic_consistency(Phi, k_val, T, P, stability)
+        stability = metabolic_stability(consistency, P, T)
+        
         series.append(a)
-
-    return np.array(series)
+        pressure_series.append(P)
+        temperature_series.append(T)
+        phi_series.append(Phi)
+        k_series.append(k_val)
+        consistency_series.append(consistency)
+        stability_series.append(stability)
+        
+    return {
+            "attention": np.array(series, dtype=float),
+            "pressure": np.array(pressure_series, dtype=float),
+            "temperature": np.array(temperature_series, dtype=float),
+            "phi": np.array(phi_series, dtype=float),
+            "k": np.array(k_series, dtype=float),
+            "consistency": np.array(consistency_series, dtype=float),
+            "stability": np.array(stability_series, dtype=float)
+        }
 
 # ==========================================================
 # METRICS
@@ -1320,20 +1432,23 @@ def mtos_260_weather(name,year,month,day):
 
     weather = [None]*260
 
-    for k in range(1,261,8):
-        kin_date = today + datetime.timedelta(days=k-1)
+    for k in range(1, 261, 26):
+        kin_date = today + datetime.timedelta(days=k - 1)
         
         memory_backup_seal = SEAL_MEMORY.copy()
         memory_backup_kin = KIN_MEMORY.copy()
         
-        np.random.seed(k)      
-        series = simulate(i,tone,kin_date,30,name)
+        np.random.seed(k)
+        
+        sim = simulate(i, tone, kin_date, 8, name)
+        
+        series = sim["attention"]
+        
+        value = float(np.mean(series[:3]))
+        value += (series[0] - 0.5) * 0.18
         
         SEAL_MEMORY[:] = memory_backup_seal
         KIN_MEMORY[:] = memory_backup_kin
-        
-        value = float(np.mean(series[:7]))
-        value += (series[0] - 0.5) * 0.3
         
         spiral = np.sin(2*np.pi*(k-1)/260) * 0.03
         value += spiral
@@ -1419,7 +1534,7 @@ def mtos_260_weather(name,year,month,day):
         ]
 
     # сколько шагов "времени"
-    STEPS = 4
+    STEPS = 1
 
     for step in range(STEPS):
 
@@ -2140,6 +2255,135 @@ def mtos_field_step(name, year, month, day, prev_field=None, prev_state=None):
 # ===============================
 # MULTI-AGENT FIELD
 # ===============================
+
+# ===============================
+# GOAL-DRIVEN AGENTS
+# ===============================
+def clamp_signed(x, lo=-1.0, hi=1.0):
+    return max(lo, min(float(x), hi))
+
+def safe_goal_name(goal):
+    g = str(goal or "stability").strip().lower()
+
+    if g in ("stability", "growth", "social", "explore"):
+        return g
+
+    return "stability"
+
+def goal_target_profile(goal):
+    g = safe_goal_name(goal)
+
+    if g == "stability":
+        return {
+            "preferred_attention": 0.62,
+            "preferred_pressure": 0.22,
+            "preferred_conflict": 0.18,
+            "preferred_field": 0.58,
+            "preferred_weight_gain": 0.10
+        }
+
+    if g == "growth":
+        return {
+            "preferred_attention": 0.72,
+            "preferred_pressure": 0.46,
+            "preferred_conflict": 0.30,
+            "preferred_field": 0.66,
+            "preferred_weight_gain": 0.16
+        }
+
+    if g == "social":
+        return {
+            "preferred_attention": 0.60,
+            "preferred_pressure": 0.28,
+            "preferred_conflict": 0.20,
+            "preferred_field": 0.62,
+            "preferred_weight_gain": 0.14
+        }
+
+    # explore
+    return {
+        "preferred_attention": 0.58,
+        "preferred_pressure": 0.38,
+        "preferred_conflict": 0.26,
+        "preferred_field": 0.64,
+        "preferred_weight_gain": 0.12
+    }
+
+def goal_alignment_score(goal, attention, pressure, conflict, field_value, network_feedback=None):
+    profile = goal_target_profile(goal)
+
+    density = float((network_feedback or {}).get("density", 0) or 0)
+    support = float((network_feedback or {}).get("supportRatio", 0) or 0)
+    conflict_ratio = float((network_feedback or {}).get("conflictRatio", 0) or 0)
+
+    a_term = 1.0 - abs(float(attention) - profile["preferred_attention"]) / 1.0
+    p_term = 1.0 - abs(float(pressure) - profile["preferred_pressure"]) / 1.0
+    c_term = 1.0 - abs(float(conflict) - profile["preferred_conflict"]) / 1.0
+    f_term = 1.0 - abs(float(field_value) - profile["preferred_field"]) / 1.0
+
+    score = (
+        a_term * 0.34 +
+        p_term * 0.24 +
+        c_term * 0.18 +
+        f_term * 0.24
+    )
+
+    g = safe_goal_name(goal)
+
+    if g == "social":
+        score += support * 0.12
+        score -= conflict_ratio * 0.12
+
+    elif g == "stability":
+        score -= float(pressure) * 0.10
+        score -= float(conflict) * 0.10
+
+    elif g == "growth":
+        score += max(0.0, float(attention) - 0.55) * 0.12
+        score += min(float(pressure), 0.55) * 0.06
+
+    elif g == "explore":
+        score += density * 0.06
+        score += max(0.0, float(field_value) - 0.50) * 0.10
+
+    return clamp_signed(score, 0.0, 1.0)
+
+def goal_feedback_label(score):
+    if score >= 0.68:
+        return "good"
+    if score <= 0.42:
+        return "bad"
+    return "neutral"
+
+def apply_goal_pull_to_field(base_field, kin, goal, goal_weight):
+    g = safe_goal_name(goal)
+    w = clamp01(goal_weight)
+
+    out = base_field[:]
+
+    for i in range(260):
+        dist = min(abs(i - kin), 260 - abs(i - kin))
+        local = math.exp(-dist / 11.0)
+
+        if g == "stability":
+            # мягкая, локальная, сглаживающая цель
+            out[i] += 0.05 * w * local
+
+        elif g == "growth":
+            # усиливаем пики и активные зоны
+            out[i] += 0.08 * w * local
+
+        elif g == "social":
+            # более широкое коллективное влияние
+            out[i] += 0.06 * w * math.exp(-dist / 16.0)
+
+        elif g == "explore":
+            # толчок в более дальние зоны
+            ring = math.exp(-abs(dist - 9) / 5.0)
+            out[i] += 0.07 * w * ring
+
+    return out
+
 def mtos_multi_agents_field(
     users,
     year,
@@ -2152,7 +2396,7 @@ def mtos_multi_agents_field(
     network_feedback=None,
     attractor_state=None
 ):
-    
+
     if locked is None:
         locked = {}
 
@@ -2186,34 +2430,52 @@ def mtos_multi_agents_field(
     state_list = []
 
     # ===============================
-    # 1. БАЗОВЫЙ ВКЛАД
+    # 1. БАЗОВЫЙ ВКЛАД + GOAL PULL
     # ===============================
     weather_cache = {}
-    
+
     for user in users:
 
         name = user["name"]
         weight = float(user.get("weight", 1.0))
-        
+        goal = safe_goal_name(user.get("goal", "stability"))
+        goal_weight = clamp01(user.get("goalWeight", 0.65))
+
         if name not in weather_cache:
             weather_cache[name] = mtos_260_weather(name, year, month, day)[:]
-            
-            weather = weather_cache[name]
-            kin_value = int(user.get("kin", 1))
-            kin = kin_value - 1
-            
-            kin_list.append(kin)
-            
-            for i in range(260):
-                dist = min(abs(i - kin), 260 - abs(i - kin))
-                influence = math.exp(-dist / 8.0)
-                
-                base_field[i] += weight * weather[i]["attention"] * influence
 
-    # нормализация
+        weather = weather_cache[name]
+        kin_value = int(user.get("kin", 1))
+        kin = kin_value - 1
+
+        kin_list.append(kin)
+
+        local_field = [0.0 for _ in range(260)]
+
+        for i in range(260):
+            dist = min(abs(i - kin), 260 - abs(i - kin))
+            influence = math.exp(-dist / 8.0)
+            local_field[i] += weight * weather[i]["attention"] * influence
+
+        local_field = apply_goal_pull_to_field(
+            local_field,
+            kin,
+            goal,
+            goal_weight
+        )
+
+        for i in range(260):
+            base_field[i] += local_field[i]
+
+    # ===============================
+    # НОРМАЛИЗАЦИЯ БАЗОВОГО ПОЛЯ
+    # ===============================
     mean_val = sum(base_field) / len(base_field)
     base_field = [v / (mean_val + 1e-6) for v in base_field]
 
+    # ===============================
+    # COLLECTIVE FIELD / WAVE
+    # ===============================
     collective_field = update_collective_field(
         users,
         weather_cache,
@@ -2263,7 +2525,7 @@ def mtos_multi_agents_field(
             base_field[i] += jitter
             base_field[i] -= conflict_ratio * 0.06
             base_field[i] += math.sin(i * 0.37) * 0.01
-            
+
     elif attractor_type == "cycle":
         for i in range(260):
             phase_wave = math.sin((2 * math.pi * i) / 20.0)
@@ -2271,14 +2533,15 @@ def mtos_multi_agents_field(
             base_field[i] += phase_wave * 0.04 * attractor_intensity
             base_field[i] += harmonic * 0.025 * attractor_intensity
             base_field[i] += support_ratio * 0.03
+
     elif attractor_type == "trend":
         for i in range(260):
             slope = i / 259.0
             base_field[i] += slope * 0.07 * attractor_intensity
-            
+
             if i > 0:
-                base_field[i] += (base_field[i] - base_field[i-1]) * 0.08
-    
+                base_field[i] += (base_field[i] - base_field[i - 1]) * 0.08
+
     elif attractor_type == "stable":
         mean_base = sum(base_field) / len(base_field)
         base_field = [0.78 * v + 0.22 * mean_base for v in base_field]
@@ -2343,13 +2606,12 @@ def mtos_multi_agents_field(
                 )
 
                 base_field[k] += signed_feedback * 0.25 * influence
-    
+
     # ===============================
     # 2. ДИНАМИКА ПОЛЯ (получаем state)
     # ===============================
     field, state = mtos_field_step_from_array(base_field, prev_field, prev_state)
 
-    # собираем состояния агентов
     for kin in kin_list:
         state_list.append(state[kin])
 
@@ -2357,7 +2619,7 @@ def mtos_multi_agents_field(
     # 3. ВЗАИМОДЕЙСТВИЯ (С ЗНАКОМ)
     # ===============================
     for i in range(len(users)):
-        for j in range(i+1, len(users)):
+        for j in range(i + 1, len(users)):
 
             u1 = users[i]
             u2 = users[j]
@@ -2365,35 +2627,30 @@ def mtos_multi_agents_field(
             key1 = f"{u1['name']}->{u2['name']}"
             key2 = f"{u2['name']}->{u1['name']}"
 
-            # 🔴 ЖЁСТКИЙ ЗАПРЕТ
             if locked.get(key1) or locked.get(key2) or memory.get(key1) == 0 or memory.get(key2) == 0:
-
-            # убиваем влияние агентов
                 kin_i = kin_list[i]
                 kin_j = kin_list[j]
-                
+
                 base_field[kin_i] *= 0.2
                 base_field[kin_j] *= 0.2
-                
                 continue
 
             kin_i = kin_list[i]
             kin_j = kin_list[j]
-            
+
             w_i = float(users[i].get("weight", 1.0))
             w_j = float(users[j].get("weight", 1.0))
-            
+
             state_i = state_list[i]
             state_j = state_list[j]
-            
+
             dist = min(abs(kin_i - kin_j), 260 - abs(kin_i - kin_j))
-            
+
             if dist > 30:
                 continue
-                
+
             strength = math.exp(-dist / 10.0)
 
-            # ЗНАК
             if state_i == 1 and state_j == 1:
                 sign = +1.0
             elif state_i == 0 and state_j == 0:
@@ -2418,10 +2675,11 @@ def mtos_multi_agents_field(
                 sign *= (1.0 - 0.05 * attractor_intensity)
 
             interaction = sign * w_i * w_j * strength
+
             for k in range(260):
                 d_i = min(abs(k - kin_i), 260 - abs(k - kin_i))
                 d_j = min(abs(k - kin_j), 260 - abs(k - kin_j))
-                
+
                 base_field[k] += interaction * 0.3 * (
                     math.exp(-d_i / 4.0) +
                     math.exp(-d_j / 4.0)
@@ -2442,27 +2700,66 @@ def mtos_multi_agents_field(
     field, state = mtos_field_step_from_array(base_field, field, state)
 
     # ===============================
-    # 5. АДАПТИВНЫЕ ВЕСА
+    # 5. АДАПТИВНЫЕ ВЕСА + GOAL SCORE
     # ===============================
     for idx, user in enumerate(users):
 
-        old_weight = user.get("weight", 1.0)
+        old_weight = float(user.get("weight", 1.0))
         kin = kin_list[idx]
 
-        local_phi = field[kin]
+        local_phi = float(field[kin])
         local_state = state[kin]
 
-        boost = 1.0 + 0.5 * local_phi
+        local_weather = weather_cache.get(user["name"], None)
+        local_pressure = 0.0
+        local_conflict = 0.0
+        local_attention = local_phi
+
+        if local_weather and 0 <= kin < len(local_weather):
+            local_attention = float(local_weather[kin]["attention"])
+            local_pressure = float(local_weather[kin]["pressure"])
+            local_conflict = float(local_weather[kin]["conflict"])
+
+        goal = safe_goal_name(user.get("goal", "stability"))
+        goal_weight = clamp01(user.get("goalWeight", 0.65))
+
+        goal_score = goal_alignment_score(
+            goal,
+            local_attention,
+            local_pressure,
+            local_conflict,
+            local_phi,
+            network_feedback=network_feedback
+        )
+
+        boost = 1.0 + 0.40 * local_phi
         penalty = 0.7 if local_state == 0 else 1.0
 
-        new_w = old_weight * boost * penalty
+        goal_gain = 1.0 + goal_score * goal_weight * goal_target_profile(goal)["preferred_weight_gain"]
+        goal_penalty = 1.0
+
+        if goal_score <= 0.42:
+            goal_penalty -= 0.18 * goal_weight
+
+        new_w = old_weight * boost * penalty * goal_gain * goal_penalty
         new_w = max(0.1, min(new_w, 3.0))
+
+        user["goal"] = goal
+        user["goalWeight"] = goal_weight
+        user["goalScore"] = float(round(goal_score, 4))
+        user["goalFeedback"] = goal_feedback_label(goal_score)
+        user["goalState"] = {
+            "attention": float(round(local_attention, 4)),
+            "pressure": float(round(local_pressure, 4)),
+            "conflict": float(round(local_conflict, 4)),
+            "field": float(round(local_phi, 4))
+        }
 
         new_weights.append(new_w)
 
     total = sum(new_weights) or 1
     new_weights = [w / total * len(users) for w in new_weights]
-    
+
     for i in range(len(users)):
         users[i]["weight"] = new_weights[i]
 
@@ -2470,7 +2767,11 @@ def mtos_multi_agents_field(
         users[i]["kin"] = kin_value
         users[i]["baseKin"] = int(users[i].get("baseKin", kin_value))
 
-    # === STABILIZE FIELD ===
+        users[i]["goal"] = safe_goal_name(users[i].get("goal", "stability"))
+        users[i]["goalWeight"] = clamp01(users[i].get("goalWeight", 0.65))
+        users[i]["goalScore"] = float(users[i].get("goalScore", 0.5))
+        users[i]["goalFeedback"] = str(users[i].get("goalFeedback", "neutral"))
+
     field = [safe_value(v, 0.5) for v in field]
     field = [clamp01(v) for v in field]
 
