@@ -1209,6 +1209,7 @@ export async function initMTOS() {
     pyodide.runPython(code)
 
     applyMTOSLang(loadMTOSLang())
+    migratePrivacyStorage()
     setStatusText("ready")
 
     window.mtosViewMode = loadMTOSViewMode()
@@ -1332,12 +1333,15 @@ function applyTodayContactsToDayState(dayState, users, dayKey = null){
         const weight = Number(item?.weight ?? 1)
         totalWeight += weight
 
-        const a = String(item?.a || "")
-        const b = String(item?.b || "")
+        const a = String(item?.user_a_id || item?.a || "")
+        const b = String(item?.user_b_id || item?.b || "")
 
-        if (Array.isArray(users) && users.some(u => u?.name === a) && users.some(u => u?.name === b)) {
-            hits += 1
-        }
+if (
+    findUserById(users, a) &&
+    findUserById(users, b)
+) {
+    hits += 1
+}
     })
 
     ds.realContacts = hits
@@ -1358,6 +1362,333 @@ window.applyTodayContactsToDayState = applyTodayContactsToDayState
 
 window.applyTodayContactsToAttractorField = applyTodayContactsToAttractorField
 
+function getStableAnonId(name){
+    const clean = String(name || "").trim()
+    if (!clean) return null
+
+    if (typeof window.getAnonIdForExport === "function") {
+        return window.getAnonIdForExport(clean)
+    }
+
+    try{
+        const raw = localStorage.getItem("mtos_export_anon_map_v1")
+        const map = raw ? JSON.parse(raw) : {}
+
+        if (map && map[clean]) return map[clean]
+
+        const used = new Set(Object.values(map || {}))
+        let i = 1
+        let nextId = ""
+
+        while(true){
+            nextId = `u${String(i).padStart(3, "0")}`
+            if (!used.has(nextId)) break
+            i++
+        }
+
+        const nextMap = { ...(map || {}), [clean]: nextId }
+        localStorage.setItem("mtos_export_anon_map_v1", JSON.stringify(nextMap))
+        return nextId
+    }catch(e){
+        return null
+    }
+}
+
+function getIdentityMap(){
+    try{
+        const raw = localStorage.getItem("mtos_export_anon_map_v1")
+        const parsed = raw ? JSON.parse(raw) : {}
+        return parsed && typeof parsed === "object" ? parsed : {}
+    }catch(e){
+        return {}
+    }
+}
+
+function getUserId(name){
+    return getStableAnonId(name)
+}
+
+function getUserNameById(userId){
+    const cleanId = String(userId || "").trim()
+    if (!cleanId) return ""
+
+    const map = getIdentityMap()
+
+    for (const [name, id] of Object.entries(map)) {
+        if (String(id) === cleanId) return String(name)
+    }
+
+    return ""
+}
+
+function getRelationIdsFromNames(a, b){
+    const aId = getUserId(a)
+    const bId = getUserId(b)
+    return {
+        aId,
+        bId,
+        pairKey: (aId && bId) ? makePairKey(aId, bId) : ""
+    }
+}
+
+function findUserById(users, userId){
+    const cleanId = String(userId || "").trim()
+    if (!cleanId || !Array.isArray(users)) return null
+
+    return users.find(u => getUserId(u?.name) === cleanId) || null
+}
+
+function findUserByNameOrId(users, value){
+    const clean = String(value || "").trim()
+    if (!clean || !Array.isArray(users)) return null
+
+    if (/^u\d{3,}$/.test(clean)) {
+        return findUserById(users, clean)
+    }
+
+    return users.find(u => String(u?.name || "").trim() === clean) || null
+}
+
+window.getUserId = getUserId
+window.getUserNameById = getUserNameById
+window.findUserById = findUserById
+window.findUserByNameOrId = findUserByNameOrId
+
+function sanitizeLogUsers(list){
+    if (!Array.isArray(list)) return []
+
+    return list.map(u => ({
+        user_id: getStableAnonId(u?.name || u?.user_id || ""),
+        kin: Number(u?.kin ?? 0) || 0,
+        baseKin: Number(u?.baseKin ?? u?.kin ?? 0) || 0,
+        weight: Number(u?.weight ?? 1) || 1,
+        goal: String(u?.goal || ""),
+        goalWeight: Number(u?.goalWeight ?? 0) || 0,
+        goalScore: Number(u?.goalScore ?? 0) || 0,
+        goalFeedback: String(u?.goalFeedback || ""),
+        phase: Number(u?.phase ?? 0) || 0
+    }))
+}
+
+function sanitizeLogRelationId(relationId){
+    const raw = String(relationId || "").trim()
+    if (!raw) return ""
+
+    if (raw.includes("->")) {
+        const [a, b] = raw.split("->")
+        const aId = getUserId(a) || a
+        const bId = getUserId(b) || b
+        return `${aId}->${bId}`
+    }
+
+    return getStableAnonId(raw) || raw
+}
+
+function safeLogEvent(type, payload = {}){
+    const clean = { ...(payload || {}) }
+
+    delete clean.name
+    delete clean.year
+    delete clean.month
+    delete clean.day
+    delete clean.birth
+    delete clean.birthdate
+    delete clean.birthday
+    delete clean.location
+    delete clean.city
+    delete clean.country
+
+    if (payload?.name) {
+    clean.user_id = getUserId(payload.name)
+}
+
+    if (Array.isArray(payload?.users)) {
+        clean.users = sanitizeLogUsers(payload.users)
+    }
+
+    if (payload?.relationId) {
+        clean.relationId = sanitizeLogRelationId(payload.relationId)
+    }
+
+    logEvent(type, clean)
+}
+
+function sanitizeStoredUserList(list){
+    if (!Array.isArray(list)) return []
+    return list
+        .map(x => getStableAnonId(x))
+        .filter(Boolean)
+}
+
+function sanitizeTodayContactsDB(db){
+    if (!db || typeof db !== "object") return {}
+
+    const out = {}
+
+    Object.entries(db).forEach(([dayKey, row]) => {
+        if (!row || typeof row !== "object") return
+
+        out[dayKey] = {}
+
+        Object.values(row).forEach(item => {
+            if (!item || typeof item !== "object") return
+
+            const aId = getStableAnonId(item.a || item.user_a_id)
+            const bId = getStableAnonId(item.b || item.user_b_id)
+            if (!aId || !bId) return
+
+            const pairKey = [aId, bId].sort().join("::")
+
+            out[dayKey][pairKey] = {
+                user_a_id: aId,
+                user_b_id: bId,
+                t: Number(item.t ?? 0),
+                expiresAt: Number(item.expiresAt ?? 0),
+                weight: Number(item.weight ?? 1)
+            }
+        })
+
+        if (!Object.keys(out[dayKey]).length) {
+            delete out[dayKey]
+        }
+    })
+
+    return out
+}
+
+function sanitizeHumanFeedbackDB(db){
+    if (!db || typeof db !== "object") return {}
+
+    const out = {}
+
+    Object.values(db).forEach(item => {
+        if (!item || typeof item !== "object") return
+
+        const userId = getStableAnonId(item.name || item.user_id)
+        if (!userId) return
+
+        const day = String(item.day || "session_day")
+        const key = `${day}__${userId}`
+
+        out[key] = {
+            ...item,
+            day,
+            user_id: userId
+        }
+
+        delete out[key].name
+    })
+
+    return out
+}
+
+function sanitizeRelationFeedbackDB(db){
+    if (!db || typeof db !== "object") return {}
+
+    const out = {}
+
+    Object.values(db).forEach(item => {
+        if (!item || typeof item !== "object") return
+
+        const aId = getStableAnonId(item.a || item.user_a_id)
+        const bId = getStableAnonId(item.b || item.user_b_id)
+        if (!aId || !bId) return
+
+        const day = String(item.day || "session_day")
+        const key = `${day}__${[aId, bId].sort().join("::")}`
+
+        out[key] = {
+            ...item,
+            day,
+            user_a_id: aId,
+            user_b_id: bId
+        }
+
+        delete out[key].a
+        delete out[key].b
+        delete out[key].name
+    })
+
+    return out
+}
+
+function sanitizeDailySnapshots(rows){
+    if (!Array.isArray(rows)) return []
+
+    return rows.map(row => {
+        if (!row || typeof row !== "object") return row
+
+        const userId = getStableAnonId(row.name || row.user_id)
+
+        const clean = {
+            ...row,
+            user_id: userId || null
+        }
+
+        delete clean.name
+        return clean
+    })
+}
+
+function sanitizeMemoryLayers(state){
+    if (!state || typeof state !== "object") return state
+
+    const next = { ...state }
+
+    if (next.userMemory && typeof next.userMemory === "object") {
+        const safeUserMemory = {}
+
+        Object.entries(next.userMemory).forEach(([name, value]) => {
+            const userId = getStableAnonId(name)
+            if (userId) {
+                safeUserMemory[userId] = value
+            }
+        })
+
+        next.userMemory = safeUserMemory
+    }
+
+    return next
+}
+
+function migratePrivacyStorage(){
+    try{
+        const rawUserList = JSON.parse(localStorage.getItem("mtos_user_list") || "[]")
+        //localStorage.setItem("mtos_user_list", JSON.stringify(sanitizeStoredUserList(rawUserList)))
+    }catch(e){}
+
+    try{
+        const rawContacts = JSON.parse(localStorage.getItem(MTOS_TODAY_CONTACTS_KEY) || "{}")
+        localStorage.setItem(MTOS_TODAY_CONTACTS_KEY, JSON.stringify(sanitizeTodayContactsDB(rawContacts)))
+    }catch(e){}
+
+    try{
+        const rawHumanFeedback = JSON.parse(localStorage.getItem(MTOS_AUTO_FEEDBACK_KEY) || "{}")
+        localStorage.setItem(MTOS_AUTO_FEEDBACK_KEY, JSON.stringify(sanitizeHumanFeedbackDB(rawHumanFeedback)))
+    }catch(e){}
+
+    try{
+        const rawRelationFeedback = JSON.parse(localStorage.getItem(MTOS_RELATION_FEEDBACK_KEY) || "{}")
+        localStorage.setItem(MTOS_RELATION_FEEDBACK_KEY, JSON.stringify(sanitizeRelationFeedbackDB(rawRelationFeedback)))
+    }catch(e){}
+
+    try{
+        const rawSnapshots = JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+        localStorage.setItem("mtos_daily_snapshots", JSON.stringify(sanitizeDailySnapshots(rawSnapshots)))
+    }catch(e){}
+
+    try{
+        const rawMemoryLayers = JSON.parse(localStorage.getItem(MTOS_MEMORY_KEY) || "null")
+        if (rawMemoryLayers && typeof rawMemoryLayers === "object") {
+            localStorage.setItem(MTOS_MEMORY_KEY, JSON.stringify(sanitizeMemoryLayers(rawMemoryLayers)))
+        }
+    }catch(e){}
+
+    try{
+        localStorage.removeItem("mtos_network_history")
+    }catch(e){}
+}
+
 // ===============================
 // USER MEMORY
 // ===============================
@@ -1367,14 +1698,20 @@ function loadUsers() {
         if (!saved) return []
 
         const parsed = JSON.parse(saved)
-        return Array.isArray(parsed) ? parsed : []
+        return Array.isArray(parsed)
+            ? parsed.map(x => String(x || "").trim()).filter(Boolean)
+            : []
     } catch (e) {
         return []
     }
 }
 
 function saveUsers(list) {
-    localStorage.setItem("mtos_user_list", JSON.stringify(list))
+    const safe = Array.isArray(list)
+        ? list.map(x => String(x || "").trim()).filter(Boolean)
+        : []
+
+    localStorage.setItem("mtos_user_list", JSON.stringify(safe))
 }
 
 function addUser(list, name) {
@@ -1642,7 +1979,10 @@ function cleanupExpiredTodayContacts(db = null){
 
 function findActiveTodayContactRecord(a, b){
     const db = cleanupExpiredTodayContacts()
-    const pairKey = makePairKey(a, b)
+    const { aId, bId } = getRelationIdsFromNames(a, b)
+    const left = aId || String(a || "").trim()
+    const right = bId || String(b || "").trim()
+    const pairKey = makePairKey(left, right)
 
     for (const dayKey of Object.keys(db)) {
         const row = db[dayKey]
@@ -1687,11 +2027,14 @@ function isTodayContact(a, b){
 function markTodayContact(a, b, dayKey = getCurrentRunDay()){
     if (!a || !b || a === b) return
 
+    const { aId, bId } = getRelationIdsFromNames(a, b)
+    if (!aId || !bId || aId === bId) return
+
     const db = cleanupExpiredTodayContacts()
 
-    const existing = findActiveTodayContactRecord(a, b)
+    const existing = findActiveTodayContactRecord(aId, bId)
     if (existing?.dayKey && db[existing.dayKey]) {
-        delete db[existing.dayKey][makePairKey(a, b)]
+        delete db[existing.dayKey][makePairKey(aId, bId)]
         if (!Object.keys(db[existing.dayKey]).length) {
             delete db[existing.dayKey]
         }
@@ -1701,11 +2044,11 @@ function markTodayContact(a, b, dayKey = getCurrentRunDay()){
         db[dayKey] = {}
     }
 
-    const key = makePairKey(a, b)
+    const key = makePairKey(aId, bId)
 
     db[dayKey][key] = {
-        a,
-        b,
+        user_a_id: aId,
+        user_b_id: bId,
         t: Date.now(),
         expiresAt: Date.now() + MTOS_CONTACT_TTL_MS,
         weight: 1
@@ -1715,7 +2058,7 @@ function markTodayContact(a, b, dayKey = getCurrentRunDay()){
 
     if (typeof window.registerMTOSOutcome === "function") {
         window.registerMTOSOutcome({
-            relationId: `${a}->${b}`,
+            relationId: `${aId}->${bId}`,
             outcome: "good",
             value: 0.15
         })
@@ -1725,8 +2068,12 @@ function markTodayContact(a, b, dayKey = getCurrentRunDay()){
 }
 
 function unmarkTodayContact(a, b){
+    const { aId, bId } = getRelationIdsFromNames(a, b)
+const left = aId || String(a || "").trim()
+const right = bId || String(b || "").trim()
+
     const db = cleanupExpiredTodayContacts()
-    const pairKey = makePairKey(a, b)
+    const pairKey = makePairKey(left, right)
     let changed = false
 
     Object.keys(db).forEach(dayKey => {
@@ -1751,10 +2098,10 @@ function buildEffectiveRelationMemory(baseMemory, dayKey = getCurrentRunDay()){
     const contacts = loadTodayContacts(dayKey)
 
     Object.values(contacts).forEach(item => {
-        if (!item?.a || !item?.b) return
+        const a = item?.user_a_id || item?.a
+        const b = item?.user_b_id || item?.b
+        if (!a || !b) return
 
-        const a = item.a
-        const b = item.b
         const boost = 1.75
 
         const k1 = `${a}->${b}`
@@ -1881,11 +2228,15 @@ function saveHumanFeedback(state){
 
 function getHumanFeedbackFor(day, name){
     const db = loadHumanFeedback()
-    return db[`${day}__${name}`] || null
+    const userId = getStableAnonId(name) || String(name || "").trim()
+    return db[`${day}__${userId}`] || null
 }
 
 function setHumanFeedbackFor(day, name, value){
     if (!day || !name) return null
+
+    const userId = getStableAnonId(name)
+    if (!userId) return null
 
     const allowed = ["good", "neutral", "bad"]
     const safeValue = allowed.includes(String(value).toLowerCase())
@@ -1893,12 +2244,12 @@ function setHumanFeedbackFor(day, name, value){
         : "neutral"
 
     const db = loadHumanFeedback()
-    const key = `${day}__${name}`
+    const key = `${day}__${userId}`
 
     db[key] = {
         ...(db[key] || {}),
         day,
-        name,
+        user_id: userId,
         value: safeValue,
         t: Date.now(),
 
@@ -1950,10 +2301,11 @@ function saveRelationFeedback(state){
 }
 
 function getRelationFeedbackKey(day, a, b){
-    const left = String(a || "").trim()
-    const right = String(b || "").trim()
-    if (!day || !left || !right) return ""
-    return `${day}__${[left, right].sort().join("::")}`
+    const { aId, bId } = getRelationIdsFromNames(a, b)
+const left = aId || String(a || "").trim()
+const right = bId || String(b || "").trim()
+if (!day || !left || !right) return ""
+return `${day}__${[left, right].sort().join("::")}`
 }
 
 function setRelationFeedbackFor(day, a, b, value){
@@ -1961,15 +2313,19 @@ function setRelationFeedbackFor(day, a, b, value){
         ? String(value).toLowerCase()
         : "neutral"
 
-    const key = getRelationFeedbackKey(day, a, b)
+    const aId = getStableAnonId(a)
+    const bId = getStableAnonId(b)
+    if (!aId || !bId) return null
+
+    const key = getRelationFeedbackKey(day, aId, bId)
     if (!key) return null
 
     const db = loadRelationFeedback()
 
     db[key] = {
         day,
-        a: String(a || "").trim(),
-        b: String(b || "").trim(),
+        user_a_id: aId,
+        user_b_id: bId,
         value: safeValue,
         t: Date.now()
     }
@@ -1980,8 +2336,8 @@ function setRelationFeedbackFor(day, a, b, value){
         localStorage.setItem(MTOS_FEEDBACK_ACK_KEY, JSON.stringify({
             t: Date.now(),
             value: safeValue,
-            a: String(a || "").trim(),
-            b: String(b || "").trim()
+            user_a_id: aId,
+            user_b_id: bId
         }))
     }catch(e){}
 
@@ -2028,13 +2384,13 @@ window.registerMTOSOutcome = function(payload = {}){
     const outcome = String(payload.outcome || "neutral").toLowerCase()
     setHumanFeedbackFor(day, name, outcome)
 
-    logEvent("mtos_outcome_feedback", {
-        day,
-        name,
-        outcome,
-        relationId: String(payload.relationId || ""),
-        value: Number(payload.value ?? 0)
-    })
+    safeLogEvent("mtos_outcome_feedback", {
+    day,
+    name,
+    outcome,
+    relationId: String(payload.relationId || ""),
+    value: Number(payload.value ?? 0)
+})
 
     if (window._rerenderMTOS) {
         window._rerenderMTOS()
@@ -2112,15 +2468,18 @@ function storeAutoFeedbackForCurrentRun(name, user, ds, decision){
     if (!name || !day || !user || !ds) return null
 
     const db = loadHumanFeedback()
-    const key = `${day}__${name}`
 
     const auto = evaluateGoalAutoFeedback(user, ds, decision)
 
-    db[key] = {
-        day,
-        name,
-        value: auto.value,
-        t: Date.now(),
+    const userId = getStableAnonId(name)
+if (!userId) return null
+
+const key = `${day}__${userId}`
+
+db[key] = {
+    day,
+    user_id: userId,
+    value: auto.value,
 
         userKin: Number(window._userKin || 0),
         todayKin: Number(window._todayKin || 0),
@@ -2218,8 +2577,10 @@ function loadDailySnapshotsForUser(name){
         const rows = JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
         if (!Array.isArray(rows)) return []
 
+        const userId = getStableAnonId(name) || String(name || "").trim()
+
         return rows
-            .filter(row => row && row.name === name)
+            .filter(row => row && (row.user_id === userId || row.name === name))
             .slice()
             .sort((a, b) => String(b.day || "").localeCompare(String(a.day || "")))
     }catch(e){
@@ -2420,7 +2781,8 @@ function getFeedbackLearningSummary(name, ds){
     }
 
     rows.forEach(row => {
-        if (!row || row.name !== name) return
+        const userId = getStableAnonId(name) || String(name || "").trim()
+        if (!row || ((row.user_id || row.name) !== userId && row.name !== name)) return
 
         const rowMode = normalizeModeName(row.mode)
         if (!summary[rowMode]) return
@@ -2471,29 +2833,42 @@ function enrichSnapshotsWithFeedbackContext(){
         let changed = false
 
         const next = rows.map(row => {
-            if (!row || !row.day || !row.name) return row
+            if (!row || !row.day || (!row.user_id && !row.name)) return row
 
-            const key = `${row.day}__${row.name}`
+            const userId = row.user_id || getStableAnonId(row.name)
+            if (!userId) return row
+
+            const key = `${row.day}__${userId}`
             const fb = feedbackDb[key]
-            if (!fb) return row
+            if (!fb) return {
+                ...row,
+                user_id: userId,
+                name: undefined
+            }
 
             if (
                 row.feedbackValue === fb.value &&
                 row.feedbackAt &&
-                row.feedbackAt === fb.t
+                row.feedbackAt === fb.t &&
+                row.user_id === userId &&
+                !row.name
             ) {
                 return row
             }
 
             changed = true
 
-            return {
+            const clean = {
                 ...row,
+                user_id: userId,
                 feedbackValue: fb.value,
                 feedbackAt: fb.t,
                 feedbackMode: fb.mode,
                 feedbackLabel: fb.label
             }
+
+            delete clean.name
+            return clean
         })
 
         if (changed) {
@@ -2738,7 +3113,8 @@ function updateMemoryLayers(name, userKin, dayState, weather, attractorField) {
         memory.kinMemory[i] = clamp01(memory.kinMemory[i] * KIN_DECAY)
     }
 
-    const userEntry = getUserMemoryEntry(memory.userMemory, name)
+    const userId = getUserId(name) || name
+    const userEntry = getUserMemoryEntry(memory.userMemory, userId)
     userEntry.score = clamp01(userEntry.score * USER_DECAY)
 
 // ===============================
@@ -2796,7 +3172,7 @@ const decisionMode = window.mtosAdaptiveMode?.mode || "UNKNOWN"
 
 memory.decisionMemory.push({
     t: Date.now(),
-    user: name,
+    user_id: getStableAnonId(name),
     kin: userKin,
     dayLabel,
     decisionMode,
@@ -2823,7 +3199,7 @@ if (memory.decisionMemory.length > 300) {
     userEntry.lastSeal = sealIndex + 1
     userEntry.updatedAt = new Date().toISOString()
 
-    memory.userMemory[name] = userEntry
+    memory.userMemory[userId] = userEntry
 
     saveMemoryLayers(memory)
     window.mtosMemoryLayers = memory
@@ -2837,8 +3213,8 @@ function getMemoryInfluence(name, kin) {
     const kinIndex = Math.max(0, Math.min(259, Number(kin) - 1))
     const sealIndex = ((Number(kin) - 1) % 20 + 20) % 20
 
-    const nameSafe = name || ""
-    const userEntry = getUserMemoryEntry(memory.userMemory, nameSafe)
+    const userId = getUserId(name || "") || ""
+    const userEntry = getUserMemoryEntry(memory.userMemory, userId)
 
     const sealValue = Number(memory.sealMemory[sealIndex] ?? 0)
     const kinValue = Number(memory.kinMemory[kinIndex] ?? 0)
@@ -2867,20 +3243,21 @@ function saveAutoDailySnapshot({
 }) {
     const day = new Date().toISOString().slice(0, 10)
 
-    const feedback = getHumanFeedbackFor(day, name)
+    const userId = getStableAnonId(name)
+const feedback = getHumanFeedbackFor(day, name)
 
-    if (!name || !userKin || !todayKin || !uiMetrics || !dayState) {
-        return
-    }
+if (!name || !userId || !userKin || !todayKin || !uiMetrics || !dayState) {
+    return
+}
 
-    if (alreadyLoggedDailySnapshot(day, name, userKin)) {
-        return
-    }
+if (alreadyLoggedDailySnapshot(day, userId, userKin)) {
+    return
+}
 
-    const snapshot = {
-        t: Date.now(),
-        day,
-        name,
+const snapshot = {
+    t: Date.now(),
+    day,
+    user_id: userId,
 
         userKin,
         todayKin,
@@ -3197,7 +3574,10 @@ renderDecisionSummaryPanel("humanLayer")
     try {
 
         setStatusText("running")
-        logEvent("run_start", { name, year, month, day })
+        safeLogEvent("run_start", {
+    name,
+    birth_ymd_redacted: true
+})
 
         const metrics = computeBehaviorMetrics(window.MTOS_LOG)
         const truth = computeAutoTruth(metrics)
@@ -3410,7 +3790,16 @@ json.dumps(users_db)
 `))
 
 users = userList.map((uName) => {
-    const userData = usersSnapshot?.[uName] || {}
+    let userData = usersSnapshot?.[uName] || {}
+
+    if ((!userData || !Object.keys(userData).length) && /^u\d{3,}$/.test(String(uName))) {
+        const currentName = String(name || "").trim()
+        const currentAnonId = getStableAnonId(currentName)
+
+        if (currentAnonId && uName === currentAnonId) {
+            userData = usersSnapshot?.[currentName] || {}
+        }
+    }
 
     let baseKin = null
 
@@ -3663,7 +4052,7 @@ window.updateMTOSBranch("decision", {
     createdAt: new Date().toISOString()
 })
 
-const currentUserAgent = users.find(u => u.name === name) || null
+const currentUserAgent = findUserByNameOrId(users, name) || null
 const autoFeedbackRow = storeAutoFeedbackForCurrentRun(
     name,
     currentUserAgent,
@@ -3791,14 +4180,14 @@ saveAutoDailySnapshot({
     console.warn("saveNetworkState skipped", e)
 }
 
-        logEvent("agents_update", {
-            users: users,
-            fieldState: fieldState,
-            weather: weather,
-            pressure: pressure,
-            userKin: userKin,
-            todayKin: todayKin
-        })
+        safeLogEvent("agents_update", {
+    users: users,
+    fieldState: fieldState,
+    weather: weather,
+    pressure: pressure,
+    userKin: userKin,
+    todayKin: todayKin
+})
 
         // ===============================
         // UI STATE
@@ -4221,7 +4610,7 @@ window.updateMTOSBranch("decision", {
     createdAt: new Date().toISOString()
 })
 
-const currentStepUserAgent = users.find(u => u.name === name) || null
+const currentStepUserAgent = findUserByNameOrId(users, name) || null
 const autoFeedbackRow = storeAutoFeedbackForCurrentRun(
     name,
     currentStepUserAgent,
@@ -4348,14 +4737,14 @@ saveAutoDailySnapshot({
     console.warn("saveNetworkState skipped", e)
 }
 
-            logEvent("agents_update", {
-                users: users,
-                fieldState: fieldState,
-                weather: weather,
-                pressure: pressure,
-                userKin: currentKin,
-                todayKin: currentKin
-            })
+            safeLogEvent("agents_update", {
+    users: users,
+    fieldState: fieldState,
+    weather: weather,
+    pressure: pressure,
+    userKin: userKin,
+    todayKin: todayKin
+})
 
             renderCognitiveState(
     currentKin,

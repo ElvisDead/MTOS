@@ -52,9 +52,19 @@ window.registerMTOSOutcome = function (payload) {
     const state = window.MTOS_STATE || {}
     const memory = state.memory || {}
     const outcomes = Array.isArray(memory.outcomes) ? memory.outcomes.slice() : []
+
+    let safeRelationId = payload.relationId || null
+
+    if (typeof safeRelationId === "string" && safeRelationId.includes("->")) {
+        const [a, b] = safeRelationId.split("->")
+        const aId = typeof window.getAnonIdForExport === "function" ? window.getAnonIdForExport(a) : a
+        const bId = typeof window.getAnonIdForExport === "function" ? window.getAnonIdForExport(b) : b
+        safeRelationId = `${aId}->${bId}`
+    }
+
     outcomes.push({
         outcome: payload.outcome || "neutral",
-        relationId: payload.relationId || null,
+        relationId: safeRelationId,
         value: safeNumber(payload.value, 0),
         createdAt: new Date().toISOString()
     })
@@ -62,8 +72,8 @@ window.registerMTOSOutcome = function (payload) {
 
     const relationHistory = { ...(memory.relationHistory || {}) }
 
-    if (payload.relationId) {
-        const prev = relationHistory[payload.relationId] || { reinforcement: 0, decay: 0 }
+    if (safeRelationId) {
+        const prev = relationHistory[safeRelationId] || { reinforcement: 0, decay: 0 }
 
         if (payload.outcome === "good") {
             prev.reinforcement = Math.min(0.50, safeNumber(prev.reinforcement, 0) + 0.04)
@@ -77,7 +87,7 @@ window.registerMTOSOutcome = function (payload) {
             prev.decay = Math.min(0.50, safeNumber(prev.decay, 0) + 0.005)
         }
 
-        relationHistory[payload.relationId] = prev
+        relationHistory[safeRelationId] = prev
     }
 
     window.updateMTOSBranch("memory", {

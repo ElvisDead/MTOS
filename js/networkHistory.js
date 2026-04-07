@@ -11,13 +11,44 @@ function safeNum(v, fallback = 0) {
     return Number.isFinite(n) ? n : fallback;
 }
 
+function getSafeAnonId(name) {
+    const clean = String(name || "").trim()
+    if (!clean) return null
+
+    if (typeof window.getAnonIdForExport === "function") {
+        return window.getAnonIdForExport(clean)
+    }
+
+    try {
+        const raw = localStorage.getItem("mtos_export_anon_map_v1")
+        const map = raw ? JSON.parse(raw) : {}
+        if (map && map[clean]) return map[clean]
+
+        const used = new Set(Object.values(map || {}))
+        let i = 1
+        let nextId = ""
+
+        while (true) {
+            nextId = `u${String(i).padStart(3, "0")}`
+            if (!used.has(nextId)) break
+            i++
+        }
+
+        const nextMap = { ...(map || {}), [clean]: nextId }
+        localStorage.setItem("mtos_export_anon_map_v1", JSON.stringify(nextMap))
+        return nextId
+    } catch (e) {
+        return null
+    }
+}
+
 function trimUsers(users) {
-    if (!Array.isArray(users)) return [];
+    if (!Array.isArray(users)) return []
 
     return users
         .slice(0, NETWORK_HISTORY_MAX_USERS)
         .map((u) => ({
-            name: String(u?.name || ""),
+            user_id: getSafeAnonId(u?.name || ""),
             kin: safeNum(u?.kin, 0),
             baseKin: safeNum(u?.baseKin ?? u?.kin, 0),
             weight: safeNum(u?.weight, 1),
@@ -25,11 +56,8 @@ function trimUsers(users) {
             goalWeight: safeNum(u?.goalWeight, 0),
             goalScore: safeNum(u?.goalScore, 0),
             goalFeedback: String(u?.goalFeedback || ""),
-            phase: safeNum(u?.phase, 0),
-            location: String(u?.location || ""),
-            city: String(u?.city || ""),
-            country: String(u?.country || "")
-        }));
+            phase: safeNum(u?.phase, 0)
+        }))
 }
 
 function trimMemory(memory) {
