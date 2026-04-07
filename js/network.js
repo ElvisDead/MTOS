@@ -75,6 +75,13 @@ function getEdgePressureProfile(score, adjustedScore, isTodayRealContact, attrac
     }
 }
 
+function translateBandLabel(band) {
+    const key = "band_" + String(band || "EXPLORE")
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_")
+    return t(key)
+}
+
 function getRelationVisual(scoreAB, scoreBA, isTodayRealContact) {
     const labelAB = getRelationLabel(scoreAB)
     const labelBA = getRelationLabel(scoreBA)
@@ -547,9 +554,9 @@ window._memoryCache = memory
         return btn
     }
 
-    panel.appendChild(makeModeBtn("Edit", "edit", "modeEdit"))
-    panel.appendChild(makeModeBtn("Link", "link", "modeLink"))
-    panel.appendChild(makeModeBtn("Contact", "contact", "modeContact"))
+    panel.appendChild(makeModeBtn(t("edit"), "edit", "modeEdit"))
+    panel.appendChild(makeModeBtn(t("link"), "link", "modeLink"))
+    panel.appendChild(makeModeBtn(t("contact"), "contact", "modeContact"))
     root.appendChild(panel)
 
     const relationPanel = document.createElement("div")
@@ -574,14 +581,14 @@ window._memoryCache = memory
         return btn
     }
 
-    relationPanel.appendChild(makeRelationBtn("All", "all", "relFilterAll"))
-    relationPanel.appendChild(makeRelationBtn("Support", "strong_support", "relFilterStrongSupport"))
-    relationPanel.appendChild(makeRelationBtn("Weak Support", "weak_support", "relFilterWeakSupport"))
-    relationPanel.appendChild(makeRelationBtn("Neutral", "neutral", "relFilterNeutral"))
-    relationPanel.appendChild(makeRelationBtn("Tension", "tension", "relFilterTension"))
-    relationPanel.appendChild(makeRelationBtn("Conflict", "conflict", "relFilterConflict"))
-    relationPanel.appendChild(makeRelationBtn("Strong Conflict", "strong_conflict", "relFilterStrongConflict"))
-    relationPanel.appendChild(makeRelationBtn("Contact", "contact", "relFilterContact"))
+    relationPanel.appendChild(makeRelationBtn(t("all"), "all", "relFilterAll"))
+    relationPanel.appendChild(makeRelationBtn(t("support"), "strong_support", "relFilterStrongSupport"))
+    relationPanel.appendChild(makeRelationBtn(t("weak_support"), "weak_support", "relFilterWeakSupport"))
+    relationPanel.appendChild(makeRelationBtn(t("neutral"), "neutral", "relFilterNeutral"))
+    relationPanel.appendChild(makeRelationBtn(t("tension"), "tension", "relFilterTension"))
+    relationPanel.appendChild(makeRelationBtn(t("conflict"), "conflict", "relFilterConflict"))
+    relationPanel.appendChild(makeRelationBtn(t("strong_conflict"), "strong_conflict", "relFilterStrongConflict"))
+    relationPanel.appendChild(makeRelationBtn(t("contact"), "contact", "relFilterContact"))
     root.appendChild(relationPanel)
 
     function paintRelationButtons() {
@@ -684,7 +691,7 @@ window._memoryCache = memory
     frame.style.boxSizing = "border-box"
 
     const frameLabel = document.createElement("div")
-    frameLabel.innerText = "INTERACTION MAP"
+    frameLabel.innerText = t("interaction_map")
     frameLabel.style.position = "absolute"
     frameLabel.style.top = "10px"
     frameLabel.style.left = "18px"
@@ -719,13 +726,13 @@ window._memoryCache = memory
 
     const desc = document.createElement("div")
     desc.innerText =
-        "Nodes = participants.\n" +
-        "Colors match Collective.\n" +
-        "Wheel / pinch = zoom, drag = move.\n" +
-        "Tap / click node = inspect.\n" +
-        "Edit = remove node or relation.\n" +
-        "Link = tap first node, then second node to connect.\n" +
-        "Contact = mark two nodes as today's real contact."
+        t("nodes_desc") + "\n" +
+        t("colors_desc") + "\n" +
+        t("zoom_desc") + "\n" +
+        t("inspect_desc") + "\n" +
+        t("edit_desc") + "\n" +
+        t("link_desc") + "\n" +
+        t("contact_desc")
     desc.style.whiteSpace = "pre-line"
     desc.style.color = "#9aa4b2"
     desc.style.textAlign = "center"
@@ -810,41 +817,49 @@ const finalPairScore = Number(payload.score ?? 0)
         const localK = localPhi / Math.max(0.001, 0.22 + localVolume * 0.55)
         const localConsistency = Math.abs(localPhi - localK * (0.22 + localVolume * 0.55))
 
-        edgePopup.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <div style="font-weight:bold;">Relation</div>
-                <button id="closeNetworkEdgePopup" style="
-                    background:#111827;
-                    color:#cbd5e1;
-                    border:1px solid #334155;
-                    border-radius:6px;
-                    cursor:pointer;
-                    font-size:11px;
-                    padding:2px 6px;
-                ">×</button>
-            </div>
+        const relationTypeLabel = window.translateRelationLabel
+    ? window.translateRelationLabel(relationType)
+    : relationType
+    
+    const temporalModeLabel = window.translateModeLabel
+    ? window.translateModeLabel(temporalMode)
+    : t("mode_" + String(temporalMode || "").toLowerCase())
 
-            <div><b>${payload.a}</b> ↔ <b>${payload.b}</b></div>
-            <div style="margin-top:6px;">Type: <b>${relationType}</b></div>
-            <div>Base score A→B: ${baseScoreAB.toFixed(3)}</div>
-            <div>Base score B→A: ${baseScoreBA.toFixed(3)}</div>
-            <div>Feedback scalar: ${relationFeedbackScalar >= 0 ? "+" : ""}${relationFeedbackScalar.toFixed(3)}</div>
-            <div>Final score: ${score.toFixed(3)}</div>
-            <div>Final pair score: ${finalPairScore.toFixed(3)}</div>
-            <div>Local pressure: ${timePressure.toFixed(3)}</div>
-            <div>Local Φ: ${localPhi.toFixed(3)}</div>
-            <div>Local k: ${localK.toFixed(3)}</div>
-            <div>Consistency: ${localConsistency.toFixed(4)}</div>
-            <div>Local urgency: ${Number(payload.urgency ?? 0).toFixed(3)}</div>
-            <div>Temporal mode: ${temporalMode}</div>
-            <div>Band: ${payload.temporalBand || "EXPLORE"}</div>
-            ${isTodayRealContact ? `<div style="color:#ffd166;">Today's real contact: YES</div>` : ``}
-            ${
-                attractorValue !== null && attractorValue !== undefined
-                    ? `<div>Field influence: ${Number(attractorValue).toFixed(3)}</div>`
-                    : ``
-            }
-        `
+edgePopup.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-weight:bold;">${t("relation")}</div>
+        <button id="closeNetworkEdgePopup" style="
+            background:#111827;
+            color:#cbd5e1;
+            border:1px solid #334155;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:11px;
+            padding:2px 6px;
+        ">×</button>
+    </div>
+
+    <div><b>${payload.a}</b> ↔ <b>${payload.b}</b></div>
+    <div style="margin-top:6px;">${t("type")}: <b>${relationTypeLabel}</b></div>
+    <div>${t("base_ab")}: ${baseScoreAB.toFixed(3)}</div>
+    <div>${t("base_ba")}: ${baseScoreBA.toFixed(3)}</div>
+    <div>${t("feedback")}: ${relationFeedbackScalar >= 0 ? "+" : ""}${relationFeedbackScalar.toFixed(3)}</div>
+    <div>${t("final")}: ${score.toFixed(3)}</div>
+    <div>${t("final_pair")}: ${finalPairScore.toFixed(3)}</div>
+    <div>${t("pressure")}: ${timePressure.toFixed(3)}</div>
+    <div>${t("phi")}: ${localPhi.toFixed(3)}</div>
+    <div>${t("k")}: ${localK.toFixed(3)}</div>
+    <div>${t("consistency")}: ${localConsistency.toFixed(4)}</div>
+<div>${t("urgency")}: ${Number(payload.urgency ?? 0).toFixed(3)}</div>
+<div>${t("temporal")}: ${temporalModeLabel}</div>
+<div>${t("band")}: ${translateBandLabel(payload.temporalBand)}</div>
+    ${isTodayRealContact ? `<div style="color:#ffd166;">${t("today_contact")}: ${t("yes")}</div>` : ``}
+    ${
+        attractorValue !== null && attractorValue !== undefined
+            ? `<div>${t("field")}: ${Number(attractorValue).toFixed(3)}</div>`
+            : ``
+    }
+`
 
         const closeBtn = document.getElementById("closeNetworkEdgePopup")
         if (closeBtn) {

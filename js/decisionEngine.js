@@ -6,55 +6,348 @@ function clamp01(x){
     return Math.max(0, Math.min(1, n))
 }
 
+function toUpperSafe(v, fallback = "UNKNOWN"){
+    const s = String(v || "").trim()
+    return s ? s.toUpperCase() : fallback
+}
+
+function buildRiskPayload({
+    pressure = 0,
+    conflict = 0,
+    stability = 0.5,
+    attention = 0.5,
+    field = 0.5,
+    tp = 0,
+    temporalMode = "EXPLORE",
+    memoryStrength = 0,
+    mode = "EXPLORE"
+} = {}) {
+    const p = clamp01(pressure)
+    const c = clamp01(conflict)
+    const s = clamp01(stability)
+    const a = clamp01(attention)
+    const f = clamp01(field)
+    const t = clamp01(tp)
+    const m = clamp01(memoryStrength)
+
+    const overload =
+        p * 0.32 +
+        t * 0.28 +
+        (1 - s) * 0.20 +
+        c * 0.12 +
+        Math.max(0, a - 0.72) * 0.08
+
+    const social =
+        c * 0.36 +
+        p * 0.18 +
+        t * 0.16 +
+        Math.max(0, f - 0.58) * 0.10 +
+        Math.max(0, a - 0.66) * 0.10 +
+        (mode === "INTERACT" ? 0.10 : 0)
+
+    const drift =
+        (1 - a) * 0.28 +
+        (1 - s) * 0.24 +
+        (1 - m) * 0.14 +
+        Math.max(0, 0.58 - f) * 0.10 +
+        (mode === "EXPLORE" ? 0.10 : 0)
+
+    const rigidity =
+        Math.max(0, a - 0.72) * 0.26 +
+        Math.max(0, s - 0.68) * 0.16 +
+        p * 0.14 +
+        (mode === "FOCUS" ? 0.16 : 0)
+
+    const total = clamp01(
+        overload * 0.34 +
+        social * 0.28 +
+        drift * 0.22 +
+        rigidity * 0.16
+    )
+
+    let label = "LOW"
+    let color = "#00ff88"
+    let title = "Manageable risk"
+
+    if (total >= 0.72) {
+        label = "HIGH"
+        color = "#ff6666"
+        title = "High error probability"
+    } else if (total >= 0.46) {
+        label = "MEDIUM"
+        color = "#ffb347"
+        title = "Moderate behavioral risk"
+    }
+
+    const vectors = [
+        { key: "overload", value: overload },
+        { key: "social", value: social },
+        { key: "drift", value: drift },
+        { key: "rigidity", value: rigidity }
+    ].sort((a, b) => b.value - a.value)
+
+    const top = vectors.slice(0, 2).map(v => v.key)
+
+    let reasons = []
+let avoid = []
+let doNow = []
+
+if (mode === "FOCUS") {
+    doNow = ["finish one concrete task"]
+    avoid = ["avoid multitasking"]
+}
+else if (mode === "ADJUST") {
+    doNow = ["reopen one alternative before committing"]
+    avoid = ["avoid forcing certainty too early"]
+}
+else if (mode === "REST") {
+    doNow = ["switch to maintenance and recovery"]
+    avoid = ["avoid pressure-based decisions"]
+}
+else if (mode === "INTERACT") {
+    doNow = ["choose one safe contact only"]
+    avoid = ["avoid emotional overreach"]
+}
+else {
+    top.forEach(key => {
+        if (key === "overload") {
+            reasons.push("load can exceed stable capacity")
+            avoid.push("do not expand commitments")
+            doNow.push("reduce the number of active tasks")
+        }
+
+        if (key === "social") {
+            reasons.push("contact may become reactive")
+            avoid.push("avoid parallel contacts")
+            doNow.push("keep communication narrow and direct")
+        }
+
+        if (key === "drift") {
+            reasons.push("attention may scatter")
+            avoid.push("avoid weak branching")
+            doNow.push("stay with one track long enough to finish")
+        }
+
+        if (key === "rigidity") {
+            reasons.push("you may lock into one angle too early")
+            avoid.push("avoid forcing certainty")
+            doNow.push("leave one reversible exit in the plan")
+        }
+    })
+}
+
+    return {
+        score: Number(total.toFixed(3)),
+        label,
+        color,
+        title,
+        temporalMode: toUpperSafe(temporalMode, "EXPLORE"),
+        topVectors: top,
+        reasons: [...new Set(reasons)].slice(0, 3),
+        avoid: [...new Set(avoid)].slice(0, 3),
+        doNow: [...new Set(doNow)].slice(0, 3)
+    }
+}
+
+function deriveModeFromRisk(risk, collective = {}){
+    const conflict = Number(collective.conflict ?? 0)
+
+    let mode = "EXPLORE"
+
+    const r = Number(risk?.score ?? 0)
+    const label = String(risk?.label || "LOW").toUpperCase()
+    const topVector = String(risk?.topVectors?.[0] || "")
+
+        if (r >= 0.75) {
+        mode = "REST"
+    }
+    else if (topVector === "overload") {
+        mode = "REST"
+    }
+    else if (topVector === "rigidity") {
+    mode = "ADJUST"
+}
+    else if (
+        topVector === "drift" &&
+        label !== "HIGH"
+    ) {
+        mode = "FOCUS"
+    }
+    else if (
+        topVector === "social" &&
+        r <= 0.46
+    ) {
+        mode = "INTERACT"
+    }
+    else if (label === "MEDIUM") {
+        mode = "FOCUS"
+    }
+    else if (r <= 0.30 && conflict <= 0.30) {
+        mode = "INTERACT"
+    }
+    else {
+        mode = "EXPLORE"
+    }
+
+    return mode
+}
+
+function buildActionFromMode(mode, risk){
+    let action = "Observe the field and avoid impulsive actions."
+    let reason = "Default background mode."
+
+    const driver = String(risk?.topVectors?.[0] || "")
+
+    if (mode === "FOCUS") {
+        action = "Reduce noise, narrow tasks, finish one concrete thing."
+
+        if (driver === "drift") {
+            reason = "Attention may scatter. Narrowing improves efficiency."
+        } else {
+            reason = "Focused execution is currently the cleanest path."
+        }
+    }
+    else if (mode === "ADJUST") {
+        action = "Loosen fixation, reopen one alternative, and continue without forcing certainty."
+
+        if (driver === "rigidity") {
+            reason = "You may lock too early. Keep movement, but do not overcommit to one angle."
+        } else {
+            reason = "The system needs flexibility before strong commitment."
+        }
+    }
+    else if (mode === "REST") {
+        action = "Do not expand commitments today. Protect energy and simplify."
+
+        if (driver === "overload") {
+            reason = "Load pressure is dominant. Reduce commitments."
+        } else {
+            reason = "Recovery and simplification are safer than expansion."
+        }
+    }
+    else if (mode === "INTERACT") {
+        action = "Good moment for one constructive contact or clean coordination."
+
+        if (driver === "social") {
+            reason = "Social dynamics are active. Interaction works best when kept clean and narrow."
+        } else {
+            reason = "The field is open enough for one useful contact."
+        }
+    }
+    else if (mode === "EXPLORE") {
+        action = "Test a move without full commitment and observe response."
+        reason = "No single hard constraint dominates. Exploration stays viable."
+    }
+
+    if (risk?.label === "HIGH") {
+        reason = "High risk overrides softer signals."
+    }
+
+    return { action, reason }
+}
+
+function buildStepHints(mode, risk){
+    let nextStep = risk?.doNow?.[0] || "hold position"
+    let avoidNow = risk?.avoid?.[0] || "avoid unnecessary actions"
+
+    if (mode === "FOCUS") {
+        nextStep = "finish one concrete task"
+        avoidNow = "avoid multitasking"
+    }
+    else if (mode === "ADJUST") {
+        nextStep = "reopen one alternative before committing"
+        avoidNow = "avoid forcing certainty too early"
+    }
+    else if (mode === "REST") {
+        nextStep = risk?.doNow?.[0] || "reduce load"
+        avoidNow = risk?.avoid?.[0] || "avoid pressure decisions"
+    }
+    else if (mode === "INTERACT") {
+        nextStep = risk?.doNow?.[0] || "choose one safe contact only"
+        avoidNow = risk?.avoid?.[0] || "avoid emotional escalation"
+    }
+    else if (mode === "EXPLORE") {
+        nextStep = risk?.doNow?.[0] || "test safely"
+        avoidNow = risk?.avoid?.[0] || "avoid rigid commitments"
+    }
+
+    return { nextStep, avoidNow }
+}
+
 export function resolveTodayMode(dayState = {}, timePressureSummary = {}, memoryLayers = null) {
     const pressure = clamp01(dayState.pressure ?? 0)
     const conflict = clamp01(dayState.conflict ?? 0)
     const stability = clamp01(dayState.stability ?? 0.5)
     const attention = clamp01(dayState.attention ?? 0.5)
     const field = clamp01(dayState.field ?? 0.5)
-    const temporalMode = String(timePressureSummary.temporalMode || "EXPLORE").toUpperCase()
+
+    const temporalMode = toUpperSafe(
+        timePressureSummary.temporalMode || "EXPLORE",
+        "EXPLORE"
+    )
+
     const tp = clamp01(timePressureSummary.value ?? timePressureSummary.pressure ?? 0)
 
-    let mode = "EXPLORE"
-    let text = "Explore carefully without forcing commitment."
-    let confidence = 0.55
+    const memoryStrength = (() => {
+        if (!memoryLayers || typeof memoryLayers !== "object") return 0
+        const decisionMemory = Array.isArray(memoryLayers.decisionMemory)
+            ? memoryLayers.decisionMemory
+            : []
+        return clamp01(Math.min(1, decisionMemory.length / 12))
+    })()
 
-    if (tp >= 0.82 || pressure >= 0.78) {
-        mode = "REST"
-        text = "Reduce load, avoid escalation, and keep actions reversible."
-        confidence = 0.84
-    }
-    else if ((pressure >= 0.62 && stability <= 0.42) || conflict >= 0.52) {
-        mode = "FOCUS"
-        text = "Narrow the scope, cut noise, and finish one concrete thing."
-        confidence = 0.74
-    }
-    else if (attention >= 0.70 && stability >= 0.60 && conflict <= 0.28) {
-        mode = "FOCUS"
-        text = "Use the coherence window for direct execution."
-        confidence = 0.78
-    }
-    else if (field >= 0.60 && conflict <= 0.34 && tp <= 0.55) {
-        mode = "INTERACT"
-        text = "Good moment for constructive contact and coordination."
-        confidence = 0.68
-    }
-    else {
-        mode = temporalMode === "FOCUS" ? "FOCUS" : "EXPLORE"
-        text = mode === "FOCUS"
-            ? "Stay selective and move in one direction."
-            : "Probe the field and test without overcommitting."
-        confidence = 0.58
-    }
+    const baseRisk = buildRiskPayload({
+    pressure,
+    conflict,
+    stability,
+    attention,
+    field,
+    tp,
+    temporalMode,
+    memoryStrength,
+    mode: "EXPLORE"
+})
+
+const tempMode = deriveModeFromRisk(baseRisk, { conflict })
+
+const risk = buildRiskPayload({
+    pressure,
+    conflict,
+    stability,
+    attention,
+    field,
+    tp,
+    temporalMode,
+    memoryStrength,
+    mode: tempMode
+})
+
+const mode = deriveModeFromRisk(risk, { conflict })
+
+    const { action, reason } = buildActionFromMode(mode, risk)
+    const { nextStep, avoidNow } = buildStepHints(mode, risk)
+
+    let confidence =
+        0.52 +
+        stability * 0.18 +
+        attention * 0.10 +
+        (1 - pressure) * 0.10 +
+        (1 - Math.min(1, Number(risk.score ?? 0))) * 0.10
 
     if (memoryLayers && Array.isArray(memoryLayers.decisionMemory) && memoryLayers.decisionMemory.length >= 3) {
-        confidence = Math.min(0.95, confidence + 0.04)
+        confidence += 0.04
     }
+
+    confidence = Math.max(0.18, Math.min(0.95, confidence))
 
     return {
         mode,
-        text,
-        confidence
+        text: action,
+        reason,
+        confidence: Number(confidence.toFixed(3)),
+        nextStep,
+        avoidNow,
+        risk
     }
 }
 
@@ -69,58 +362,95 @@ window.buildMTOSDecision = function () {
     const collective = state.collective || {}
 
     const topEvent = pickTopEvent(events)
+    void topEvent
+
     const pressure = Number(collective.timePressure ?? 0)
-    const stability = Number(collective.consistency ?? collective.stability ?? 0)
+    const conflict = Number(collective.conflict ?? 0)
+    const stability = Number(collective.consistency ?? collective.stability ?? 0.5)
+    const attention = Number(collective.attention ?? 0.5)
+    const field = Number(collective.field ?? 0.5)
+    const temporalMode = String(collective.temporalMode || "EXPLORE")
 
-    let mode = "EXPLORE"
-    let action = "Observe the field and avoid impulsive actions."
-    let reason = "Default background mode."
+    const baseRisk = buildRiskPayload({
+    pressure,
+    conflict,
+    stability,
+    attention,
+    field,
+    tp: pressure,
+    temporalMode,
+    memoryStrength: 0,
+    mode: "EXPLORE"
+})
 
-    if (topEvent) {
-        if (topEvent.type === "conflict") {
-            mode = "REST"
-            action = "Avoid unnecessary contact and do practical solo work."
-            reason = "Conflict window under elevated pressure."
-        }
-        else if (topEvent.type === "instability") {
-            mode = "FOCUS"
-            action = "Reduce noise, narrow tasks, finish one concrete thing."
-            reason = "Activation is high while stability is low."
-        }
-        else if (topEvent.type === "support") {
-            mode = "INTERACT"
-            action = "Good moment for constructive contact or coordination."
-            reason = "Supportive ties are stronger than friction."
-        }
-        else if (topEvent.type === "opportunity") {
-            mode = "EXPLORE"
-            action = "Initiate a useful move, test a connection, or advance a project."
-            reason = "Potential is high and pressure is manageable."
-        }
-    }
+const tempMode = deriveModeFromRisk(baseRisk, { conflict })
 
-    if (pressure >= 0.80) {
-        mode = "REST"
-        action = "Do not expand commitments today. Protect energy and simplify."
-        reason = "Extreme time pressure overrides softer signals."
-    }
+const risk = buildRiskPayload({
+    pressure,
+    conflict,
+    stability,
+    attention,
+    field,
+    tp: pressure,
+    temporalMode,
+    memoryStrength: 0,
+    mode: tempMode
+})
 
-    if (stability <= 0.30 && pressure >= 0.60) {
-        mode = "FOCUS"
-        action = "No new social moves. Finish physical or technical work only."
-        reason = "Low stability plus pressure requires narrowing."
-    }
+const mode = deriveModeFromRisk(risk, { conflict })
+
+    const { action, reason } = buildActionFromMode(mode, risk)
+    const { nextStep, avoidNow } = buildStepHints(mode, risk)
 
     const decision = {
         mode,
         action,
         reason,
+        text: action,
+        risk,
+        nextStep,
+        avoidNow,
         confidence: Math.round(
-            Math.max(50, Math.min(95, ((stability * 0.55 + (1 - pressure) * 0.45) * 100)))
+            Math.max(
+                50,
+                Math.min(
+                    95,
+                    (
+                        stability * 0.40 +
+                        (1 - pressure) * 0.25 +
+                        (1 - Math.min(1, Number(risk.score ?? 0))) * 0.35
+                    ) * 100
+                )
+            )
         ),
         createdAt: new Date().toISOString()
     }
 
     window.setMTOSState({ decision })
     return decision
+}
+
+function generateTargetsFromNetwork(state){
+
+    if(!window.currentNetworkRelations) return []
+
+    const relations = window.currentNetworkRelations
+
+    return relations.map(r => {
+
+        let score = r.score || 0
+
+        let role = "neutral"
+
+        if(score > 0.6) role = "primary"
+        else if(score < -0.4) role = "avoid"
+
+        return {
+            name: r.target,
+            role: role,
+            score: score
+        }
+
+    })
+
 }

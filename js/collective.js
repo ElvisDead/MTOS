@@ -1,5 +1,27 @@
 import { getRelationLabel } from "./relationTypes.js"
 
+function ct(key){
+    if (typeof window.t === "function") return window.t(key)
+    return key
+}
+
+function translateCollectiveAttractor(type){
+    const x = String(type || "").toLowerCase()
+    if (x === "stable") return ct("attractorStable")
+    if (x === "cycle") return ct("attractorCycle")
+    if (x === "trend") return ct("attractorTrend")
+    if (x === "chaos") return ct("attractorChaos")
+    return ct("unknownWord")
+}
+
+function translateCollectiveFeedback(value){
+    const x = String(value || "").toLowerCase()
+    if (x === "good") return ct("good").toUpperCase()
+    if (x === "neutral") return ct("neutral").toUpperCase()
+    if (x === "bad") return ct("bad").toUpperCase()
+    return String(value || "").toUpperCase()
+}
+
 export function drawCollective(id, users){
         function getTimePressureState(){
         const tp = window.mtosTimePressure || window.mtosTimePressureSummary || {}
@@ -122,7 +144,7 @@ const collectiveConsistency = Math.abs(collectivePhi - collectiveK * temperature
 
     // ===== ЗАГОЛОВОК =====
     const title = document.createElement("div")
-    title.innerText = "Collective Relations"
+    title.innerText = ct("collectiveRelationsTitle")
     title.style.color = "#fff"
     title.style.fontWeight = "bold"
     title.style.fontSize = "16px"
@@ -132,7 +154,7 @@ const collectiveConsistency = Math.abs(collectivePhi - collectiveK * temperature
     box.appendChild(title)
 
     const tempEl = document.createElement("div")
-    tempEl.innerText = "System Temperature: " + temperature.toFixed(2)
+    tempEl.innerText = ct("systemTemperature") + ": " + temperature.toFixed(2)
     tempEl.style.color = "#888"
     tempEl.style.textAlign = "center"
     tempEl.style.marginBottom = "8px"
@@ -143,7 +165,7 @@ const collectiveConsistency = Math.abs(collectivePhi - collectiveK * temperature
 metabolicEl.innerText =
     "Φ: " + collectivePhi.toFixed(3) +
     " • k: " + collectiveK.toFixed(3) +
-    " • consistency: " + collectiveConsistency.toFixed(4)
+    " • " + ct("consistency").toLowerCase() + ": " + collectiveConsistency.toFixed(4)
 metabolicEl.style.color = "#888"
 metabolicEl.style.textAlign = "center"
 metabolicEl.style.marginBottom = "8px"
@@ -158,10 +180,10 @@ const attractorText = isNaN(attractorIntensity)
 
 const attractorEl = document.createElement("div")
 attractorEl.innerText =
-    "Attractor: " +
+    ct("attractorWord") + ": " +
 ((attractorState && typeof attractorState.type === "string" && attractorState.type.trim())
-    ? attractorState.type
-    : "unknown") +
+    ? translateCollectiveAttractor(attractorState.type)
+    : ct("unknownWord")) +
 " (" + attractorText + ")"
 attractorEl.style.color = "#888"
 attractorEl.style.textAlign = "center"
@@ -171,12 +193,14 @@ box.appendChild(attractorEl)
 
 const timePressureEl = document.createElement("div")
 timePressureEl.innerText =
-    "Time Pressure: " +
+    ct("time_pressure") + ": " +
     timePressureState.pressure.toFixed(2) +
     " • " +
-    timePressureState.label +
+    ct("level" + timePressureState.label.charAt(0).toUpperCase() + timePressureState.label.slice(1)) +
     " • " +
-    timePressureState.temporalMode
+    (typeof window.translateModeLabel === "function"
+        ? window.translateModeLabel(timePressureState.temporalMode)
+        : timePressureState.temporalMode)
 timePressureEl.style.color = "#888"
 timePressureEl.style.textAlign = "center"
 timePressureEl.style.marginBottom = "8px"
@@ -186,7 +210,7 @@ box.appendChild(timePressureEl)
     // ===== ПРОВЕРКА =====
     if(!users || users.length < 2){
         const empty = document.createElement("div")
-        empty.innerText = "Not enough participants"
+        empty.innerText = ct("notEnoughParticipants")
         empty.style.color = "#888"
         empty.style.textAlign = "center"
         box.appendChild(empty)
@@ -296,6 +320,10 @@ if(memory[key] !== 0 && Math.random() < randomEventChance){
 relations.forEach(r => {
 
     const { label, color } = getRelationLabel(r.score)
+const translatedLabel =
+    typeof window.translateRelationLabel === "function"
+        ? window.translateRelationLabel(label)
+        : label
 
     const row = document.createElement("div")
     row.style.display = "grid"
@@ -307,7 +335,7 @@ relations.forEach(r => {
     row.style.background = "rgba(255,255,255," + (Math.abs(r.score) * 0.08) + ")"
     row.style.fontSize = "13px"
 
-    row.title = "Score: " + r.score.toFixed(3)
+    row.title = ct("scoreLabel") + ": " + r.score.toFixed(3)
 
     row.style.cursor = "pointer"
     row.onmouseenter = () => {
@@ -384,9 +412,9 @@ const relationFeedback =
         : null
 
 status.innerText =
-    label +
+    translatedLabel +
     " (" + r.score.toFixed(2) + ")" +
-    (relationFeedback ? ` • ${String(relationFeedback.value).toUpperCase()}` : "")
+    (relationFeedback ? ` • ${translateCollectiveFeedback(relationFeedback.value)}` : "")
     status.style.color = color
     status.style.fontWeight = "bold"
     status.style.gridColumn = "1 / span 3"
@@ -447,26 +475,34 @@ window.mtosCollectiveState = {
     root.appendChild(box)
 
     const description = document.createElement("div")
-    description.style.color = "#888"
-    description.style.fontSize = "12px"
-    description.style.textAlign = "center"
-    description.style.marginTop = "10px"
-        
-    description.innerText = 
-        "Left click → Support (+)\n" +
-        "Right click → Conflict (−)\n" +
-        "Shift + Click → Neutral (0)\n\n" +
-        "The system reveals dynamic relationships between participants.\n" +
-"Connections evolve over time, influenced by user actions, internal dynamics, time pressure, and random events."
+description.style.color = "#888"
+description.style.fontSize = "12px"
+description.style.textAlign = "center"
+description.style.marginTop = "10px"
+description.style.maxWidth = "760px"
+description.style.marginLeft = "auto"
+description.style.marginRight = "auto"
+description.style.lineHeight = "1.6"
 
-description.innerText += "\n\n--- SYSTEM METRICS ---\n" +
-"Φ (energy) → strength of meaningful interactions\n" +
-"k (coherence) → how structured the system is\n" +
-"consistency → system stability (0 = balanced, >0 = unstable)\n\n" +
-"Attractor → dynamic pattern:\n" +
-"stable / cycle / trend / chaos / unknown\n"
-        
-    description.style.whiteSpace = "pre-line"
-        
-    root.appendChild(description)
+description.innerHTML = `
+    <div style="margin-bottom:6px;">${ct("leftClickSupport")}</div>
+    <div style="margin-bottom:6px;">${ct("rightClickConflict")}</div>
+    <div style="margin-bottom:14px;">${ct("shiftClickNeutral")}</div>
+
+    <div style="margin-bottom:6px;">${ct("collectiveDescLine1")}</div>
+    <div style="margin-bottom:14px;">${ct("collectiveDescLine2")}</div>
+
+    <div style="margin:14px 0 8px 0; color:#bbb; font-weight:bold;">
+        --- ${ct("systemMetricsTitle")} ---
+    </div>
+
+    <div style="margin-bottom:6px;">${ct("metricPhiDesc")}</div>
+    <div style="margin-bottom:6px;">${ct("metricKDesc")}</div>
+    <div style="margin-bottom:14px;">${ct("metricConsistencyDesc")}</div>
+
+    <div style="margin-bottom:6px;">${ct("attractorDynamicPattern")}</div>
+    <div>${ct("attractorModesLine")}</div>
+`
+
+root.appendChild(description)
 }

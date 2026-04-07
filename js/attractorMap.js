@@ -1,3 +1,8 @@
+function at(key){
+    if (typeof window.t === "function") return window.t(key)
+    return key
+}
+
 export function drawAttractorMap(id, data, options = {}) {
     const {
         size = 20,
@@ -556,80 +561,98 @@ const userMemoryValue = Number(memory.userMemory?.[userName]?.score ?? 0)
             ? details.members.map(m => {
                 return `<div>• ${m.name} <span style="color:#888;">(Kin ${m.kin}, ${Number(m.score ?? 0).toFixed(2)})</span></div>`
             }).join("")
-            : `<div style="color:#777;">No users</div>`
+            : `<div style="color:#777;">${at("noUsersWord")}</div>`
 
         analysisPanel.innerHTML = `
             <div style="font-size:13px; color:#fff; margin-bottom:10px;">
-                <b>FLOW MINI-ANALYSIS</b>
-            </div>
-
-            <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-                <div><b>A / Row:</b> ${labelA}</div>
-                <div style="color:#888;">${meaningA || "—"}</div>
-                <div style="margin-top:6px;"><b>B / Column:</b> ${labelB}</div>
-                <div style="color:#888;">${meaningB || "—"}</div>
-            </div>
-
-            <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-    <div><b>Kin:</b> ${flow.kin}</div>
-    <div><b>Segment:</b> ${flow.segment} — ${flow.segmentName}</div>
-    <div><b>Local index:</b> ${flow.localIndex} / 64</div>
+    <b>${at("attractorCellTitle")}</b>
 </div>
 
             <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-    <div><b>Heat:</b> ${flow.value.toFixed(3)}</div>
-<div><b>Memory boost:</b> ${flow.memoryBoost.toFixed(3)}</div>
-<div><b>Segment field:</b> ${Number(flow.segmentValue ?? 0).toFixed(3)}</div>
-<div><b>Pressure ×:</b> ${flow.pressureMul.toFixed(3)}</div>
-<div><b>Temp ×:</b> ${flow.tempMul.toFixed(3)}</div>
-<div><b>Memory gain:</b> ${flow.memoryGain.toFixed(3)}</div>
-<div><b>Diffusion:</b> ${flow.diffusion.toFixed(3)}</div>
-<div><b>Pull ×:</b> ${flow.pullMul.toFixed(3)}</div>
-<div><b>Flow X:</b> ${flow.dx.toFixed(3)}</div>
-<div><b>Flow Y:</b> ${flow.dy.toFixed(3)}</div>
-<div><b>Strength:</b> ${flow.mag.toFixed(3)}</div>
-<div><b>Direction:</b> ${dir}</div>
-<div><b>Laplacian:</b> ${flow.laplacian.toFixed(3)}</div>
-<div><b>Contrast:</b> ${flow.contrast.toFixed(3)}</div>
+    <div><b>Row seal:</b> ${labelA}</div>
+${meaningA ? `<div style="color:#888;">${meaningA}</div>` : ""}
+<div style="margin-top:6px;"><b>Column seal:</b> ${labelB}</div>
+${meaningB ? `<div style="color:#888;">${meaningB}</div>` : ""}
+</div>
 
             <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-                <div><b>Zone type:</b> ${zone}</div>
+    <div><b>${at("kinLabel")}:</b> ${flow.kin}</div>
+<div><b>${at("segmentLabel")}:</b> ${flow.segment} — ${flow.segmentName}</div>
+<div><b>${at("localIndexLabel")}:</b> ${flow.localIndex} / 64</div>
+</div>
+
+            <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
+    <div><b>${at("heatLabel")}:</b> ${flow.value.toFixed(3)}</div>
+<div><b>${at("memoryBoostLabel")}:</b> ${flow.memoryBoost.toFixed(3)}</div>
+${Number(flow.segmentValue ?? 0) !== 0 ? `<div><b>${at("segmentFieldLabel")}:</b> ${Number(flow.segmentValue).toFixed(3)}</div>` : ""}
+${flow.pressureMul !== 1 ? `<div><b>${at("pressureMulLabel")}:</b> ${flow.pressureMul.toFixed(3)}</div>` : ""}
+${flow.tempMul !== 1 ? `<div><b>${at("tempMulLabel")}:</b> ${flow.tempMul.toFixed(3)}</div>` : ""}
+${flow.memoryGain !== 0 ? `<div><b>${at("memoryGainLabel")}:</b> ${flow.memoryGain.toFixed(3)}</div>` : ""}
+${flow.diffusion !== 0 ? `<div><b>${at("diffusionLabel")}:</b> ${flow.diffusion.toFixed(3)}</div>` : ""}
+${flow.pullMul !== 1 ? `<div><b>${at("pullMulLabel")}:</b> ${flow.pullMul.toFixed(3)}</div>` : ""}
+<div><b>${at("flowXLabel")}:</b> ${flow.dx.toFixed(3)}</div>
+<div><b>${at("flowYLabel")}:</b> ${flow.dy.toFixed(3)}</div>
+<div><b>${at("strengthLabel")}:</b> ${flow.mag.toFixed(3)}</div>
+<div><b>${at("directionLabel")}:</b> ${dir}</div>
+<div><b>${at("laplacianLabel")}:</b> ${flow.laplacian.toFixed(3)}</div>
+<div><b>${at("contrastLabel")}:</b> ${flow.contrast.toFixed(3)}</div>
+</div>
+            <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
+                <div><b>${at("zoneTypeLabel")}:</b> ${zone}</div>
                 <div style="color:#888; margin-top:4px;">
                     ${
-                        zone === "peak basin" ? "High-value pocket with low local drift. Stable synergy center."
-                        : zone === "weak basin" ? "Low-energy pocket. Weak basin or depleted zone."
-                        : zone === "ridge / strong gradient" ? "Steep transition. Strong directional pull nearby."
-                        : zone === "channel / active flow" ? "Energy is moving through this zone."
-                        : zone === "unstable pocket" ? "Local curvature is unstable. Watch for sudden flips."
-                        : "Balanced local field without dominant pull."
+                        zone === "peak basin" ? at("zonePeakBasinDesc")
+: zone === "weak basin" ? at("zoneWeakBasinDesc")
+: zone === "ridge / strong gradient" ? at("zoneRidgeDesc")
+: zone === "channel / active flow" ? at("zoneChannelDesc")
+: zone === "unstable pocket" ? at("zoneUnstablePocketDesc")
+: at("zoneNeutralFieldDesc")
                     }
                 </div>
             </div>
 
             <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-                <div><b>Support avg:</b> ${(details?.supportAvg ?? 0).toFixed(3)}</div>
-                <div><b>Conflict avg:</b> ${(details?.conflictAvg ?? 0).toFixed(3)}</div>
-                <div><b>Users:</b> ${details?.count ?? 0}</div>
+                ${
+    details
+        ? `
+<div><b>${at("supportAvgLabel")}:</b> ${(details.supportAvg ?? 0).toFixed(3)}</div>
+<div><b>${at("conflictAvgLabel")}:</b> ${(details.conflictAvg ?? 0).toFixed(3)}</div>
+<div><b>${at("usersLabel")}:</b> ${details.count ?? 0}</div>
+`
+        : `<div style="color:#777;">${at("noSocialLayerData")}</div>`
+}
             </div>
 
             <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-    <div><b>Archetype polarity:</b> ${(details?.polarity ?? 0).toFixed(3)}</div>
-    <div><b>User polarity:</b> ${(details?.userPolarity ?? 0).toFixed(3)}</div>
-    <div><b>Alignment:</b> ${(details?.polarityAlignment ?? 0).toFixed(3)}</div>
-    <div><b>Tension:</b> ${(details?.polarityTension ?? 0).toFixed(3)}</div>
+${
+    details
+        ? `
+<div><b>${at("archetypePolarityLabel")}:</b> ${(details.polarity ?? 0).toFixed(3)}</div>
+<div><b>${at("userPolarityLabel")}:</b> ${(details.userPolarity ?? 0).toFixed(3)}</div>
+<div><b>${at("alignmentLabel")}:</b> ${(details.polarityAlignment ?? 0).toFixed(3)}</div>
+<div><b>${at("tensionLabel")}:</b> ${(details.polarityTension ?? 0).toFixed(3)}</div>
+`
+        : `<div style="color:#777;">${at("noPolarityData")}</div>`
+}
 </div>
 
 <div style="margin-bottom:10px; padding:10px; border:1px solid #1f2937; background:#080808;">
-    <div><b>Seal memory:</b> ${sealMemoryValue.toFixed(3)}</div>
-    <div><b>User memory:</b> ${userMemoryValue.toFixed(3)}</div>
-    <div style="color:#888; margin-top:4px;">
-        Seal memory = long-term archetype reinforcement.<br>
-        User memory = personal accumulated reinforcement.
-    </div>
+${
+    sealMemoryValue > 0 || userMemoryValue > 0
+        ? `
+<div><b>${at("sealMemoryLabel")}:</b> ${sealMemoryValue.toFixed(3)}</div>
+<div><b>${at("userMemoryLabel")}:</b> ${userMemoryValue.toFixed(3)}</div>
+<div style="color:#888; margin-top:4px;">
+    ${at("sealMemoryDesc")}<br>
+    ${at("userMemoryDesc")}
+</div>
+`
+        : `<div style="color:#777;">${at("noAccumulatedMemorySignal")}</div>`
+}
 </div>
 
             <div style="padding:10px; border:1px solid #1f2937; background:#080808;">
-                <div style="margin-bottom:6px;"><b>Members</b></div>
+                <div style="margin-bottom:6px;"><b>${at("membersLabel")}</b></div>
                 ${membersHtml}
             </div>
         `
@@ -673,10 +696,34 @@ const userMemoryValue = Number(memory.userMemory?.[userName]?.score ?? 0)
     drawGrid()
 
     if (selectedSeal !== null) {
-        setSelection(selectedSeal, selectedSeal)
-    } else {
-        setSelection(0, 0)
-    }
+    if (selectedSeal !== null) {
+    selectedCell = { row: selectedSeal, col: selectedSeal }
+    updateAnalysisPanel(selectedSeal, selectedSeal)
+    drawGrid()
+} else {
+    selectedCell = null
+    drawGrid()
+    analysisPanel.innerHTML = `
+        <div style="font-size:13px; color:#fff; margin-bottom:10px;">
+            <b>${at("attractorMapTitle")}</b>
+        </div>
+        <div style="color:#9ca3af; line-height:1.7;">
+            ${at("clickAnyCellInspect")}
+        </div>
+    `
+}
+} else {
+    selectedCell = null
+    drawGrid()
+    analysisPanel.innerHTML = `
+        <div style="font-size:13px; color:#fff; margin-bottom:10px;">
+            <b>${at("attractorMapTitle")}</b>
+        </div>
+        <div style="color:#9ca3af; line-height:1.7;">
+            ${at("clickAnyCellInspect")}
+        </div>
+    `
+}
 
     let raf = null
     let running = true
@@ -701,10 +748,10 @@ const userMemoryValue = Number(memory.userMemory?.[userName]?.score ?? 0)
     legend.style.fontFamily = "monospace"
     legend.style.textAlign = "center"
     legend.innerHTML = `
-Heatmap + Flow Field<br>
-Bright = strong synergy / attractor<br>
-Arrows = local direction of field movement<br>
-Click cell = mini-analysis at right
+${at("heatmapFlowField")}<br>
+${at("brightStrongSynergy")}<br>
+${at("arrowsDirectionField")}<br>
+${at("clickCellMiniAnalysis")}
     `
     leftCol.appendChild(legend)
 
@@ -717,32 +764,32 @@ Click cell = mini-analysis at right
     desc.style.whiteSpace = "pre-line"
     desc.style.lineHeight = "1.5"
     desc.innerHTML = `
-MTOS Attractor Heatmap + Flow Field
+${at("attractorDescTitle")}
 
-Each cell shows interaction intensity between row archetype A and column archetype B.
+${at("eachCellShows")}
 
-Heat:
-• dark = weak zone
-• bright = strong synergy / pull
-• red outline = unstable / weak basin
-• soft glow = peak attractor zone
+${at("heatLabelTitle")}:
+• ${at("heatDarkDesc")}
+• ${at("heatBrightDesc")}
+• ${at("heatRedOutlineDesc")}
+• ${at("heatSoftGlowDesc")}
 
-Flow:
-• arrow direction = local gradient direction
-• arrow size = gradient strength
+${at("flowLabelTitle")}:
+• ${at("flowArrowDirectionDesc")}
+• ${at("flowArrowSizeDesc")}
 
-4×65 phase overlay:
-• blue frame = initiation
-• green frame = growth
-• amber frame = peak
-• red frame = release
+${at("phaseOverlayTitle")}:
+• ${at("phaseBlueDesc")}
+• ${at("phaseGreenDesc")}
+• ${at("phaseAmberDesc")}
+• ${at("phaseRedDesc")}
 
-Right panel:
-• clicked cell mini-analysis
-• local field structure
-• segment profile
-• support / conflict
-• member list
+${at("rightPanelTitle")}:
+• ${at("rightPanelClickedDesc")}
+• ${at("rightPanelLocalDesc")}
+• ${at("rightPanelSegmentDesc")}
+• ${at("rightPanelSupportDesc")}
+• ${at("rightPanelMembersDesc")}
 `
     leftCol.appendChild(desc)
 }

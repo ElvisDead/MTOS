@@ -1,5 +1,10 @@
 import { KinRegistry } from "./kinRegistry.js"
 
+function at(key){
+    if (typeof window.t === "function") return window.t(key)
+    return key
+}
+
 let phi = 0
 let k = 1
 let consistency = 0
@@ -657,35 +662,35 @@ ctx.fillText(`S3 release: ${segMeans[3].toFixed(2)}`, 10, 155)
     
     // кнопка pause
     const pauseBtn = document.createElement("button")
-    pauseBtn.innerText = "Pause"
+    pauseBtn.innerText = at("pauseBtn")
     pauseBtn.onclick = () => {
         isPaused = !isPaused
-        pauseBtn.innerText = isPaused ? "Resume" : "Pause"
+        pauseBtn.innerText = isPaused ? at("resumeBtn") : at("pauseBtn")
     }
     
     // slow
     const slowBtn = document.createElement("button")
-    slowBtn.innerText = "Slow"
+    slowBtn.innerText = at("slowBtn")
     slowBtn.onclick = () => {
         speedMultiplier = 0.3
     }
     
     // normal
     const normalBtn = document.createElement("button")
-    normalBtn.innerText = "Normal"
+    normalBtn.innerText = at("normalBtn")
     normalBtn.onclick = () => {
         speedMultiplier = 1
     }
     
     // boost
     const boostBtn = document.createElement("button")
-    boostBtn.innerText = "Boost"
+    boostBtn.innerText = at("boostBtn")
     boostBtn.onclick = () => {
         speedMultiplier = 5
     }
 
         const resetFieldBtn = document.createElement("button")
-    resetFieldBtn.innerText = "Reset Field"
+    resetFieldBtn.innerText = at("resetFieldBtn")
     resetFieldBtn.onclick = () => {
         localStorage.removeItem(FIELD_STORAGE_KEY)
         localStorage.removeItem(MEMORY_STORAGE_KEY)
@@ -729,27 +734,27 @@ ctx.fillText(`S3 release: ${segMeans[3].toFixed(2)}`, 10, 155)
     description.style.margin = "10px auto"
 
     description.innerHTML = `
-MTOS Attractor — Dynamic Cognitive Field Visualization
+${at("attractorDynamicFieldTitle")}
 
-This system represents a 260-node cyclic field evolving under metabolic dynamics.
+${at("attractorDynamicFieldLine1")}
 
-Each point corresponds to a node in the field:
-• X-axis — position in the 260-cycle
-• Y-axis — signal intensity
+${at("attractorDynamicFieldLine2")}
+• ${at("attractorXAxis")}
+• ${at("attractorYAxis")}
 
-Core dynamics:
-• Memory — stabilizes recurring patterns (attractor formation)
-• Pressure — suppresses unstable signals (skepticism)
-• Temperature — introduces variability (activity / noise)
-• Phase — modulates behavior across 13-cycle temporal states
-• Persistent field memory — yesterday’s field continues influencing today
+${at("attractorCoreDynamics")}
+• ${at("attractorMemory")}
+• ${at("attractorPressure")}
+• ${at("attractorTemperature")}
+• ${at("attractorPhase")}
+• ${at("attractorPersistent")}
 
-The attractor evolves in real time, showing:
-• formation of patterns
-• collapse of unstable structures
-• emergence of coherent clusters
+${at("attractorEvolves")}
+• ${at("attractorFormation")}
+• ${at("attractorCollapse")}
+• ${at("attractorEmergence")}
 
-This is not a static graph, but a living system.
+${at("attractorNotStatic")}
 `
 
     root.appendChild(description)

@@ -42,11 +42,1140 @@ import { drawFieldTorus } from "./fieldTorus.js"
 import "./stateBus.js"
 import "./eventEngine.js"
 import "./memoryLoop.js"
-
+import { renderDecisionSummaryPanel } from "./decisionSummaryPanel.js"
 import { resolveTodayMode } from "./decisionEngine.js"
 import { renderTodayPanel } from "./todayPanel.js"
 
 import { renderHumanLayerV2 } from "./humanLayer.js"
+
+const MTOS_VIEW_MODE_KEY = "mtos_view_mode_v1"
+
+const MTOS_LANG_KEY = "mtos_lang_v1"
+
+const mtosTranslations = {
+  en: {
+    weather_title: "METABOLIC WEATHER"
+  },
+  ru: {
+    weather_title: "МЕТАБОЛИЧЕСКАЯ ПОГОДА"
+  }
+}
+
+function updateStaticTexts(){
+  const el = document.getElementById("weatherTitle")
+  if(el) el.innerText = t("weather_title")
+}
+
+function loadMTOSLang(){
+    try{
+        const raw = localStorage.getItem(MTOS_LANG_KEY)
+        return raw === "ru" ? "ru" : "en"
+    }catch(e){
+        return "en"
+    }
+}
+
+function saveMTOSLang(lang){
+    try{
+        localStorage.setItem(MTOS_LANG_KEY, lang === "ru" ? "ru" : "en")
+    }catch(e){}
+}
+
+const MTOS_I18N = {
+    en: {
+        ready: "Ready",
+        running: "Running...",
+        done: "Done",
+        doneCache: "Done (cache)",
+        error: "ERROR",
+        enterDate: "Enter date",
+
+        editOn: "EDIT ON",
+        editOff: "EDIT OFF",
+
+        confidence: "Confidence",
+        do: "Do",
+        avoid: "Avoid",
+
+        todaySummary: "Today Summary",
+        mode: "Mode",
+        risk: "Risk",
+        nextMove: "Next Move",
+        currentBestPosture: "Current best posture",
+        adjustedByLearning: "Adjusted by learning history",
+        primary: "Primary",
+        secondary: "Secondary",
+        noSecondaryDriver: "No secondary driver",
+
+        decisionBridge: "Decision Bridge",
+        modeRiskAligned: "Mode / risk aligned",
+        learningAdjusted: "Learning-adjusted",
+
+        whyThisDay: "Why This Day",
+        learningSignal: "Learning Signal",
+        feedback: "Feedback",
+
+        selectedTarget: "Selected target",
+        wasContactUseful: "Was contact with this person actually useful today?",
+        wasModeUseful: "Was today's mode actually useful for you?",
+
+        good: "Good",
+        neutral: "Neutral",
+        bad: "Bad",
+
+        feedbackSaved: "Feedback saved",
+        manualFeedbackNote: "Manual feedback updates learning for similar states and also modifies the selected relation in Network / Collective.",
+
+        decisionTargets: "Decision Targets",
+        chooseOneTarget: "Choose one target for today",
+        bestContactNow: "Best contact now",
+        possibleContacts: "Possible contacts",
+        avoidToday: "Avoid today",
+        allAgents: "All agents",
+        noPrimaryTargets: "No primary targets",
+        noNeutralTargets: "No neutral targets",
+        noAvoidTargets: "No avoid targets",
+        noAgentsFound: "No agents found",
+        inNetwork: "In network",
+        selected: "Selected",
+        select: "Select",
+        contact: "Contact",
+        unmark: "Unmark",
+        selectedTargetBadge: "Selected target",
+        manualTarget: "manual target",
+        realContact: "real contact",
+
+        systemOutput: "System Output",
+        reason: "Reason",
+        bestTargetNow: "Best target now",
+
+        backgroundMode: "Background Mode",
+        noMajorEvent: "No major event threshold reached.",
+        type: "Type",
+        level: "Level",
+        score: "Score",
+
+        fieldTension: "Field Tension",
+        pressure: "Pressure",
+        stability: "Stability",
+        consistency: "Consistency",
+        gradient: "Gradient",
+        interpretation: "Interpretation",
+        highTension: "HIGH TENSION",
+        mediumTension: "MEDIUM TENSION",
+        lowTension: "LOW TENSION",
+        uneven: "uneven",
+        mixed: "mixed",
+        stable: "stable",
+        fieldCompressed: "Field is compressed. Actions amplify consequences.",
+        fieldActive: "Field is active. Choose direction carefully.",
+        fieldOpen: "Field is open enough for soft movement.",
+
+        actionTrace: "Action Trace",
+
+        historyEfficiency: "History Efficiency",
+        noHistoryYet: "No history yet. Run MTOS on different days and leave feedback.",
+        days: "Days",
+        avgPredictability: "Avg Predictability",
+        antiFail: "Anti-Fail",
+        modeEfficiency: "Mode Efficiency",
+        dayTypeEfficiency: "Day Type Efficiency",
+        recentDays: "Recent Days",
+        averageTimePressure: "Average time pressure",
+
+        noSnapshotsYet: "No snapshots yet",
+        runDifferentDays: "Run MTOS on different days to build history",
+        predictabilityWord: "predictability",
+        feedbackWord: "feedback",
+
+        deepWork: "Deep work. Work alone.",
+        distractions: "Distractions. Social noise.",
+        communicate: "Communicate. Build connections.",
+        isolation: "Isolation.",
+        tryNewThings: "Try new things.",
+        routineLoops: "Routine loops.",
+        recoverSlowDown: "Recover. Slow down.",
+        overload: "Overload.",
+
+        systemEventsTitle: "SYSTEM EVENTS",
+systemDecisionTitle: "SYSTEM DECISION",
+
+modeFocus: "FOCUS",
+modeAdjust: "ADJUST",
+modeRest: "REST",
+modeExplore: "EXPLORE",
+modeInteract: "INTERACT",
+
+riskLow: "LOW",
+riskMedium: "MEDIUM",
+riskHigh: "HIGH",
+riskCritical: "CRITICAL",
+
+noStrongFeedbackPattern: "No strong feedback pattern yet.",
+derivedFromCachedDayState: "Derived from cached day state.",
+derivedFromDayState: "Derived from day state, time pressure, and memory.",
+
+decisionTextFocusBetter: "FOCUS — this mode has worked better for you in similar states.",
+decisionTextAdjustBetter: "ADJUST — past feedback suggests flexibility works better here than tightening.",
+decisionTextRestSafer: "REST — past feedback suggests recovery is safer here.",
+decisionTextExploreBetter: "EXPLORE — flexible mode fits better than forcing execution.",
+decisionTextInteractBetter: "INTERACT — social/action mode has better past response here.",
+
+pastFeedbackBadSwitched: "Past feedback says {from} performs badly in similar states; switched to {to}.",
+pastFeedbackBadReduced: "Past feedback says {mode} often performs badly in similar states; confidence reduced.",
+pastFeedbackGoodIncreased: "Past feedback says {mode} performs well in similar states; confidence increased.",
+
+ultraSynergy: "Ultra Synergy",
+strongSupport: "Strong Support",
+support: "Support",
+neutral: "Neutral",
+conflict: "Conflict",
+strongConflict: "Strong Conflict",
+
+adjust: "Adjust",
+
+eventTypeBackground: "background",
+levelLow: "low",
+levelMedium: "medium",
+levelHigh: "high",
+noSystemDecisionYet: "No system decision yet",
+observeField: "Observe the field.",
+noReason: "No reason",
+
+scoreWord: "score",
+realContactWord: "real contact",
+manualTargetWord: "manual target",
+kinWord: "kin",
+
+tensionWord: "TENSION",
+temporalModeLabel: "Temporal Mode",
+
+ifModePrefix: "If",
+ifContactPrefix: "If you contact",
+ifChoosePrimary: "If you choose one of the primary contacts:",
+
+veryStrongAlignmentToday: "This target has very strong alignment today",
+supportiveNeedsCleanTiming: "This target is supportive, but needs clean timing",
+keepInteractionShort: "Keep the interaction short and precise",
+oneDirectContactBetter: "One direct contact is better than multiple parallel contacts",
+
+strongestAlignment: "strongest alignment",
+stableExpansion: "stable expansion",
+safeReinforcement: "safe reinforcement",
+
+networkMayExpand: "Network may expand",
+stabilityMayDipReactive: "Stability may dip if contact becomes reactive",
+constructiveAlignmentLikely: "Constructive alignment is likely if contact stays clean",
+parallelContactsOverload: "Parallel contacts may create overload",
+oneDirectContactFavored: "One direct contact is favored over many weak contacts",
+
+focusNarrowExecution: "Stability can improve through narrower execution",
+focusNetworkCompress: "Network activity will likely compress",
+focusBranchesReduce: "New external branches may reduce coherence",
+
+adjustFixationRising: "Fixation is rising, so flexibility is safer than tightening",
+adjustReopenAlternative: "Reopen one alternative before hard commitment",
+adjustSmallCorrection: "A small course correction is better than forcing certainty",
+
+restPressureDecrease: "Pressure can decrease if commitments are reduced",
+restOpportunitiesRemain: "Opportunities remain, but active expansion slows down",
+restMaintenanceBest: "Best effect comes from maintenance, not push",
+
+exploreSignalsDiversify: "Signals may diversify before they stabilize",
+exploreUsefulPaths: "Useful paths can appear, but certainty stays low",
+exploreTooManyExperiments: "Too many experiments may scatter energy",
+
+today_mode: "Today Mode",
+day_type: "Day Type",
+energy: "Energy",
+trust: "Trust",
+time_pressure: "Time pressure",
+real_contacts: "Real contacts",
+attractor: "Attractor",
+
+map_mode: "Map Mode",
+mode_full: "Full",
+mode_users_field: "Users / Field",
+mode_pressure: "Pressure",
+
+desc_full: "Overall cognitive climate.",
+desc_users: "Where participants and active zones are concentrated.",
+desc_pressure: "Where overload and tension accumulate.",
+
+legend: "Legend",
+low_field: "Low field",
+balanced: "Balanced",
+high_field: "High field",
+
+quick_reading: "Quick reading",
+hot_zone: "Hot zone",
+cold_zone: "Cold zone",
+risk_zone: "Risk zone",
+white_frame: "White frame",
+yellow_frame: "Yellow frame",
+
+hot_zone_desc: "Better for movement, focus, and active steps.",
+cold_zone_desc: "Better for rest, observation, and low-pressure tasks.",
+risk_zone_desc: "Tension, overload, or conflict may rise here.",
+white_frame_desc: "your current kin.",
+yellow_frame_desc: "today's kin.",
+
+about_map: "About this map",
+map_desc: "13×20 cognitive field (260 states).",
+horizontal: "Horizontal",
+vertical: "Vertical",
+click_hint: "Click any cell to inspect the current state.",
+
+advice_default: "Observe the zone.",
+avoid_default: "Avoid overreaction.",
+advice_hot: "Good zone for action, movement, and active decisions.",
+avoid_hot: "Avoid wasting the window.",
+advice_cold: "Better for rest, observation, or low-pressure tasks.",
+avoid_cold: "Avoid forcing output.",
+advice_risk: "Tension is high here. Move carefully.",
+avoid_risk: "Avoid conflict, overload, and irreversible moves.",
+advice_balanced: "Balanced zone for moderate work.",
+avoid_balanced: "Avoid reading too much into weak signals.",
+
+no_participants_in_kin: "No participants in this kin",
+no_users: "No users",
+what_to_do_here: "What to do here",
+participants: "Participants",
+your_day_type: "Your day type",
+current_mode: "Current mode",
+day_index: "Day index",
+tone: "Tone",
+seal: "Seal",
+users: "Users",
+
+"Balanced zone": "Balanced zone",
+"Risk zone": "Risk zone",
+"Hot zone": "Hot zone",
+"Cold zone": "Cold zone",
+
+High: "High",
+Medium: "Medium",
+Low: "Low",
+Overload: "Overload",
+Conflict: "Conflict",
+Chaotic: "Chaotic",
+Compressed: "Compressed",
+Manageable: "Manageable",
+
+attention: "Attention",
+conflict: "Conflict",
+
+collectiveSectionTitle: "COLLECTIVE",
+collectiveRelationsTitle: "Collective Relations",
+systemTemperature: "System Temperature",
+attractorWord: "Attractor",
+unknownWord: "unknown",
+notEnoughParticipants: "Not enough participants",
+scoreLabel: "Score",
+systemMetricsTitle: "SYSTEM METRICS",
+
+leftClickSupport: "Left click → Support (+)",
+rightClickConflict: "Right click → Conflict (−)",
+shiftClickNeutral: "Shift + Click → Neutral (0)",
+
+collectiveDescLine1: "The system reveals dynamic relationships between participants.",
+collectiveDescLine2: "Connections evolve over time, influenced by user actions, internal dynamics, time pressure, and random events.",
+
+metricPhiDesc: "Φ (energy) → strength of meaningful interactions",
+metricKDesc: "k (coherence) → how structured the system is",
+metricConsistencyDesc: "consistency → system stability (0 = balanced, >0 = unstable)",
+attractorDynamicPattern: "Attractor → dynamic pattern:",
+attractorModesLine: "stable / cycle / trend / chaos / unknown",
+
+attractorStable: "stable",
+attractorCycle: "cycle",
+attractorTrend: "trend",
+attractorChaos: "chaos",
+
+leftClickSupport: "Left click → Support (+)",
+rightClickConflict: "Right click → Conflict (−)",
+shiftClickNeutral: "Shift + Click → Neutral (0)",
+
+collectiveDescLine1: "The system reveals dynamic relationships between participants.",
+collectiveDescLine2: "Connections evolve over time, influenced by user actions, internal dynamics, time pressure, and random events.",
+
+systemMetricsTitle: "SYSTEM METRICS",
+
+metricPhiDesc: "Φ (energy) → strength of meaningful interactions",
+metricKDesc: "k (coherence) → how structured the system is",
+metricConsistencyDesc: "consistency → system stability (0 = balanced, >0 = unstable)",
+
+attractorDynamicPattern: "Attractor → dynamic pattern:",
+attractorModesLine: "stable / cycle / trend / chaos / unknown",
+
+collaborate: "Collaborate",
+tension: "Tension",
+collectiveSectionTitle: "COLLECTIVE",
+strong: "Strong",
+
+attractorSectionTitle: "ATTRACTOR",
+historyEfficiencySectionTitle: "HISTORY EFFICIENCY",
+seriesSectionTitle: "SERIES",
+toolsSectionTitle: "TOOLS",
+
+collaborate: "Collaborate",
+tension: "Tension",
+
+attractorMapTitle: "ATTRACTOR MAP",
+attractorCellTitle: "ATTRACTOR CELL",
+clickAnyCellInspect: "Click any cell to inspect local structure.",
+
+rowSeal: "Row seal",
+columnSeal: "Column seal",
+kinLabel: "Kin",
+segmentLabel: "Segment",
+localIndexLabel: "Local index",
+
+heatLabel: "Heat",
+memoryBoostLabel: "Memory boost",
+segmentFieldLabel: "Segment field",
+pressureMulLabel: "Pressure ×",
+tempMulLabel: "Temp ×",
+memoryGainLabel: "Memory gain",
+diffusionLabel: "Diffusion",
+pullMulLabel: "Pull ×",
+flowXLabel: "Flow X",
+flowYLabel: "Flow Y",
+strengthLabel: "Strength",
+directionLabel: "Direction",
+laplacianLabel: "Laplacian",
+contrastLabel: "Contrast",
+
+zoneTypeLabel: "Zone type",
+supportAvgLabel: "Support avg",
+conflictAvgLabel: "Conflict avg",
+usersLabel: "Users",
+
+archetypePolarityLabel: "Archetype polarity",
+userPolarityLabel: "User polarity",
+alignmentLabel: "Alignment",
+tensionLabel: "Tension",
+
+sealMemoryLabel: "Seal memory",
+userMemoryLabel: "User memory",
+membersLabel: "Members",
+
+noUsersWord: "No users",
+noSocialLayerData: "No social layer data for this cell",
+noPolarityData: "No polarity data",
+noAccumulatedMemorySignal: "No accumulated memory signal",
+
+sealMemoryDesc: "Seal memory = long-term archetype reinforcement.",
+userMemoryDesc: "User memory = personal accumulated reinforcement.",
+
+zonePeakBasinDesc: "High-value pocket with low local drift. Stable synergy center.",
+zoneWeakBasinDesc: "Low-energy pocket. Weak basin or depleted zone.",
+zoneRidgeDesc: "Steep transition. Strong directional pull nearby.",
+zoneChannelDesc: "Energy is moving through this zone.",
+zoneUnstablePocketDesc: "Local curvature is unstable. Watch for sudden flips.",
+zoneNeutralFieldDesc: "Balanced local field without dominant pull.",
+
+heatmapFlowField: "Heatmap + Flow Field",
+brightStrongSynergy: "Bright = strong synergy / attractor",
+arrowsDirectionField: "Arrows = local direction of field movement",
+clickCellMiniAnalysis: "Click cell = mini-analysis at right",
+
+attractorDescTitle: "MTOS Attractor Heatmap + Flow Field",
+eachCellShows: "Each cell shows interaction intensity between row archetype A and column archetype B.",
+heatLabelTitle: "Heat",
+flowLabelTitle: "Flow",
+phaseOverlayTitle: "4×65 phase overlay",
+rightPanelTitle: "Right panel",
+
+heatDarkDesc: "dark = weak zone",
+heatBrightDesc: "bright = strong synergy / pull",
+heatRedOutlineDesc: "red outline = unstable / weak basin",
+heatSoftGlowDesc: "soft glow = peak attractor zone",
+
+flowArrowDirectionDesc: "arrow direction = local gradient direction",
+flowArrowSizeDesc: "arrow size = gradient strength",
+
+phaseBlueDesc: "blue frame = initiation",
+phaseGreenDesc: "green frame = growth",
+phaseAmberDesc: "amber frame = peak",
+phaseRedDesc: "red frame = release",
+
+rightPanelClickedDesc: "clicked cell mini-analysis",
+rightPanelLocalDesc: "local field structure",
+rightPanelSegmentDesc: "segment profile",
+rightPanelSupportDesc: "support / conflict",
+rightPanelMembersDesc: "member list",
+
+pauseBtn: "Pause",
+resumeBtn: "Resume",
+slowBtn: "Slow",
+normalBtn: "Normal",
+boostBtn: "Boost",
+resetFieldBtn: "Reset Field",
+
+attractorDynamicFieldTitle: "MTOS Attractor — Dynamic Cognitive Field Visualization",
+attractorDynamicFieldLine1: "This system represents a 260-node cyclic field evolving under metabolic dynamics.",
+attractorDynamicFieldLine2: "Each point corresponds to a node in the field:",
+attractorXAxis: "X-axis — position in the 260-cycle",
+attractorYAxis: "Y-axis — signal intensity",
+attractorCoreDynamics: "Core dynamics:",
+attractorMemory: "Memory — stabilizes recurring patterns (attractor formation)",
+attractorPressure: "Pressure — suppresses unstable signals (skepticism)",
+attractorTemperature: "Temperature — introduces variability (activity / noise)",
+attractorPhase: "Phase — modulates behavior across 13-cycle temporal states",
+attractorPersistent: "Persistent field memory — yesterday’s field continues influencing today",
+attractorEvolves: "The attractor evolves in real time, showing:",
+attractorFormation: "formation of patterns",
+attractorCollapse: "collapse of unstable structures",
+attractorEmergence: "emergence of coherent clusters",
+attractorNotStatic: "This is not a static graph, but a living system.",
+systemWord: "system",
+behaviorWord: "behavior",
+
+seriesLegend: `These charts represent temporal dynamics inside the 260-state cognitive cycle.
+
+• 7 days — short-term attention dynamics
+• 30 days — medium-range behavioral drift
+• 260 days — full-cycle attention structure
+
+• Φ series — metabolic intensity / integrated cognitive load
+• T series — processing temperature / activation intensity
+• Consistency series — internal coherence of the current regime
+
+All charts are displayed on a fixed 0..1 scale for visual comparison.`
+    },
+
+    ru: {
+        ready: "Готово",
+        running: "Запуск...",
+        done: "Готово",
+        doneCache: "Готово (кэш)",
+        error: "ОШИБКА",
+        enterDate: "Введите дату",
+
+        editOn: "РЕДАКТ. ВКЛ",
+        editOff: "РЕДАКТ. ВЫКЛ",
+
+        confidence: "Уверенность",
+        do: "Делать",
+        avoid: "Избегать",
+
+        todaySummary: "Сводка дня",
+        mode: "Режим",
+        risk: "Риск",
+        nextMove: "Следующий шаг",
+        currentBestPosture: "Лучшее текущее положение",
+        adjustedByLearning: "Скорректировано обучением",
+        primary: "Основной",
+        secondary: "Вторичный",
+        noSecondaryDriver: "Нет вторичного фактора",
+
+        modeRiskAligned: "Режим / риск согласованы",
+        learningAdjusted: "Скорректировано обучением",
+
+        whyThisDay: "Почему такой день",
+        learningSignal: "Сигнал обучения",
+        feedback: "Обратная связь",
+
+        selectedTarget: "Выбранная цель",
+        wasContactUseful: "Был ли контакт с этим человеком полезен сегодня?",
+        wasModeUseful: "Был ли сегодняшний режим полезен для тебя?",
+
+        good: "Хорошо",
+        neutral: "Нейтрально",
+        bad: "Плохо",
+
+        feedbackSaved: "Оценка сохранена",
+        manualFeedbackNote: "Ручная оценка обновляет обучение для похожих состояний и также меняет выбранную связь в Network / Collective.",
+
+        decisionTargets: "Цели решения",
+        chooseOneTarget: "Выбери одну цель на сегодня",
+        bestContactNow: "Лучший контакт сейчас",
+        possibleContacts: "Возможные контакты",
+        avoidToday: "Избегать сегодня",
+        allAgents: "Все агенты",
+        noPrimaryTargets: "Нет основных целей",
+        noNeutralTargets: "Нет нейтральных целей",
+        noAvoidTargets: "Нет целей на избегание",
+        noAgentsFound: "Агенты не найдены",
+        inNetwork: "В сети",
+        selected: "Выбран",
+        select: "Выбрать",
+        contact: "Контакт",
+        unmark: "Снять",
+        selectedTargetBadge: "Выбранная цель",
+        manualTarget: "ручная цель",
+        realContact: "реальный контакт",
+
+        systemOutput: "Выход системы",
+        reason: "Причина",
+        bestTargetNow: "Лучшая цель сейчас",
+
+        backgroundMode: "Фоновый режим",
+        noMajorEvent: "Сильный порог события не достигнут.",
+        type: "Тип",
+        level: "Уровень",
+        score: "Оценка",
+
+        fieldTension: "Напряжение поля",
+        pressure: "Давление",
+        stability: "Стабильность",
+        consistency: "Согласованность",
+        gradient: "Градиент",
+        interpretation: "Интерпретация",
+        highTension: "ВЫСОКОЕ НАПРЯЖЕНИЕ",
+        mediumTension: "СРЕДНЕЕ НАПРЯЖЕНИЕ",
+        lowTension: "НИЗКОЕ НАПРЯЖЕНИЕ",
+        uneven: "неровный",
+        mixed: "смешанный",
+        stable: "стабильный",
+        fieldCompressed: "Поле сжато. Действия сильнее усиливают последствия.",
+        fieldActive: "Поле активно. Выбирай направление аккуратно.",
+        fieldOpen: "Поле достаточно открыто для мягкого движения.",
+
+        actionTrace: "Траектория действия",
+
+        historyEfficiency: "Эффективность истории",
+        noHistoryYet: "Истории пока нет. Запускай MTOS в разные дни и оставляй оценку.",
+        days: "Дней",
+        avgPredictability: "Средн. предсказуемость",
+        antiFail: "Анти-провал",
+        modeEfficiency: "Эффективность режимов",
+        dayTypeEfficiency: "Эффективность типов дня",
+        recentDays: "Последние дни",
+        averageTimePressure: "Среднее давление времени",
+
+        noSnapshotsYet: "Снимков пока нет",
+        runDifferentDays: "Запускай MTOS в разные дни, чтобы собрать историю",
+        predictabilityWord: "предсказуемость",
+        feedbackWord: "оценка",
+
+        deepWork: "Глубокая работа. Работай один.",
+        distractions: "Отвлечения. Социальный шум.",
+        communicate: "Общайся. Укрепляй связи.",
+        isolation: "Изоляция.",
+        tryNewThings: "Пробуй новое.",
+        routineLoops: "Рутинные петли.",
+        recoverSlowDown: "Восстановление. Сбавь темп.",
+        overload: "Перегрузка.",
+
+        systemEventsTitle: "СИСТЕМНЫЕ СОБЫТИЯ",
+        systemDecisionTitle: "СИСТЕМНОЕ РЕШЕНИЕ",
+
+        modeFocus: "ФОКУС",
+        modeAdjust: "ПОДСТРОЙКА",
+        modeRest: "ОТДЫХ",
+        modeExplore: "ИССЛЕДОВАНИЕ",
+        modeInteract: "КОНТАКТ",
+
+        riskLow: "НИЗКИЙ",
+        riskMedium: "СРЕДНИЙ",
+        riskHigh: "ВЫСОКИЙ",
+        riskCritical: "КРИТИЧЕСКИЙ",
+
+        noStrongFeedbackPattern: "Пока нет сильного паттерна обратной связи.",
+        derivedFromCachedDayState: "Выведено из кэшированного состояния дня.",
+        derivedFromDayState: "Выведено из состояния дня, давления времени и памяти.",
+
+        decisionTextFocusBetter: "ФОКУС — этот режим раньше работал у тебя лучше в похожих состояниях.",
+        decisionTextAdjustBetter: "ПОДСТРОЙКА — прошлые оценки подсказывают, что здесь гибкость лучше, чем зажатие.",
+        decisionTextRestSafer: "ОТДЫХ — прошлые оценки подсказывают, что восстановление здесь безопаснее.",
+        decisionTextExploreBetter: "ИССЛЕДОВАНИЕ — гибкий режим здесь лучше, чем форсировать исполнение.",
+        decisionTextInteractBetter: "КОНТАКТ — социальный/действенный режим здесь раньше давал лучший отклик.",
+
+        pastFeedbackBadSwitched: "Прошлые оценки показывают, что режим {from} плохо работает в похожих состояниях; переключено на {to}.",
+        pastFeedbackBadReduced: "Прошлые оценки показывают, что режим {mode} часто плохо работает в похожих состояниях; уверенность снижена.",
+        pastFeedbackGoodIncreased: "Прошлые оценки показывают, что режим {mode} хорошо работает в похожих состояниях; уверенность повышена.",
+
+        ultraSynergy: "Ультра-синергия",
+        strongSupport: "Сильная поддержка",
+        support: "Поддержка",
+        neutral: "Нейтрально",
+        conflict: "Конфликт",
+        strongConflict: "Сильный конфликт",
+
+        adjust_desc: "Ослабь фиксацию, открой одну альтернативу и продолжай без попытки всё зафиксировать.",
+        eventTypeBackground: "фоновый",
+        levelLow: "низкий",
+        levelMedium: "средний",
+        levelHigh: "высокий",
+        noSystemDecisionYet: "Системного решения пока нет",
+        observeField: "Наблюдай за полем.",
+        noReason: "Нет причины",
+
+        scoreWord: "оценка",
+realContactWord: "реальный контакт",
+manualTargetWord: "ручная цель",
+kinWord: "кин",
+
+tensionWord: "НАПРЯЖЕНИЕ",
+temporalModeLabel: "Временной режим",
+
+ifModePrefix: "Если",
+ifContactPrefix: "Если связаться с",
+ifChoosePrimary: "Если выбрать один из основных контактов:",
+
+veryStrongAlignmentToday: "У этой цели сегодня очень сильное совпадение",
+supportiveNeedsCleanTiming: "Цель поддерживающая, но требует чистого тайминга",
+keepInteractionShort: "Контакт лучше держать коротким и точным",
+oneDirectContactBetter: "Один прямой контакт лучше, чем несколько параллельных",
+
+strongestAlignment: "самое сильное совпадение",
+stableExpansion: "стабильное расширение",
+safeReinforcement: "безопасное усиление",
+
+networkMayExpand: "Сеть может расшириться",
+stabilityMayDipReactive: "Стабильность может просесть, если контакт станет реактивным",
+constructiveAlignmentLikely: "Конструктивное совпадение вероятно, если контакт останется чистым",
+parallelContactsOverload: "Параллельные контакты могут создать перегрузку",
+oneDirectContactFavored: "Один прямой контакт предпочтительнее множества слабых",
+
+focusNarrowExecution: "Стабильность может вырасти через более узкое исполнение",
+focusNetworkCompress: "Сетевая активность, вероятно, сожмётся",
+focusBranchesReduce: "Новые внешние ветви могут снизить цельность",
+
+adjustFixationRising: "Фиксация растёт, поэтому гибкость безопаснее, чем зажатие",
+adjustReopenAlternative: "Переоткрой одну альтернативу перед жёсткой фиксацией",
+adjustSmallCorrection: "Небольшая коррекция курса лучше, чем форсировать определённость",
+
+restPressureDecrease: "Давление может снизиться, если сократить обязательства",
+restOpportunitiesRemain: "Возможности остаются, но активное расширение замедляется",
+restMaintenanceBest: "Лучший эффект сейчас даёт поддержание, а не нажим",
+
+exploreSignalsDiversify: "Сигналы могут разойтись, прежде чем стабилизироваться",
+exploreUsefulPaths: "Полезные пути могут появиться, но определённость пока низкая",
+exploreTooManyExperiments: "Слишком много экспериментов может рассеять энергию",
+
+today_mode: "Режим дня",
+day_type: "Тип дня",
+energy: "Энергия",
+trust: "Доверие",
+time_pressure: "Давление времени",
+real_contacts: "Реальные контакты",
+attractor: "Аттрактор",
+
+map_mode: "Режим карты",
+mode_full: "Поле",
+mode_users_field: "Пользователи / Поле",
+mode_pressure: "Давление",
+
+desc_full: "Общее состояние поля.",
+desc_users: "Где сосредоточены участники и активные зоны.",
+desc_pressure: "Где накапливается перегрузка и напряжение.",
+
+legend: "Легенда",
+low_field: "Низкое поле",
+balanced: "Сбалансированное",
+high_field: "Высокое поле",
+
+quick_reading: "Быстрое чтение",
+hot_zone: "Горячая зона",
+cold_zone: "Холодная зона",
+risk_zone: "Рисковая зона",
+white_frame: "Белая рамка",
+yellow_frame: "Жёлтая рамка",
+
+hot_zone_desc: "Лучше подходит для движения, фокуса и активных шагов.",
+cold_zone_desc: "Лучше подходит для отдыха, наблюдения и задач с низким давлением.",
+risk_zone_desc: "Здесь может расти напряжение, перегрузка или конфликт.",
+white_frame_desc: "твой текущий кин.",
+yellow_frame_desc: "сегодняшний кин.",
+
+about_map: "О карте",
+map_desc: "Поле 13×20 (260 состояний).",
+horizontal: "Горизонталь",
+vertical: "Вертикаль",
+click_hint: "Нажмите на клетку для анализа состояния.",
+
+advice_default: "Наблюдай зону.",
+avoid_default: "Избегай переоценки.",
+advice_hot: "Хорошая зона для действий, движения и активных решений.",
+avoid_hot: "Избегай траты окна.",
+advice_cold: "Лучше для отдыха, наблюдения или задач с низким давлением.",
+avoid_cold: "Избегай принудительного вывода.",
+advice_risk: "Здесь высокое напряжение. Двигайся осторожно.",
+avoid_risk: "Избегай конфликта, перегрузки и необратимых действий.",
+advice_balanced: "Сбалансированная зона для умеренной работы.",
+avoid_balanced: "Избегай чрезмерной интерпретации слабых сигналов.",
+
+no_participants_in_kin: "В этом кине нет участников",
+no_users: "Нет пользователей",
+what_to_do_here: "Что делать здесь",
+participants: "Участники",
+your_day_type: "Тип твоего дня",
+current_mode: "Текущий режим",
+day_index: "Индекс дня",
+tone: "Тон",
+seal: "Печать",
+users: "Пользователи",
+
+"Balanced zone": "Сбалансированная зона",
+"Risk zone": "Рисковая зона",
+"Hot zone": "Горячая зона",
+"Cold zone": "Холодная зона",
+
+High: "Высокая",
+Medium: "Средняя",
+Low: "Низкая",
+Overload: "Перегрузка",
+Conflict: "Конфликт",
+Chaotic: "Хаотично",
+Compressed: "Сжато",
+Manageable: "Управляемо",
+
+attention: "Внимание",
+conflict: "Конфликт",
+
+collectiveSectionTitle: "КОЛЛЕКТИВ",
+collectiveRelationsTitle: "Коллективные связи",
+systemTemperature: "Температура системы",
+attractorWord: "Аттрактор",
+unknownWord: "неизвестно",
+notEnoughParticipants: "Недостаточно участников",
+scoreLabel: "Оценка",
+systemMetricsTitle: "СИСТЕМНЫЕ МЕТРИКИ",
+
+leftClickSupport: "Левый клик → Поддержка (+)",
+rightClickConflict: "Правый клик → Конфликт (−)",
+shiftClickNeutral: "Shift + Клик → Нейтрально (0)",
+
+collectiveDescLine1: "Система показывает динамические отношения между участниками.",
+collectiveDescLine2: "Связи меняются со временем под влиянием действий пользователя, внутренней динамики, давления времени и случайных событий.",
+
+metricPhiDesc: "Φ (энергия) → сила значимых взаимодействий",
+metricKDesc: "k (когерентность) → насколько система структурирована",
+metricConsistencyDesc: "согласованность → стабильность системы (0 = баланс, >0 = нестабильность)",
+attractorDynamicPattern: "Аттрактор → динамический режим:",
+attractorModesLine: "стабильность / цикл / тренд / хаос / неизвестно",
+
+attractorStable: "стабильность",
+attractorCycle: "цикл",
+attractorTrend: "тренд",
+attractorChaos: "хаос",
+
+leftClickSupport: "Левый клик → Поддержка (+)",
+rightClickConflict: "Правый клик → Конфликт (−)",
+shiftClickNeutral: "Shift + Клик → Нейтрально (0)",
+
+collectiveDescLine1: "Система показывает динамические отношения между участниками.",
+collectiveDescLine2: "Связи меняются со временем под влиянием действий пользователя, внутренней динамики, давления времени и случайных событий.",
+
+systemMetricsTitle: "СИСТЕМНЫЕ МЕТРИКИ",
+
+metricPhiDesc: "Φ (энергия) → сила значимых взаимодействий",
+metricKDesc: "k (когерентность) → насколько система структурирована",
+metricConsistencyDesc: "согласованность → стабильность системы (0 = баланс, >0 = нестабильность)",
+
+attractorDynamicPattern: "Аттрактор → динамический режим:",
+attractorModesLine: "стабильность / цикл / тренд / хаос / неизвестно",
+
+collaborate: "Сотрудничество",
+tension: "Напряжение",
+collectiveSectionTitle: "КОЛЛЕКТИВ",
+strong: "Сильное",
+
+attractorSectionTitle: "АТТРАКТОР",
+historyEfficiencySectionTitle: "ЭФФЕКТИВНОСТЬ ИСТОРИИ",
+seriesSectionTitle: "СЕРИИ",
+toolsSectionTitle: "ИНСТРУМЕНТЫ",
+
+collaborate: "Сотрудничество",
+tension: "Напряжение",
+
+attractorMapTitle: "КАРТА АТТРАКТОРА",
+attractorCellTitle: "ЯЧЕЙКА АТТРАКТОРА",
+clickAnyCellInspect: "Нажми на любую ячейку, чтобы посмотреть локальную структуру.",
+
+rowSeal: "Печать строки",
+columnSeal: "Печать столбца",
+kinLabel: "Кин",
+segmentLabel: "Сегмент",
+localIndexLabel: "Локальный индекс",
+
+heatLabel: "Нагрев",
+memoryBoostLabel: "Усиление памяти",
+segmentFieldLabel: "Поле сегмента",
+pressureMulLabel: "Давление ×",
+tempMulLabel: "Температура ×",
+memoryGainLabel: "Прирост памяти",
+diffusionLabel: "Диффузия",
+pullMulLabel: "Тяга ×",
+flowXLabel: "Поток X",
+flowYLabel: "Поток Y",
+strengthLabel: "Сила",
+directionLabel: "Направление",
+laplacianLabel: "Лапласиан",
+contrastLabel: "Контраст",
+
+zoneTypeLabel: "Тип зоны",
+supportAvgLabel: "Средняя поддержка",
+conflictAvgLabel: "Средний конфликт",
+usersLabel: "Пользователи",
+
+archetypePolarityLabel: "Полярность архетипа",
+userPolarityLabel: "Полярность пользователя",
+alignmentLabel: "Совпадение",
+tensionLabel: "Напряжение",
+
+sealMemoryLabel: "Память печати",
+userMemoryLabel: "Память пользователя",
+membersLabel: "Участники",
+
+noUsersWord: "Нет пользователей",
+noSocialLayerData: "Для этой ячейки нет данных социального слоя",
+noPolarityData: "Нет данных полярности",
+noAccumulatedMemorySignal: "Нет накопленного сигнала памяти",
+
+sealMemoryDesc: "Память печати = долгосрочное усиление архетипа.",
+userMemoryDesc: "Память пользователя = личное накопленное усиление.",
+
+zonePeakBasinDesc: "Зона высокого значения с низким локальным дрейфом. Стабильный центр синергии.",
+zoneWeakBasinDesc: "Зона низкой энергии. Слабый бассейн или истощённая область.",
+zoneRidgeDesc: "Резкий переход. Рядом сильная направленная тяга.",
+zoneChannelDesc: "Энергия движется через эту зону.",
+zoneUnstablePocketDesc: "Локальная кривизна нестабильна. Возможны резкие перевороты.",
+zoneNeutralFieldDesc: "Сбалансированное локальное поле без доминирующей тяги.",
+
+heatmapFlowField: "Тепловая карта + поле потока",
+brightStrongSynergy: "Яркое = сильная синергия / аттрактор",
+arrowsDirectionField: "Стрелки = локальное направление движения поля",
+clickCellMiniAnalysis: "Клик по ячейке = мини-анализ справа",
+
+attractorDescTitle: "Тепловая карта аттрактора MTOS + поле потока",
+eachCellShows: "Каждая ячейка показывает интенсивность взаимодействия между архетипом строки A и архетипом столбца B.",
+heatLabelTitle: "Нагрев",
+flowLabelTitle: "Поток",
+phaseOverlayTitle: "Фазовый слой 4×65",
+rightPanelTitle: "Правая панель",
+
+heatDarkDesc: "тёмное = слабая зона",
+heatBrightDesc: "яркое = сильная синергия / тяга",
+heatRedOutlineDesc: "красная обводка = нестабильная / слабая впадина",
+heatSoftGlowDesc: "мягкое свечение = пиковая зона аттрактора",
+
+flowArrowDirectionDesc: "направление стрелки = локальное направление градиента",
+flowArrowSizeDesc: "размер стрелки = сила градиента",
+
+phaseBlueDesc: "синяя рамка = инициация",
+phaseGreenDesc: "зелёная рамка = рост",
+phaseAmberDesc: "янтарная рамка = пик",
+phaseRedDesc: "красная рамка = спад",
+
+rightPanelClickedDesc: "мини-анализ выбранной ячейки",
+rightPanelLocalDesc: "локальная структура поля",
+rightPanelSegmentDesc: "профиль сегмента",
+rightPanelSupportDesc: "поддержка / конфликт",
+rightPanelMembersDesc: "список участников",
+
+pauseBtn: "Пауза",
+resumeBtn: "Продолжить",
+slowBtn: "Медленно",
+normalBtn: "Нормально",
+boostBtn: "Ускорить",
+resetFieldBtn: "Сбросить поле",
+
+attractorDynamicFieldTitle: "MTOS Аттрактор — визуализация динамического когнитивного поля",
+attractorDynamicFieldLine1: "Эта система показывает 260-узловое циклическое поле, развивающееся под метаболической динамикой.",
+attractorDynamicFieldLine2: "Каждая точка соответствует узлу поля:",
+attractorXAxis: "Ось X — положение в цикле из 260",
+attractorYAxis: "Ось Y — интенсивность сигнала",
+attractorCoreDynamics: "Основная динамика:",
+attractorMemory: "Память — стабилизирует повторяющиеся паттерны (формирование аттрактора)",
+attractorPressure: "Давление — подавляет нестабильные сигналы (скепсис)",
+attractorTemperature: "Температура — вносит изменчивость (активность / шум)",
+attractorPhase: "Фаза — модулирует поведение через временные состояния 13-цикла",
+attractorPersistent: "Постоянная память поля — вчерашнее поле продолжает влиять на сегодня",
+attractorEvolves: "Аттрактор развивается в реальном времени, показывая:",
+attractorFormation: "формирование паттернов",
+attractorCollapse: "схлопывание нестабильных структур",
+attractorEmergence: "появление когерентных кластеров",
+attractorNotStatic: "Это не статичный график, а живая система.",
+
+systemWord: "система",
+behaviorWord: "поведение",
+
+seriesLegend: `Эти графики показывают временную динамику внутри 260-состояний когнитивного цикла.
+
+• 7 дней — краткосрочная динамика внимания
+• 30 дней — среднесрочный поведенческий дрейф
+• 260 дней — полная структура цикла внимания
+
+• Φ серия — метаболическая интенсивность / интегральная когнитивная нагрузка
+• T серия — температура обработки / интенсивность активации
+• Серия согласованности — внутренняя целостность текущего режима
+
+Все графики отображаются в фиксированном диапазоне 0..1 для наглядного сравнения.`
+    }
+}
+
+function t(key){
+    const lang = window.mtosLang || window.MTOS_LANG || loadMTOSLang()
+
+    const external =
+        window.MTOS_TRANSLATIONS?.[lang]?.[key] ??
+        window.MTOS_TRANSLATIONS?.en?.[key]
+
+    if (external != null) return external
+
+    return MTOS_I18N[lang]?.[key] ?? MTOS_I18N.en[key] ?? key
+}
+
+function setStatusText(key){
+    const status = document.getElementById("status")
+    if (status) status.innerText = t(key)
+}
+
+window.t = t
+
+window.translateModeLabel = translateModeLabel
+window.translateRelationLabel = translateRelationLabel
+window.translateRiskLabel = translateRiskLabel
+
+function translateModeLabel(mode){
+    const m = String(mode || "").toUpperCase()
+    if (m === "FOCUS") return t("modeFocus")
+    if (m === "ADJUST") return t("modeAdjust")
+    if (m === "REST") return t("modeRest")
+    if (m === "INTERACT") return t("modeInteract")
+    return t("modeExplore")
+}
+
+function translateRelationLabel(label){
+    const x = String(label || "").toLowerCase().trim()
+
+    if (x.includes("ultra synergy")) return t("ultraSynergy")
+    if (x.includes("strong support")) return t("strongSupport")
+    if (x.includes("strong conflict")) return t("strongConflict")
+
+    if (x.includes("collaborate")) return t("collaborate")
+    if (x.includes("support")) return t("support")
+    if (x.includes("tension")) return t("tension")
+    if (x.includes("conflict")) return t("conflict")
+    if (x.includes("neutral")) return t("neutral")
+    if (x === "strong") return t("strong")
+
+    if (x.includes("manual target")) return t("manualTargetWord")
+    if (x.includes("real contact")) return t("realContactWord")
+
+    return label || ""
+}
+
+function translateRiskLabel(label){
+    const r = String(label || "").toUpperCase()
+    if (r === "LOW") return t("riskLow")
+    if (r === "MEDIUM") return t("riskMedium")
+    if (r === "HIGH") return t("riskHigh")
+    if (r === "CRITICAL") return t("riskCritical")
+    return r
+}
+
+function formatI18n(template, vars = {}){
+    return String(template || "").replace(/\{(\w+)\}/g, (_, key) => {
+        return vars[key] != null ? String(vars[key]) : `{${key}}`
+    })
+}
+
+function applyMTOSLang(lang){
+    const safeLang = lang === "ru" ? "ru" : "en"
+
+    const enBtn = document.getElementById("langEnBtn")
+    const ruBtn = document.getElementById("langRuBtn")
+
+    if (enBtn) enBtn.classList.toggle("active", safeLang === "en")
+    if (ruBtn) ruBtn.classList.toggle("active", safeLang === "ru")
+
+    window.mtosLang = safeLang
+
+    const systemEventsTitle = document.getElementById("systemEventsTitle")
+const systemDecisionTitle = document.getElementById("systemDecisionTitle")
+const weatherTitle = document.getElementById("weatherTitle")
+const collectiveSectionTitle = document.getElementById("collectiveSectionTitle")
+const attractorSectionTitle = document.getElementById("attractorSectionTitle")
+const historyEfficiencySectionTitle = document.getElementById("historyEfficiencySectionTitle")
+const seriesSectionTitle = document.getElementById("seriesSectionTitle")
+const toolsSectionTitle = document.getElementById("toolsSectionTitle")
+
+    if (systemEventsTitle) systemEventsTitle.innerText = t("systemEventsTitle")
+    if (systemDecisionTitle) systemDecisionTitle.innerText = t("systemDecisionTitle")
+    if (collectiveSectionTitle) collectiveSectionTitle.innerText = t("collectiveSectionTitle")
+    if (attractorSectionTitle) attractorSectionTitle.innerText = t("attractorSectionTitle")
+if (historyEfficiencySectionTitle) historyEfficiencySectionTitle.innerText = t("historyEfficiencySectionTitle")
+if (seriesSectionTitle) seriesSectionTitle.innerText = t("seriesSectionTitle")
+if (toolsSectionTitle) toolsSectionTitle.innerText = t("toolsSectionTitle")
+
+    if (weatherTitle) {
+        weatherTitle.innerText = safeLang === "ru"
+            ? "МЕТАБОЛИЧЕСКАЯ ПОГОДА"
+            : "METABOLIC WEATHER"
+    }
+
+    if (typeof window.applyStaticTranslations === "function") {
+        window.applyStaticTranslations()
+    }
+}
+
+if (typeof window.applyStaticTranslations === "function") {
+    window.applyStaticTranslations()
+}
+
+window.setMTOSLang = function(lang){
+    const safeLang = lang === "ru" ? "ru" : "en"
+    saveMTOSLang(safeLang)
+    applyMTOSLang(safeLang)
+
+    if (window._rerenderMTOS) {
+        window._rerenderMTOS()
+    } else if (window._weather) {
+        renderAll(
+            window._weather,
+            window._weatherToday,
+            window._pressure,
+            window._userKin,
+            window._todayKin,
+            window._date?.year,
+            window._date?.month,
+            window._date?.day
+        )
+    }
+}
+
+function loadMTOSViewMode(){
+    try{
+        const raw = localStorage.getItem(MTOS_VIEW_MODE_KEY)
+        return raw === "full" ? "full" : "lite"
+    }catch(e){
+        return "lite"
+    }
+}
+
+function saveMTOSViewMode(mode){
+    try{
+        localStorage.setItem(MTOS_VIEW_MODE_KEY, mode === "full" ? "full" : "lite")
+    }catch(e){}
+}
+
+function applyMTOSViewMode(mode){
+    const safeMode = mode === "full" ? "full" : "lite"
+    const isLite = safeMode === "lite"
+
+    document.querySelectorAll(".research-block").forEach(el => {
+        el.classList.toggle("mtos-hidden", isLite)
+    })
+
+    const liteBtn = document.getElementById("viewLiteBtn")
+    const fullBtn = document.getElementById("viewFullBtn")
+
+    if (liteBtn) liteBtn.classList.toggle("active", safeMode === "lite")
+    if (fullBtn) fullBtn.classList.toggle("active", safeMode === "full")
+
+    window.mtosViewMode = safeMode
+}
+
+window.setMTOSViewMode = function(mode){
+    const safeMode = mode === "full" ? "full" : "lite"
+    saveMTOSViewMode(safeMode)
+    applyMTOSViewMode(safeMode)
+}
 
 function toPython(obj) {
     return JSON.stringify(obj)
@@ -73,15 +1202,17 @@ function clamp01(x){
 // ===============================
 export async function initMTOS() {
 
-    const status = document.getElementById("status")
-
     pyodide = await loadPyodide()
     await pyodide.loadPackage("numpy")
 
     const code = await fetch("./MTOS_Engine.py").then(r => r.text())
     pyodide.runPython(code)
 
-    status.innerText = "Ready"
+    applyMTOSLang(loadMTOSLang())
+    setStatusText("ready")
+
+    window.mtosViewMode = loadMTOSViewMode()
+    applyMTOSViewMode(window.mtosViewMode)
     window.exportLog = exportLog
     window.fieldMode = "hybrid"
     window.fieldViewMode = "grid"
@@ -118,7 +1249,7 @@ export async function initMTOS() {
 
         const btn = document.getElementById("editBtn")
         if (btn) {
-            btn.innerText = window.networkMode === "edit" ? "EDIT ON" : "EDIT OFF"
+            btn.innerText = window.networkMode === "edit" ? t("editOn") : t("editOff")
         }
 
         console.log("Mode:", window.networkMode)
@@ -802,6 +1933,7 @@ function setHumanFeedbackFor(day, name, value){
 }
 
 window.setHumanFeedbackFor = setHumanFeedbackFor
+window.enrichSnapshotsWithFeedbackContext = enrichSnapshotsWithFeedbackContext
 
 function loadRelationFeedback(){
     try{
@@ -1024,18 +2156,18 @@ function storeAutoFeedbackForCurrentRun(name, user, ds, decision){
 }
 
 function getSimpleHumanState(ds){
-    const label = String(ds?.dayLabel || "NEUTRAL").toUpperCase()
+    const label = String(ds?.dayLabel || "EXPLORE").toUpperCase()
     const pressure = Number(ds?.pressure ?? 0)
     const conflict = Number(ds?.conflict ?? 0)
     const stability = Number(ds?.stability ?? 0.5)
     const attention = Number(ds?.attention ?? 0.5)
     const attractorType = String(window.mtosAttractorState?.type || "unknown")
 
-    if (label === "RECOVERY") return "RECOVERY"
-    if (label === "FATIGUE") return "HEAVY"
+    if (label === "REST") return "RECOVERY"
     if (attractorType === "chaos" || conflict >= 0.52 || pressure >= 0.70) return "CHAOTIC"
     if (label === "FOCUS" || (attention >= 0.70 && stability >= 0.60)) return "FOCUSED"
-    if (label === "FLOW") return "LIGHT"
+    if (label === "INTERACT") return "LIGHT"
+    if (label === "ADJUST") return "BALANCED"
     return "BALANCED"
 }
 
@@ -1102,8 +2234,8 @@ function renderHumanHistory(name){
         return `
             <div class="human-history-row">
                 <div class="human-history-date">—</div>
-                <div class="human-history-state">No snapshots yet</div>
-                <div class="human-history-mode">Run MTOS on different days to build history</div>
+                <div class="human-history-state">${t("noSnapshotsYet")}</div>
+                <div class="human-history-mode">${t("runDifferentDays")}</div>
             </div>
         `
     }
@@ -1116,7 +2248,7 @@ function renderHumanHistory(name){
             <div class="human-history-row">
                 <div class="human-history-date">${row.day || "?"}</div>
                 <div class="human-history-state">${row.dayLabel || "UNKNOWN"}${fbText}</div>
-                <div class="human-history-mode">${row.recommendedMode || "UNKNOWN"} · predictability ${Number(row.predictability ?? 0).toFixed(0)}</div>
+                <div class="human-history-mode">${row.recommendedMode || "UNKNOWN"} · ${t("predictabilityWord")} ${Number(row.predictability ?? 0).toFixed(0)} • ${t("pressure")} ${Number(row.timePressure ?? 0).toFixed(2)}</div>
             </div>
         `
     }).join("")
@@ -1134,35 +2266,35 @@ function renderHumanLayer(data){
     let avoid = ""
 
     if(mode === "FOCUS"){
-        action = "Deep work. Work alone."
-        avoid = "Distractions. Social noise."
-    }
-    else if(mode === "SOCIAL"){
-        action = "Communicate. Build connections."
-        avoid = "Isolation."
-    }
-    else if(mode === "EXPLORE"){
-        action = "Try new things."
-        avoid = "Routine loops."
-    }
-    else if(mode === "REST"){
-        action = "Recover. Slow down."
-        avoid = "Overload."
-    }
+    action = t("deepWork")
+    avoid = t("distractions")
+}
+else if(mode === "SOCIAL"){
+    action = t("communicate")
+    avoid = t("isolation")
+}
+else if(mode === "EXPLORE"){
+    action = t("tryNewThings")
+    avoid = t("routineLoops")
+}
+else if(mode === "REST"){
+    action = t("recoverSlowDown")
+    avoid = t("overload")
+}
 
     el.innerHTML = `
         <div class="mobile-card">
 
             <div class="mobile-title">${mode}</div>
-            <div class="mobile-sub">Confidence: ${confidence.toFixed(2)}</div>
+            <div class="mobile-sub">${t("confidence")}: ${confidence.toFixed(2)}</div>
 
             <div class="mobile-section">
-                <div class="mobile-label">DO</div>
+                <div class="mobile-label">${t("do")}</div>
                 <div class="mobile-text">${action}</div>
             </div>
 
             <div class="mobile-section">
-                <div class="mobile-label">AVOID</div>
+                <div class="mobile-label">${t("avoid")}</div>
                 <div class="mobile-text">${avoid}</div>
             </div>
 
@@ -1176,11 +2308,54 @@ function feedbackValueToScore(value){
     return 0
 }
 
+function calcModeStats(rows){
+    const map = {}
+
+    ;(Array.isArray(rows) ? rows : []).forEach(row => {
+        const mode = String(row?.decisionMode || row?.recommendedMode || "UNKNOWN").toUpperCase()
+
+        if (!map[mode]) {
+            map[mode] = {
+                mode,
+                total: 0,
+                good: 0,
+                neutral: 0,
+                bad: 0,
+                score: 0
+            }
+        }
+
+        map[mode].total += 1
+
+        const fb = String(row?.feedbackValue || "").toLowerCase()
+
+        if (fb === "good") map[mode].good += 1
+        else if (fb === "bad") map[mode].bad += 1
+        else map[mode].neutral += 1
+    })
+
+    const list = Object.values(map)
+
+    list.forEach(item => {
+        item.score = item.total
+            ? Number((
+                (item.good * 1.0 + item.neutral * 0.15 - item.bad * 1.2) / item.total
+            ).toFixed(3))
+            : 0
+    })
+
+    return list.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score
+        return b.total - a.total
+    })
+}
+
 function normalizeModeName(mode){
     const m = String(mode || "").trim().toUpperCase()
 
     if (m === "FOCUS") return "FOCUS"
     if (m === "REST") return "REST"
+    if (m === "ADJUST") return "ADJUST"
     if (m === "EXPLORE") return "EXPLORE"
     if (m === "INTERACT") return "INTERACT"
     if (m === "FLOW") return "EXPLORE"
@@ -1238,9 +2413,10 @@ function getFeedbackLearningSummary(name, ds){
 
     const summary = {
         FOCUS: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
-        REST: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
-        EXPLORE: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
-        INTERACT: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 }
+    ADJUST: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
+    REST: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
+    EXPLORE: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 },
+    INTERACT: { good: 0, bad: 0, neutral: 0, total: 0, score: 0 }
     }
 
     rows.forEach(row => {
@@ -1336,7 +2512,7 @@ function applyFeedbackToDecision(baseDecision, name, ds){
     const currentMode = normalizeModeName(decision.mode)
     const summary = getFeedbackLearningSummary(name, ds)
 
-    const candidates = ["FOCUS", "REST", "EXPLORE", "INTERACT"].map(mode => {
+    const candidates = ["FOCUS", "ADJUST", "REST", "EXPLORE", "INTERACT"].map(mode => {
         const score = Number(summary[mode]?.score ?? 0)
         return {
             mode,
@@ -1365,8 +2541,8 @@ function applyFeedbackToDecision(baseDecision, name, ds){
         candidates
     }
 
-    decision.feedbackAdjusted = false
-    decision.feedbackReason = "No strong feedback pattern yet."
+        decision.feedbackAdjusted = false
+    decision.feedbackReason = t("noStrongFeedbackPattern")
 
     const enoughEvidenceForCurrent = currentCandidate.total >= 2
     const strongNegativeCurrent = currentCandidate.score <= -0.35
@@ -1382,29 +2558,44 @@ function applyFeedbackToDecision(baseDecision, name, ds){
     if (enoughEvidenceForCurrent && strongNegativeCurrent && alternativeBetter) {
         decision.mode = bestCandidate.mode
         decision.feedbackAdjusted = true
-        decision.feedbackReason =
-            `Past feedback says ${currentMode} performs badly in similar states; switched to ${bestCandidate.mode}.`
+        decision.feedbackReason = formatI18n(
+            t("pastFeedbackBadSwitched"),
+            {
+                from: translateModeLabel(currentMode),
+                to: translateModeLabel(bestCandidate.mode)
+            }
+        )
     } else if (enoughEvidenceForCurrent && strongNegativeCurrent) {
         decision.confidence = Math.max(0.18, Number(decision.confidence ?? 0.5) - 0.22)
         decision.feedbackAdjusted = true
-        decision.feedbackReason =
-            `Past feedback says ${currentMode} often performs badly in similar states; confidence reduced.`
+        decision.feedbackReason = formatI18n(
+            t("pastFeedbackBadReduced"),
+            {
+                mode: translateModeLabel(currentMode)
+            }
+        )
     } else if (enoughEvidenceForCurrent && strongPositiveCurrent) {
         decision.confidence = Math.min(0.98, Number(decision.confidence ?? 0.5) + 0.10)
         decision.feedbackAdjusted = true
-        decision.feedbackReason =
-            `Past feedback says ${currentMode} performs well in similar states; confidence increased.`
+        decision.feedbackReason = formatI18n(
+            t("pastFeedbackGoodIncreased"),
+            {
+                mode: translateModeLabel(currentMode)
+            }
+        )
     }
 
     if (decision.feedbackAdjusted) {
         if (decision.mode === "FOCUS") {
-            decision.text = "FOCUS — this mode has worked better for you in similar states."
+            decision.text = t("decisionTextFocusBetter")
+        } else if (decision.mode === "ADJUST") {
+            decision.text = t("decisionTextAdjustBetter")
         } else if (decision.mode === "REST") {
-            decision.text = "REST — past feedback suggests recovery is safer here."
+            decision.text = t("decisionTextRestSafer")
         } else if (decision.mode === "EXPLORE") {
-            decision.text = "EXPLORE — flexible mode fits better than forcing execution."
+            decision.text = t("decisionTextExploreBetter")
         } else if (decision.mode === "INTERACT") {
-            decision.text = "INTERACT — social/action mode has better past response here."
+            decision.text = t("decisionTextInteractBetter")
         }
     }
 
@@ -1435,14 +2626,14 @@ function loadMemoryLayers() {
         : {},
 
     dayMemory: parsed.dayMemory && typeof parsed.dayMemory === "object"
-        ? parsed.dayMemory
-        : {
-            FOCUS: 0,
-            FLOW: 0,
-            NEUTRAL: 0,
-            FATIGUE: 0,
-            RECOVERY: 0
-        },
+    ? parsed.dayMemory
+    : {
+        FOCUS: 0,
+        ADJUST: 0,
+        INTERACT: 0,
+        EXPLORE: 0,
+        REST: 0
+    },
 
     decisionMemory: Array.isArray(parsed.decisionMemory)
         ? parsed.decisionMemory.slice(-300)
@@ -1463,12 +2654,12 @@ function loadMemoryLayers() {
     userMemory: {},
     pairMemory: {},
     dayMemory: {
-        FOCUS: 0,
-        FLOW: 0,
-        NEUTRAL: 0,
-        FATIGUE: 0,
-        RECOVERY: 0
-    },
+    FOCUS: 0,
+    ADJUST: 0,
+    INTERACT: 0,
+    EXPLORE: 0,
+    REST: 0
+},
     decisionMemory: [],
     fieldMemory: new Array(260).fill(0)
 }
@@ -1700,19 +2891,26 @@ function saveAutoDailySnapshot({
 
         recommendedMode: window.mtosAdaptiveMode?.mode || getRecommendedMode(dayState) || "UNKNOWN",
 
-        decisionMode: String(window.mtosDecision?.mode || "UNKNOWN"),
+decisionMode: String(window.mtosDecision?.mode || "UNKNOWN"),
+decisionRisk: String(window.mtosDecision?.risk || "LOW"),
 decisionText: String(window.mtosDecision?.text || ""),
 feedbackAdjusted: Boolean(window.mtosDecision?.feedbackAdjusted || false),
 feedbackReason: String(window.mtosDecision?.feedbackReason || ""),
-feedbackValue: String(feedback?.value || ""),
 feedbackAt: Number(feedback?.t || 0),
 
-        attention: Number(uiMetrics.attention ?? 0),
-        noise: Number(uiMetrics.noise ?? 0),
-        entropy: Number(uiMetrics.entropy ?? 0),
-        lyapunov: Number(uiMetrics.lyapunov ?? 0),
-        prediction: Number(uiMetrics.prediction ?? 0),
-        predictability: Number(uiMetrics.predictability ?? 0),
+attention: Number(uiMetrics.attention ?? 0),
+noise: Number(uiMetrics.noise ?? 0),
+entropy: Number(uiMetrics.entropy ?? 0),
+lyapunov: Number(uiMetrics.lyapunov ?? 0),
+prediction: Number(uiMetrics.prediction ?? 0),
+
+systemPredictability: Number(uiMetrics.predictability ?? 0),
+behaviorEfficiency: Number(
+    feedback?.autoScore ??
+    window.mtosAutoFeedbackRow?.autoScore ??
+    0
+),
+predictability: Number(uiMetrics.predictability ?? 0),
 
         attractorType: String(window.mtosAttractorState?.type ?? "unknown"),
         attractorIntensity: Number(window.mtosAttractorState?.intensity ?? 0),
@@ -1752,8 +2950,6 @@ window.mtosMetabolicMetrics = {
     consistencySeries: [],
     stabilitySeries: []
 }
-
-    const status = document.getElementById("status")
 
     const name = document.getElementById("name").value.trim()
     const year = +document.getElementById("year").value
@@ -1845,7 +3041,7 @@ if (window.mtosDecision) {
             window.mtosDecision?.feedbackReason ||
             window.mtosDecision?.reason ||
             window.mtosDecision?.why ||
-            "Derived from cached day state."
+            t("derivedFromCachedDayState")
         ),
         confidence: Math.round(
             Math.max(0, Math.min(1, Number(window.mtosDecision?.confidence ?? 0.5))) * 100
@@ -1898,6 +3094,8 @@ window.updateMTOSBranch("decision", {
     selectedTarget: cacheSelectedTarget || null
 })
 
+renderDecisionSummaryPanel("humanLayer")
+
 window.updateMTOSBranch("collective", {
     ...(window.mtosCollectiveState || {}),
     stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
@@ -1909,7 +3107,6 @@ window.commitMTOSDecisionToMemory()
 
 renderSystemEventsPanel()
 renderSystemDecisionPanel()
-
 renderDecisionTargetsPanel()
 renderFieldTensionPanel()
 renderActionTracePanel()
@@ -1969,6 +3166,8 @@ window.updateMTOSBranch("decision", {
     selectedTarget: rerenderSelectedTarget || null
 })
 
+renderDecisionSummaryPanel("humanLayer")
+
     window.updateMTOSBranch("collective", {
         ...(window.mtosCollectiveState || {}),
         stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
@@ -1983,20 +3182,21 @@ window.updateMTOSBranch("decision", {
     renderDecisionTargetsPanel()
     renderFieldTensionPanel()
     renderActionTracePanel()
+    renderHistoryEfficiencyPanel("historyEfficiencyPanel")
 }
 
-        status.innerText = "Done (cache)"
+        setStatusText("doneCache")
         return
     }
 
     if (!year || !month || !day) {
-        document.getElementById("status").innerText = "Enter date"
+        setStatusText("enterDate")
         return
     }
 
     try {
 
-        status.innerText = "Running..."
+        setStatusText("running")
         logEvent("run_start", { name, year, month, day })
 
         const metrics = computeBehaviorMetrics(window.MTOS_LOG)
@@ -2045,7 +3245,7 @@ birth = datetime.date(${year}, ${month}, ${day})
 _, tone, _, i = kin_from_date(birth)
 today = datetime.datetime.now(datetime.timezone.utc).date()
 
-metabolic = simulate(i, tone, today, 90, ${JSON.stringify(name)})
+metabolic = simulate(i, tone, today, 260, ${JSON.stringify(name)})
 
 series = metabolic["attention"].tolist()
 pressure_series = metabolic["pressure"].tolist()
@@ -2439,6 +3639,8 @@ const decision = applyFeedbackToDecision(
 
 window.mtosDecision = decision
 
+window.mtosRisk = decision?.risk || null
+
 window.updateMTOSBranch("decision", {
     mode: String(decision?.mode || "EXPLORE"),
     action: String(
@@ -2450,26 +3652,16 @@ window.updateMTOSBranch("decision", {
         decision?.feedbackReason ||
         decision?.reason ||
         decision?.why ||
-        "Derived from day state, time pressure, and memory."
+        t("derivedFromDayState")
     ),
     confidence: Math.round(
         Math.max(0, Math.min(1, Number(decision?.confidence ?? 0.5))) * 100
     ),
     targets: { primary: [], avoid: [], neutral: [] },
+    selectedTarget: null,
     source: "human_decision_layer",
     createdAt: new Date().toISOString()
 })
-
-renderDecisionSummaryPanel("humanLayer")
-
-//renderUserPanel({
-    //dayState: window.mtosDayState || {},
-    //decision: window.mtosDecision || {},
-    //attractorState: window.mtosAttractorState || {},
-    //timePressureSummary: window.mtosTimePressureSummary || {},
-    //forecastStats: window.mtosForecastStats || {},
-    //snapshots: JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
-//})
 
 const currentUserAgent = users.find(u => u.name === name) || null
 const autoFeedbackRow = storeAutoFeedbackForCurrentRun(
@@ -2671,6 +3863,8 @@ window.updateMTOSBranch("decision", {
     selectedTarget: selectedTarget || null
 })
 
+renderDecisionSummaryPanel("humanLayer")
+
 window.updateMTOSBranch("collective", {
     ...(window.mtosCollectiveState || {}),
     stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
@@ -2682,7 +3876,6 @@ window.commitMTOSDecisionToMemory()
 
 renderSystemEventsPanel()
 renderSystemDecisionPanel()
-
 renderDecisionTargetsPanel()
 renderFieldTensionPanel()
 renderActionTracePanel()
@@ -2741,6 +3934,8 @@ window.updateMTOSBranch("decision", {
     selectedTarget: rerenderSelectedTarget || null
 })
 
+renderDecisionSummaryPanel("humanLayer")
+
     window.updateMTOSBranch("collective", {
         ...(window.mtosCollectiveState || {}),
         stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
@@ -2755,6 +3950,7 @@ window.updateMTOSBranch("decision", {
     renderDecisionTargetsPanel()
     renderFieldTensionPanel()
     renderActionTracePanel()
+    renderHistoryEfficiencyPanel("historyEfficiencyPanel")
 }
 
 window._mtosRunCache[runtimeKey] = {
@@ -2777,7 +3973,7 @@ window._mtosRunCache[runtimeKey] = {
     users: JSON.parse(JSON.stringify(users || []))
 }
 
-        status.innerText = "Done"
+        setStatusText("done")
 
         // ===============================
         // TIME CONTROL
@@ -2842,8 +4038,6 @@ users = users.map((u) => {
         phase: phaseFromWeather
     }
 })
-
-            
 
             const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
             const baseMemory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
@@ -3026,17 +4220,6 @@ window.updateMTOSBranch("decision", {
     source: "human_decision_layer",
     createdAt: new Date().toISOString()
 })
-
-renderDecisionSummaryPanel("humanLayer")
-
-//renderUserPanel({
-    //dayState: window.mtosDayState || {},
-    //decision: window.mtosDecision || {},
-    //attractorState: window.mtosAttractorState || {},
-    //timePressureSummary: window.mtosTimePressureSummary || {},
-    //forecastStats: window.mtosForecastStats || {},
-    //snapshots: JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
-//})
 
 const currentStepUserAgent = users.find(u => u.name === name) || null
 const autoFeedbackRow = storeAutoFeedbackForCurrentRun(
@@ -3231,6 +4414,8 @@ window.updateMTOSBranch("decision", {
     selectedTarget: stepSelectedTarget || null
 })
 
+renderDecisionSummaryPanel("humanLayer")
+
 window.updateMTOSBranch("collective", {
     ...(window.mtosCollectiveState || {}),
     stability: Number(window.mtosDayState?.stability ?? window.mtosCollectiveState?.stability ?? 0.5),
@@ -3242,7 +4427,6 @@ window.commitMTOSDecisionToMemory()
 
 renderSystemEventsPanel()
 renderSystemDecisionPanel()
-
 renderDecisionTargetsPanel()
 renderFieldTensionPanel()
 renderActionTracePanel()
@@ -3253,7 +4437,7 @@ renderActionTracePanel()
 
     } catch (e) {
         console.error(e)
-        status.innerText = "ERROR"
+        status.innerText = t("error")
     }
 
     window.onKinSelect = (kin) => {
@@ -3267,7 +4451,11 @@ renderActionTracePanel()
 
     renderAttractorOnly()
 }
+
+applyMTOSViewMode(window.mtosViewMode || loadMTOSViewMode())
 }
+
+updateMTOSLogo()
 
 // ===============================
 // RENDER ALL
@@ -3298,6 +4486,7 @@ function renderAll(weather, weatherToday, pressure, userKin, todayKin, year, mon
     drawCollective("collective", users)
 
     renderAttractorOnly()
+    renderHistoryEfficiencyPanel("historyEfficiencyPanel")
 }
 
 function getDaySyncInfo(users, todayKin) {
@@ -3574,50 +4763,69 @@ score += memoryInfluence.user * 0.16
 
     score += momentum * 0.7
 
-    let label = "NEUTRAL"
+    let label = "EXPLORE"
 
-    if (score >= 0.34) label = "FOCUS"
-    else if (score >= 0.12) label = "FLOW"
-    else if (score <= -0.34) label = "RECOVERY"
-    else if (score <= -0.14) label = "FATIGUE"
+if (score >= 0.34) label = "FOCUS"
+else if (score <= -0.34) label = "REST"
+else if (score >= 0.08) label = "INTERACT"
+else label = "EXPLORE"
 
-    if (
-        conflict >= 0.48 ||
-        pressure >= 0.68 ||
-        attractor.type === "chaos"
-    ) {
-        if (score < 0.20) {
-            label = "RECOVERY"
-        }
+if (
+    conflict >= 0.48 ||
+    pressure >= 0.68 ||
+    attractor.type === "chaos"
+) {
+    if (score < 0.20) {
+        label = "REST"
     }
+}
 
-    if (
-        attention >= 0.72 &&
-        stability >= 0.64 &&
-        conflict <= 0.22 &&
-        pressure <= 0.42
-    ) {
-        label = "FOCUS"
-    }
+if (
+    attention >= 0.72 &&
+    stability >= 0.64 &&
+    conflict <= 0.22 &&
+    pressure <= 0.42
+) {
+    label = "FOCUS"
+}
 
-    if (
-        field >= 0.58 &&
-        attention >= 0.48 &&
-        attention <= 0.72 &&
-        pressure <= 0.52 &&
-        conflict <= 0.32 &&
-        label === "NEUTRAL"
-    ) {
-        label = "FLOW"
-    }
+if (
+    field >= 0.58 &&
+    attention >= 0.48 &&
+    attention <= 0.72 &&
+    pressure <= 0.52 &&
+    conflict <= 0.32 &&
+    label === "EXPLORE"
+) {
+    label = "INTERACT"
+}
 
-    if (
-        pressure >= 0.62 &&
-        stability <= 0.42 &&
-        label !== "RECOVERY"
-    ) {
-        label = "FATIGUE"
-    }
+if (
+    pressure >= 0.62 &&
+    stability <= 0.42 &&
+    label !== "REST"
+) {
+    label = "REST"
+}
+
+if (
+    attractor.type === "trend" &&
+    attention >= 0.46 &&
+    pressure <= 0.58 &&
+    conflict <= 0.38 &&
+    label === "EXPLORE"
+) {
+    label = "ADJUST"
+}
+
+if (
+    attention >= 0.72 &&
+    stability >= 0.68 &&
+    pressure >= 0.52 &&
+    label === "FOCUS"
+) {
+    label = "ADJUST"
+}
 
     let streak = 1
     if (memory.lastLabel === label) {
@@ -3634,22 +4842,22 @@ score += memoryInfluence.user * 0.16
     }
 
     const descMap = {
-        FOCUS: "High coherence. Best for execution and decisive work.",
-        FLOW: "Constructive open movement. Good for exploration and synthesis.",
-        NEUTRAL: "Balanced but not strongly directed. Good for maintenance.",
-        FATIGUE: "Load exceeds productive stability. Reduce pressure.",
-        RECOVERY: "System is restoring integrity. Avoid force."
-    }
+    FOCUS: "High coherence. Best for execution and decisive work.",
+    ADJUST: "Direction exists, but rigidity is rising. Correct course before hard commitment.",
+    INTERACT: "The field is open for one clean contact or coordination.",
+    EXPLORE: "Open movement. Good for testing and light exploration.",
+    REST: "Load exceeds stable capacity. Reduce pressure and recover."
+}
 
     evolved.dayDesc = descMap[label]
 
     const colorMap = {
-        FOCUS: "#00ff88",
-        FLOW: "#66ccff",
-        NEUTRAL: "#bbbbbb",
-        FATIGUE: "#ffb347",
-        RECOVERY: "#ff6666"
-    }
+    FOCUS: "#00ff88",
+    ADJUST: "#ffd166",
+    INTERACT: "#66ccff",
+    EXPLORE: "#bbbbbb",
+    REST: "#ff6666"
+}
 
     evolved.dayColor = colorMap[label]
 
@@ -3799,6 +5007,22 @@ function getTodayAction(decision, ds, tpSummary, networkFeedback){
         }
     }
 
+        if (mode === "ADJUST") {
+        return {
+            title: "ADJUST",
+            doList: [
+                "Reopen one alternative",
+                "Correct direction before commitment",
+                "Keep the next move reversible"
+            ],
+            avoidList: [
+                "Rigid certainty",
+                "Overcommitting too early",
+                "Turning one signal into a final conclusion"
+            ]
+        }
+    }
+
     if (mode === "REST") {
         return {
             title: "REST",
@@ -3917,6 +5141,44 @@ function renderSystemEventsPanel(){
         ? window.MTOS_STATE.events
         : []
 
+    function translateEventTitle(title){
+        const s = String(title || "").trim()
+
+        if (!s) return t("backgroundMode")
+        if (s === "Background Mode") return t("backgroundMode")
+
+        return s
+    }
+
+    function translateEventLevel(level){
+        const s = String(level || "").trim().toLowerCase()
+
+        if (s === "low") return t("levelLow")
+        if (s === "medium") return t("levelMedium")
+        if (s === "high") return t("levelHigh")
+
+        return String(level || "")
+    }
+
+    function translateEventDescription(desc){
+        const s = String(desc || "").trim()
+
+        if (!s) return t("noMajorEvent")
+        if (s === "No major event threshold reached.") return t("noMajorEvent")
+
+        return s
+    }
+
+    function translateEventType(type, title){
+        const raw = String(type || "").trim()
+        const titleSafe = String(title || "").trim()
+
+        if (raw.toLowerCase() === "background") return t("eventTypeBackground")
+        if (titleSafe === "Background Mode" && !raw) return t("eventTypeBackground")
+
+        return translateRelationLabel(raw) || raw
+    }
+
     if(!events.length){
         root.innerHTML = `
             <div style="
@@ -3929,12 +5191,12 @@ function renderSystemEventsPanel(){
                 color:#e5e7eb;
                 text-align:left;
             ">
-                <div style="font-size:18px;font-weight:700;color:#fff;">Background Mode</div>
+                <div style="font-size:18px;font-weight:700;color:#fff;">${t("backgroundMode")}</div>
                 <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
-                    Type: background • Level: low • Score: 0.18
+                    ${t("type")}: ${t("eventTypeBackground")} • ${t("level")}: ${t("levelLow")} • ${t("score")}: 0.18
                 </div>
                 <div style="font-size:14px;line-height:1.6;margin-top:8px;">
-                    No major event threshold reached.
+                    ${t("noMajorEvent")}
                 </div>
             </div>
         `
@@ -3957,12 +5219,18 @@ function renderSystemEventsPanel(){
                     color:#e5e7eb;
                     text-align:left;
                 ">
-                    <div style="font-size:18px;font-weight:700;color:#fff;">${e.title}</div>
-                    <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
-                        Type: ${e.type} • Level: ${e.level} • Score: ${Number(e.score || 0).toFixed(2)}
+                    <div style="font-size:18px;font-weight:700;color:#fff;">
+                        ${translateEventTitle(e.title)}
                     </div>
+
+                    <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
+                        ${t("type")}: ${translateEventType(e.type || e.label || "", e.title || "")}
+                        • ${t("level")}: ${translateEventLevel(e.level || "")}
+                        • ${t("score")}: ${Number(e.score || 0).toFixed(2)}
+                    </div>
+
                     <div style="font-size:14px;line-height:1.6;margin-top:8px;">
-                        ${e.description}
+                        ${translateEventDescription(e.description)}
                     </div>
                 </div>
             `).join("")}
@@ -3977,6 +5245,35 @@ function renderSystemDecisionPanel(){
     const decision = window.MTOS_STATE?.decision || null
     const selectedTarget = decision?.selectedTarget || null
 
+    const modeText = translateModeLabel(decision?.mode || "EXPLORE")
+
+    let actionText = String(decision?.action || "").trim()
+    if (decision?.mode === "ADJUST") {
+        actionText = t("adjust_desc")
+    }
+    if (actionText === "Observe the field." || !actionText) {
+        actionText = t("observeField")
+    }
+
+    let reasonText = String(decision?.reason || "").trim()
+
+if (
+    reasonText === "No reason" ||
+    !reasonText
+) {
+    reasonText = t("noReason")
+} else if (reasonText === "No strong feedback pattern yet.") {
+    reasonText = t("noStrongFeedbackPattern")
+} else if (reasonText === "Derived from cached day state.") {
+    reasonText = t("derivedFromCachedDayState")
+} else if (reasonText === "Derived from day state, time pressure, and memory.") {
+    reasonText = t("derivedFromDayState")
+}
+
+    const targetLabelText = selectedTarget?.label
+        ? translateRelationLabel(selectedTarget.label)
+        : ""
+
     if(!decision){
         root.innerHTML = `
             <div style="
@@ -3988,7 +5285,7 @@ function renderSystemDecisionPanel(){
                 background:rgba(255,255,255,0.03);
                 color:#9ca3af;
             ">
-                No system decision yet
+                ${t("noSystemDecisionYet")}
             </div>
         `
         return
@@ -4009,32 +5306,30 @@ function renderSystemDecisionPanel(){
             text-align:left;
         ">
             <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:8px;">
-                System Output
+                ${t("systemOutput")}
             </div>
             <div style="font-size:28px;font-weight:800;color:#00ff88;line-height:1.1;">
-                ${decision.mode || "EXPLORE"}
+                ${modeText}
             </div>
             <div style="font-size:16px;line-height:1.7;color:#e5e7eb;margin-top:12px;">
-                ${decision.action || "Observe the field."}
+                ${actionText}
             </div>
             <div style="font-size:13px;color:#9ca3af;margin-top:12px;">
-                Reason: ${decision.reason || "No reason"}
+                ${t("reason")}: ${reasonText}
             </div>
             <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
-                Confidence: ${decision.confidence || 50}%
+                ${t("confidence")}: ${decision.confidence || 50}%
             </div>
             ${selectedTarget ? `
-    <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
-        Best target now: <span style="color:#00ff88;font-weight:700;">${selectedTarget.name}</span>
-        • ${selectedTarget.label}
-        • score ${Number(selectedTarget.score ?? 0).toFixed(2)}
-    </div>
-` : ""}
+                <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
+                    ${t("bestTargetNow")}: <span style="color:#00ff88;font-weight:700;">${selectedTarget.name}</span>
+                    • ${targetLabelText}
+                    • ${t("score")} ${Number(selectedTarget.score ?? 0).toFixed(2)}
+                </div>
+            ` : ""}
         </div>
     `
 }
-
-
 
 function resolveDecisionTargetsLocal(){
     const currentName = getCurrentUserName()
@@ -4065,17 +5360,25 @@ function resolveDecisionTargetsLocal(){
             let priority = score
 
             if (mode === "INTERACT") {
-                priority += isContact ? 0.22 : 0
-                priority += score > 0 ? 0.18 : -0.12
-            } else if (mode === "FOCUS") {
-                priority += score > 0 ? 0.08 : -0.18
-                priority -= urgency * 0.08
-            } else if (mode === "REST") {
-                priority -= Math.abs(score) * 0.18
-                priority -= urgency * 0.12
-            } else {
-                priority += score > 0 ? 0.06 : -0.06
-            }
+    priority += isContact ? 0.22 : 0
+    priority += score > 0 ? 0.18 : -0.12
+}
+else if (mode === "FOCUS") {
+    priority += score > 0 ? 0.08 : -0.18
+    priority -= urgency * 0.08
+}
+else if (mode === "ADJUST") {
+    priority += score > 0 ? 0.04 : -0.08
+    priority -= Math.abs(score) * 0.04
+    priority -= urgency * 0.10
+}
+else if (mode === "REST") {
+    priority -= Math.abs(score) * 0.18
+    priority -= urgency * 0.12
+}
+else {
+    priority += score > 0 ? 0.06 : -0.06
+}
 
             return {
                 name: other,
@@ -4148,6 +5451,41 @@ function renderDecisionTargetsPanel(){
     const currentName = window.getCurrentUserName ? window.getCurrentUserName() : ""
     const selectedName = getSelectedDecisionTarget()
 
+        const allAgents = Array.isArray(window.currentUsers)
+        ? window.currentUsers
+            .map(u => ({
+                name: String(u?.name || "").trim(),
+                kin: Number(u?.kin || 0)
+            }))
+            .filter(u => u.name && u.name !== currentName)
+            .sort((a, b) => a.name.localeCompare(b.name, "ru"))
+        : []
+
+    const currentTargetsFlat = [
+        ...(Array.isArray(targets.primary) ? targets.primary : []),
+        ...(Array.isArray(targets.neutral) ? targets.neutral : []),
+        ...(Array.isArray(targets.avoid) ? targets.avoid : [])
+    ]
+
+    const targetMap = new Map(
+        currentTargetsFlat.map(item => [item.name, item])
+    )
+
+    const allAgentsList = allAgents.map(agent => {
+        const found = targetMap.get(agent.name)
+
+        return {
+            name: agent.name,
+            kin: agent.kin,
+            score: Number(found?.score ?? 0),
+            label: String(found?.label || t("inNetwork")),
+            isTodayRealContact: typeof window.isTodayContact === "function"
+                ? window.isTodayContact(currentName, agent.name)
+                : false,
+            isSelected: agent.name === selectedName
+        }
+    })
+
     const renderList = (items, color, emptyText, groupName) => {
         if (!Array.isArray(items) || !items.length) {
             return `<div style="color:#94a3b8;font-size:13px;">${emptyText}</div>`
@@ -4172,7 +5510,7 @@ function renderDecisionTargetsPanel(){
                             </div>
                             ${isSelected ? `
                                 <div style="font-size:11px;color:#00ff88;margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">
-                                    Selected target
+                                    ${t("selectedTargetBadge")}
                                 </div>
                             ` : ""}
                         </div>
@@ -4196,7 +5534,7 @@ function renderDecisionTargetsPanel(){
                                         font-size:12px;
                                         font-weight:700;
                                     "
-                                >${isSelected ? "Selected" : "Select"}</button>
+                                >${isSelected ? t("selected") : t("select")}</button>
 
                                 <button
                                     type="button"
@@ -4213,19 +5551,92 @@ function renderDecisionTargetsPanel(){
                                         font-size:12px;
                                         font-weight:700;
                                     "
-                                >${item.isTodayRealContact ? "Marked" : "Contact"}</button>
+                                >${item.isTodayRealContact ? t("unmark") : t("contact")}</button>
                             `
                             }
                         </div>
                     </div>
 
                     <div style="font-size:12px;color:#cbd5e1;margin-top:6px;">
-                        ${item.label} • score ${Number(item.score ?? 0).toFixed(2)}
-                        ${item.isTodayRealContact ? " • real contact" : ""}
+                        ${translateRelationLabel(item.label)} • ${t("scoreWord")} ${Number(item.score ?? 0).toFixed(2)}
+                        ${item.isTodayRealContact ? ` • ${t("realContactWord")}` : ""}
                     </div>
                 </div>
             `
         }).join("")
+    }
+
+        const renderAllAgentsList = (items) => {
+        if (!Array.isArray(items) || !items.length) {
+            return `<div style="color:#94a3b8;font-size:13px;">${t("noAgentsFound")}</div>`
+        }
+
+        return `
+            <div style="
+                display:grid;
+                grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+                gap:10px;
+            ">
+                ${items.map((item) => `
+                    <div style="
+                        padding:10px 12px;
+                        border-radius:14px;
+                        background:${item.isSelected ? "rgba(0,255,136,0.08)" : "rgba(255,255,255,0.03)"};
+                        border:1px solid ${item.isSelected ? "rgba(0,255,136,0.24)" : "rgba(255,255,255,0.07)"};
+                        box-shadow:${item.isSelected ? "0 0 0 1px rgba(0,255,136,0.08) inset" : "none"};
+                    ">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                            <div>
+                                <div style="font-size:15px;font-weight:700;color:#e5e7eb;">
+                                    ${item.name}
+                                </div>
+                                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+                                    ${t("kinWord")} ${Number(item.kin || 0)}
+${item.label ? ` • ${translateRelationLabel(item.label)}` : ""}
+${Number.isFinite(item.score) ? ` • ${t("scoreWord")} ${item.score.toFixed(2)}` : ""}
+${item.isTodayRealContact ? ` • ${t("realContactWord")}` : ""}
+                                </div>
+                            </div>
+
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                                <button
+                                    type="button"
+                                    class="mtos-select-target-btn"
+                                    data-target-name="${String(item.name).replace(/"/g, "&quot;")}"
+                                    style="
+                                        padding:6px 10px;
+                                        border-radius:10px;
+                                        border:1px solid ${item.isSelected ? "rgba(0,255,136,0.35)" : "rgba(255,255,255,0.10)"};
+                                        background:${item.isSelected ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.05)"};
+                                        color:${item.isSelected ? "#00ff88" : "#f8fafc"};
+                                        cursor:pointer;
+                                        font-size:12px;
+                                        font-weight:700;
+                                    "
+                                >${item.isSelected ? t("selected") : t("select")}</button>
+
+                                <button
+                                    type="button"
+                                    class="mtos-contact-btn"
+                                    data-contact-name="${String(item.name).replace(/"/g, "&quot;")}"
+                                    data-current-name="${String(currentName).replace(/"/g, "&quot;")}"
+                                    style="
+                                        padding:6px 10px;
+                                        border-radius:10px;
+                                        border:1px solid ${item.isTodayRealContact ? "rgba(0,255,136,0.35)" : "rgba(255,255,255,0.10)"};
+                                        background:${item.isTodayRealContact ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.05)"};
+                                        color:${item.isTodayRealContact ? "#00ff88" : "#f8fafc"};
+                                        cursor:pointer;
+                                        font-size:12px;
+                                        font-weight:700;
+                                    "
+                                >${item.isTodayRealContact ? t("unmark") : t("contact")}</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+        `
     }
 
     root.innerHTML = `
@@ -4243,11 +5654,11 @@ function renderDecisionTargetsPanel(){
             text-align:left;
         ">
             <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:12px;">
-                Decision Targets
+                ${t("decisionTargets")}
             </div>
 
             <div style="font-size:13px;color:#cbd5e1;margin-bottom:14px;">
-                Choose one target for today
+                ${t("chooseOneTarget")}
             </div>
 
             <div style="
@@ -4256,19 +5667,26 @@ function renderDecisionTargetsPanel(){
                 gap:14px;
             ">
                 <div>
-                    <div style="font-size:13px;font-weight:700;color:#00ff88;margin-bottom:10px;">Best contact now</div>
-                    ${renderList(targets.primary, "#00ff88", "No primary targets", "primary")}
+                    <div style="font-size:13px;font-weight:700;color:#00ff88;margin-bottom:10px;">${t("bestContactNow")}</div>
+                    ${renderList(targets.primary, "#00ff88", `${t("noPrimaryTargets")}`, "primary")}
                 </div>
 
                 <div>
-                    <div style="font-size:13px;font-weight:700;color:#ffb347;margin-bottom:10px;">Possible contacts</div>
-                    ${renderList(targets.neutral, "#ffb347", "No neutral targets", "neutral")}
+                    <div style="font-size:13px;font-weight:700;color:#ffb347;margin-bottom:10px;">${t("possibleContacts")}</div>
+                    ${renderList(targets.neutral, "#ffb347", `${t("noNeutralTargets")}`, "neutral")}
                 </div>
 
                 <div>
-                    <div style="font-size:13px;font-weight:700;color:#ff6666;margin-bottom:10px;">Avoid today</div>
-                    ${renderList(targets.avoid, "#ff6666", "No avoid targets", "avoid")}
+                    <div style="font-size:13px;font-weight:700;color:#ff6666;margin-bottom:10px;">${t("avoidToday")}</div>
+                    ${renderList(targets.avoid, "#ff6666", `${t("noAvoidTargets")}`, "avoid")}
                 </div>
+            </div>
+
+            <div style="margin-top:18px;">
+                <div style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px;">
+                    ${t("allAgents")}
+                </div>
+                ${renderAllAgentsList(allAgentsList)}
             </div>
         </div>
     `
@@ -4291,7 +5709,11 @@ function renderDecisionTargetsPanel(){
         ]
 
         const selectedTarget =
-            allTargets.find(x => x.name === targetName) || null
+    allTargets.find(x => x.name === targetName) || {
+        name: targetName,
+        score: 0,
+        label: "manual target"
+    }
 
         window.updateMTOSBranch("decision", {
             ...(window.MTOS_STATE?.decision || {}),
@@ -4307,24 +5729,55 @@ function renderDecisionTargetsPanel(){
 })
 
     root.querySelectorAll(".mtos-contact-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const a = btn.dataset.currentName || (window.getCurrentUserName ? window.getCurrentUserName() : "")
-            const b = btn.dataset.contactName || ""
-            const isMarked = String(btn.textContent || "").trim().toLowerCase() === "marked"
+    btn.addEventListener("click", () => {
+        const a = btn.dataset.currentName || (window.getCurrentUserName ? window.getCurrentUserName() : "")
+        const b = btn.dataset.contactName || ""
+        const actionText = String(btn.textContent || "").trim().toLowerCase()
+        const isMarked = actionText === "marked" || actionText === "unmark"
 
-            if (!a || !b || a === b) return
+        if (!a || !b || a === b) return
 
-            if (isMarked) {
-                if (typeof window.unmarkTodayContact === "function") {
-                    window.unmarkTodayContact(a, b)
-                }
-            } else {
-                if (typeof window.markTodayContact === "function") {
-                    window.markTodayContact(a, b)
-                }
+        const currentTargets =
+            window.MTOS_STATE?.decision?.targets ||
+            resolveDecisionTargetsLocal()
+
+        const allTargets = [
+            ...(Array.isArray(currentTargets.primary) ? currentTargets.primary : []),
+            ...(Array.isArray(currentTargets.neutral) ? currentTargets.neutral : []),
+            ...(Array.isArray(currentTargets.avoid) ? currentTargets.avoid : [])
+        ]
+
+        const selectedTarget =
+            allTargets.find(x => x.name === b) || {
+                name: b,
+                score: 0,
+                label: t("realContact")
             }
+
+        setSelectedDecisionTarget(b)
+
+        window.updateMTOSBranch("decision", {
+            ...(window.MTOS_STATE?.decision || {}),
+            targets: currentTargets,
+            selectedTarget
         })
+
+        if (isMarked) {
+            if (typeof window.unmarkTodayContact === "function") {
+                window.unmarkTodayContact(a, b)
+            }
+        } else {
+            if (typeof window.markTodayContact === "function") {
+                window.markTodayContact(a, b)
+            }
+        }
+
+        renderDecisionSummaryPanel("humanLayer")
+        renderSystemDecisionPanel()
+        renderDecisionTargetsPanel()
+        renderActionTracePanel()
     })
+})
 }
 
 function renderFieldTensionPanel(){
@@ -4344,12 +5797,12 @@ function renderFieldTensionPanel(){
     const temp = Number(metabolic.T ?? collective.temperature ?? 0.5)
 
     const tensionLevel =
-        pressure >= 0.75 ? "HIGH" :
-        pressure >= 0.45 ? "MEDIUM" : "LOW"
+        pressure >= 0.75 ? t("highTension") :
+        pressure >= 0.45 ? t("mediumTension") : t("lowTension")
 
     const gradientText =
-        consistency >= 0.22 ? "uneven" :
-        consistency >= 0.10 ? "mixed" : "stable"
+        consistency >= 0.22 ? t("uneven") :
+        consistency >= 0.10 ? t("mixed") : t("stable")
 
     const toneColor =
         pressure >= 0.75 ? "#ff6666" :
@@ -4370,16 +5823,16 @@ function renderFieldTensionPanel(){
             text-align:left;
         ">
             <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:12px;">
-                Field Tension
+                ${t("fieldTension")}
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;">
                 <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
-                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Pressure</div>
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">${t("pressure")}</div>
                     <div style="margin-top:4px;font-size:18px;font-weight:700;color:${toneColor};">${pressure.toFixed(2)}</div>
                 </div>
                 <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
-                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Stability</div>
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">${t("stability")}</div>
                     <div style="margin-top:4px;font-size:18px;font-weight:700;">${stability.toFixed(2)}</div>
                 </div>
                 <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
@@ -4395,25 +5848,25 @@ function renderFieldTensionPanel(){
                     <div style="margin-top:4px;font-size:18px;font-weight:700;">${temp.toFixed(2)}</div>
                 </div>
                 <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
-                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">Consistency</div>
+                    <div style="font-size:10px;color:#8b949e;letter-spacing:0.12em;text-transform:uppercase;">${t("consistency")}</div>
                     <div style="margin-top:4px;font-size:18px;font-weight:700;">${consistency.toFixed(3)}</div>
                 </div>
             </div>
 
             <div style="font-size:15px;font-weight:700;color:${toneColor};">
-                ${tensionLevel} TENSION
-            </div>
-            <div style="font-size:13px;line-height:1.7;color:#cbd5e1;margin-top:8px;">
-                Gradient: <b>${gradientText}</b><br>
-                Temporal mode: <b>${tp.temporalMode || "EXPLORE"}</b><br>
-                Interpretation: ${
-                    pressure >= 0.75
-                        ? "Field is compressed. Actions amplify consequences."
-                        : pressure >= 0.45
-                        ? "Field is active. Choose direction carefully."
-                        : "Field is open enough for soft movement."
-                }
-            </div>
+    ${tensionLevel} ${t("tensionWord")}
+</div>
+<div style="font-size:13px;line-height:1.7;color:#cbd5e1;margin-top:8px;">
+    ${t("gradient")}: <b>${gradientText}</b><br>
+    ${t("temporalModeLabel")}: <b>${translateModeLabel(tp.temporalMode || "EXPLORE")}</b><br>
+    ${t("interpretation")}: ${
+        pressure >= 0.75
+            ? t("fieldCompressed")
+            : pressure >= 0.45
+            ? t("fieldActive")
+            : t("fieldOpen")
+    }
+</div>
         </div>
     `
 }
@@ -4430,25 +5883,25 @@ const tp = window.mtosTimePressureSummary || {}
 const targets = window.MTOS_STATE?.decision?.targets || { primary: [], avoid: [], neutral: [] }
 const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
 
-    let title = `If ${mode}`
+    let title = `${t("ifModePrefix")} ${translateModeLabel(mode)}`
     let lines = []
     let confidence = "medium"
 
     if (mode === "INTERACT") {
     title = selectedTarget
-        ? `If you contact ${selectedTarget.name}:`
-        : "If you choose one of the primary contacts:"
+        ? `${t("ifContactPrefix")} ${selectedTarget.name}:`
+        : t("ifChoosePrimary")
 
         if (selectedTarget) {
     lines = [
-        `Contact ${selectedTarget.name} → ${selectedTarget.label}`,
-        Number(selectedTarget.score ?? 0) >= 0.75
-            ? "This target has very strong alignment today"
-            : "This target is supportive, but needs clean timing",
-        Number(tp.value ?? 0) >= 0.6
-            ? "Keep the interaction short and precise"
-            : "One direct contact is better than multiple parallel contacts"
-    ]
+    `${selectedTarget.name} → ${translateRelationLabel(selectedTarget.label)}`,
+    Number(selectedTarget.score ?? 0) >= 0.75
+        ? t("veryStrongAlignmentToday")
+        : t("supportiveNeedsCleanTiming"),
+    Number(tp.value ?? 0) >= 0.6
+        ? t("keepInteractionShort")
+        : t("oneDirectContactBetter")
+]
 } else {
     const primaryNames = Array.isArray(targets.primary)
         ? targets.primary.map(x => x.name).slice(0, 3)
@@ -4456,44 +5909,53 @@ const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
 
     if (primaryNames.length) {
         lines = primaryNames.map((name, i) => {
-            if (i === 0) return `Contact ${name} → strongest alignment`
-            if (i === 1) return `Contact ${name} → stable expansion`
-            return `Contact ${name} → safe reinforcement`
+            if (i === 0) return `${name} → ${t("strongestAlignment")}`
+if (i === 1) return `${name} → ${t("stableExpansion")}`
+return `${name} → ${t("safeReinforcement")}`
         })
     } else {
         lines = [
-            `Network may expand (${Number(net.supportRatio ?? 0).toFixed(2)} support zone)`,
-            Number(ds.stability ?? 0.5) < 0.5
-                ? "Stability may dip if contact becomes reactive"
-                : "Constructive alignment is likely if contact stays clean",
-            Number(tp.value ?? 0) >= 0.6
-                ? "Parallel contacts may create overload"
-                : "One direct contact is favored over many weak contacts"
-        ]
+    `${t("networkMayExpand")} (${Number(net.supportRatio ?? 0).toFixed(2)})`,
+    Number(ds.stability ?? 0.5) < 0.5
+        ? t("stabilityMayDipReactive")
+        : t("constructiveAlignmentLikely"),
+    Number(tp.value ?? 0) >= 0.6
+        ? t("parallelContactsOverload")
+        : t("oneDirectContactFavored")
+]
     }
 }
 
         confidence = Number(tp.value ?? 0) >= 0.6 ? "medium" : "good"
     } else if (mode === "FOCUS") {
         lines = [
-            "Stability can improve through narrower execution",
-            "Network activity will likely compress",
-            "New external branches may reduce coherence"
-        ]
+    t("focusNarrowExecution"),
+    t("focusNetworkCompress"),
+    t("focusBranchesReduce")
+]
         confidence = "good"
+    }
+    else if (mode === "ADJUST") {
+    lines = [
+    t("adjustFixationRising"),
+    t("adjustReopenAlternative"),
+    t("adjustSmallCorrection")
+]
+    confidence = "good"
+
     } else if (mode === "REST") {
         lines = [
-            "Pressure can decrease if commitments are reduced",
-            "Opportunities remain, but active expansion slows down",
-            "Best effect comes from maintenance, not push"
-        ]
+    t("restPressureDecrease"),
+    t("restOpportunitiesRemain"),
+    t("restMaintenanceBest")
+]
         confidence = "good"
     } else {
         lines = [
-            "Signals may diversify before they stabilize",
-            "Useful paths can appear, but certainty stays low",
-            "Too many experiments may scatter energy"
-        ]
+    t("exploreSignalsDiversify"),
+    t("exploreUsefulPaths"),
+    t("exploreTooManyExperiments")
+]
         confidence = "medium"
     }
 
@@ -4512,7 +5974,7 @@ const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
             text-align:left;
         ">
             <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8b949e;margin-bottom:12px;">
-                Action Trace
+                ${t("actionTrace")}
             </div>
 
             <div style="font-size:20px;font-weight:800;color:#00ff88;line-height:1.15;margin-bottom:10px;">
@@ -4534,414 +5996,271 @@ const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
             </div>
 
             <div style="font-size:13px;color:#9ca3af;margin-top:12px;">
-                Confidence: ${confidence}
+                ${t("confidence")}: ${confidence}
             </div>
         </div>
     `
 }
 
-function renderDecisionSummaryPanel(targetId = "todayPanel"){
+function renderHistoryEfficiencyPanel(targetId = "historyEfficiencyPanel"){
+    const historyModeLabel = (mode) => {
+        const m = String(mode || "").toUpperCase()
+
+        if (m === "FOCUS") return t("modeFocus")
+        if (m === "FLOW") return t("modeExplore")
+        if (m === "EXPLORE") return t("modeExplore")
+        if (m === "REST") return t("modeRest")
+        if (m === "INTERACT") return t("modeInteract")
+        if (m === "ADJUST") return t("modeAdjust")
+        if (m === "UNKNOWN") return t("unknownWord")
+
+        return m
+    }
+
     const root = document.getElementById(targetId)
-    if(!root) return
+    if (!root) return
 
-    const ds = window.mtosDayState || {}
-    const decision = window.mtosDecision || {}
-    const tpSummary = window.mtosTimePressureSummary || {}
-    const attractorState = window.mtosAttractorState || {}
-    const networkFeedback = window.mtosNetworkFeedback || {}
-    const userMeta = window.mtosUserMeta || {}
-    const todayMeta = window.mtosTodayMeta || {}
-    const metabolic = window.mtosMetabolicMetrics || {}
+    const name = getCurrentUserName()
+    if (!name) {
+        root.innerHTML = ""
+        return
+    }
 
-    const currentDay = getCurrentRunDay()
-const currentUser = getCurrentUserName()
-const selectedTarget = window.MTOS_STATE?.decision?.selectedTarget || null
+    let rows = []
+    try {
+        rows = JSON.parse(localStorage.getItem("mtos_daily_snapshots") || "[]")
+            .filter(x => x && x.name === name)
+            .sort((a, b) => String(b.day || "").localeCompare(String(a.day || "")))
+    } catch (e) {
+        rows = []
+    }
 
-const currentFeedback = getHumanFeedbackFor(currentDay, currentUser)
-const currentFeedbackValue = String(currentFeedback?.value || "").toLowerCase()
+    if (!rows.length) {
+        root.innerHTML = `
+            <div style="
+                max-width:980px;
+                margin:0 auto;
+                padding:18px;
+                border:1px solid rgba(255,255,255,0.08);
+                border-radius:20px;
+                background:rgba(255,255,255,0.03);
+                color:#cbd5e1;
+                text-align:left;
+            ">
+                <div style="font-size:14px;color:#94a3b8;">
+                    ${t("noHistoryYet")}
+                </div>
+            </div>
+        `
+        return
+    }
 
-const currentRelationFeedback = selectedTarget
-    ? getRelationFeedbackFor(currentDay, currentUser, selectedTarget.name)
-    : null
+    const total = rows.length
+    const good = rows.filter(x => String(x.feedbackValue || "").toLowerCase() === "good").length
+    const neutral = rows.filter(x => String(x.feedbackValue || "").toLowerCase() === "neutral").length
+    const bad = rows.filter(x => String(x.feedbackValue || "").toLowerCase() === "bad").length
 
-const currentRelationFeedbackValue = String(
-    currentRelationFeedback?.value || currentFeedbackValue || ""
-).toLowerCase()
+    const hitRate = total ? ((good / total) * 100).toFixed(1) : "0.0"
+    const antiFailRate = total ? (((good + neutral) / total) * 100).toFixed(1) : "0.0"
 
-const feedbackAck = getFeedbackAck()
-const showAck =
-    feedbackAck &&
-    (Date.now() - Number(feedbackAck.t || 0)) < 7000
+    const avgPredictability = total
+    ? (
+        rows.reduce((sum, row) => sum + Number(row.systemPredictability ?? row.predictability ?? 0), 0) / total
+    ).toFixed(1)
+    : "0.0"
 
-    const dayType = getSimpleDayType(ds, tpSummary)
-    const energy = getEnergyBand(ds)
-    const risk = getRiskBand(ds, tpSummary, attractorState, networkFeedback)
-    const action = getTodayAction(decision, ds, tpSummary, networkFeedback)
-    const whyList = buildWhyList(ds, tpSummary, attractorState, networkFeedback)
+    const avgTimePressure = total
+        ? (
+            rows.reduce((sum, row) => sum + Number(row.timePressure ?? 0), 0) / total
+        ).toFixed(2)
+        : "0.00"
 
-    const rawConfidence = Number(decision?.confidence)
-    const confidence = Number.isFinite(rawConfidence)
-        ? Math.max(0, Math.min(1, rawConfidence))
-        : 0.5
+    const modeStats = calcModeStats(rows)
 
-    const confidencePct = Math.round(confidence * 100)
+    const dayTypeStatsMap = {}
+    rows.forEach(row => {
+        const label = String(row.dayLabel || "UNKNOWN").toUpperCase()
 
-    const phi = Number(metabolic?.phi ?? 0)
-    const k = Number(metabolic?.k ?? 0)
-    const T = Number(metabolic?.T ?? 0)
-    const P = Number(metabolic?.P ?? 0)
-    const V = Number(metabolic?.V ?? 0)
-    const consistency = Number(metabolic?.consistency ?? 0)
-
-    const nextStep =
-        action?.doList?.[0] ||
-        decision?.text ||
-        "Move one step without overcommitting."
-
-    const decisionBridge = (() => {
-        const label = String(ds?.dayLabel || "").toUpperCase()
-        const mode = String(decision?.mode || "").toUpperCase()
-
-        if (label === "FOCUS" && mode === "EXPLORE") {
-            return "State is coherent, but the system prefers soft exploration instead of hard fixation."
+        if (!dayTypeStatsMap[label]) {
+            dayTypeStatsMap[label] = {
+                label,
+                total: 0,
+                good: 0,
+                neutral: 0,
+                bad: 0,
+                score: 0
+            }
         }
 
-        if (label === "FOCUS" && mode === "FOCUS") {
-            return "Both state and action align: this is a direct execution window."
-        }
+        dayTypeStatsMap[label].total += 1
 
-        if (label === "BALANCED" && mode === "EXPLORE") {
-            return "The field is stable enough to probe, test, and move without forcing commitment."
-        }
+        const fb = String(row.feedbackValue || "").toLowerCase()
 
-        if (label === "RECOVERY" && mode === "REST") {
-            return "Recovery state and recommended mode are aligned: reduce pressure and restore coherence."
-        }
+        if (fb === "good") dayTypeStatsMap[label].good += 1
+        else if (fb === "bad") dayTypeStatsMap[label].bad += 1
+        else dayTypeStatsMap[label].neutral += 1
+    })
 
-        if (label === "FATIGUE" && mode === "REST") {
-            return "The system detects overload; the safest move is to reduce input and avoid escalation."
-        }
+    const dayTypeStats = Object.values(dayTypeStatsMap)
+    dayTypeStats.forEach(item => {
+        item.score = item.total
+            ? Number((
+                (item.good * 1.0 + item.neutral * 0.15 - item.bad * 1.2) / item.total
+            ).toFixed(3))
+            : 0
+    })
 
-        return decision?.text || "The mode is derived from the current balance of pressure, field, and stability."
-    })()
+    dayTypeStats.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score
+        return b.total - a.total
+    })
+
+    const recentRows = rows.slice(0, 7)
 
     root.innerHTML = `
         <div style="
-            max-width: 980px;
-            margin: 28px auto 0;
-            padding: 22px;
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 28px;
+            max-width:980px;
+            margin:0 auto;
+            padding:22px;
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:28px;
             background:
                 radial-gradient(circle at 12% 100%, rgba(0,255,136,0.07), transparent 25%),
                 radial-gradient(circle at 88% 100%, rgba(255,210,80,0.06), transparent 22%),
                 linear-gradient(180deg, rgba(8,10,14,0.98) 0%, rgba(4,6,9,1) 100%);
-            box-shadow:
-                0 24px 60px rgba(0,0,0,0.34),
-                inset 0 0 0 1px rgba(255,255,255,0.02);
-            box-sizing: border-box;
-            color: #f8fafc;
-            font-family: Arial, sans-serif;
-            position: relative;
-            overflow: hidden;
+            color:#f8fafc;
+            box-sizing:border-box;
+            text-align:left;
         ">
             <div style="
-                font-size: 11px;
-                letter-spacing: 0.18em;
-                text-transform: uppercase;
-                color: #7f8792;
-                text-align: center;
-                margin-bottom: 18px;
-            ">Today Summary</div>
-
-            <div style="
                 display:grid;
-                grid-template-columns: repeat(12, minmax(0, 1fr));
-                gap: 14px;
-                align-items: stretch;
+                grid-template-columns:repeat(6, minmax(0,1fr));
+                gap:12px;
+                margin-bottom:16px;
             ">
-                <div style="
-                    grid-column: span 4;
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    min-height: 126px;
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
-                        Day Type
-                    </div>
-                    <div style="font-size:28px; font-weight:800; color:${dayType.color}; line-height:1.1;">
-                        ${dayType.label}
-                    </div>
-                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px;">
-                        Day index: ${Number(ds?.dayIndex ?? 0).toFixed(2)}
-                    </div>
-                    <div style="margin-top:10px; color:#94a3b8; font-size:12px; line-height:1.55;">
-                        ${ds?.dayDesc || "No description"}
-                    </div>
+                <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;">${t("days")}</div>
+                    <div style="font-size:24px;font-weight:800;margin-top:6px;">${total}</div>
                 </div>
 
-                <div style="
-                    grid-column: span 4;
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    min-height: 126px;
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
-                        You Today
-                    </div>
-                    <div style="font-size:20px; font-weight:700; color:#ffffff; line-height:1.25;">
-                        Kin ${userMeta.kin ?? window._userKin ?? "—"} — ${ds?.dayLabel || "UNKNOWN"}
-                    </div>
-                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px; line-height:1.75;">
-                        Energy: <b>${energy.label}</b><br>
-                        Risk: <b>${risk}</b><br>
-                        Stability: <b>${Number(ds?.stability ?? 0.5).toFixed(2)}</b>
-                    </div>
+                <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;">${t("good")}</div>
+                    <div style="font-size:24px;font-weight:800;margin-top:6px;color:#00ff88;">${good}</div>
                 </div>
 
-                <div style="
-                    grid-column: span 4;
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    min-height: 126px;
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
-                        Today Action
-                    </div>
-                    <div style="font-size:22px; font-weight:800; color:#00ff88; line-height:1.15;">
-                        ${action.title}
-                    </div>
-                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px; line-height:1.75;">
-                        Confidence: <b>${confidencePct}%</b><br>
-                        Next step: <b>${nextStep}</b>
-                    </div>
+                <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;">${t("bad")}</div>
+                    <div style="font-size:24px;font-weight:800;margin-top:6px;color:#ff6666;">${bad}</div>
                 </div>
 
-                <div style="
-                    grid-column: span 8;
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    min-height: 118px;
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
-                        Decision Bridge
-                    </div>
-                    <div style="font-size:15px; font-weight:700; color:#ffffff; line-height:1.45; margin-bottom:10px;">
-                        ${decisionBridge}
-                    </div>
-                    <div style="
-                        display:grid;
-                        grid-template-columns: repeat(6, minmax(0, 1fr));
-                        gap:10px;
-                        margin-top:8px;
-                    ">
-                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">Φ</div>
-                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${phi.toFixed(3)}</div>
-                        </div>
-                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">P</div>
-                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${P.toFixed(2)}</div>
-                        </div>
-                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">V</div>
-                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${V.toFixed(2)}</div>
-                        </div>
-                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">T</div>
-                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${T.toFixed(2)}</div>
-                        </div>
-                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">k</div>
-                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${k.toFixed(3)}</div>
-                        </div>
-                        <div style="padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e;">Consistency</div>
-                            <div style="margin-top:4px; font-size:16px; font-weight:700;">${consistency.toFixed(3)}</div>
-                        </div>
-                    </div>
+                <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;">${t("hit_rate")}</div>
+                    <div style="font-size:24px;font-weight:800;margin-top:6px;color:#66ccff;">${hitRate}%</div>
                 </div>
 
-                <div style="
-                    grid-column: span 4;
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    min-height: 118px;
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:8px;">
-                        Today vs Day
-                    </div>
-                    <div style="font-size:18px; font-weight:700; color:#ffffff; line-height:1.25;">
-                        User Kin ${userMeta.kin ?? window._userKin ?? "—"} / Today Kin ${todayMeta.kin ?? window._todayKin ?? "—"}
-                    </div>
-                    <div style="margin-top:10px; color:#cbd5e1; font-size:13px; line-height:1.7;">
-                        User seal: <b>${userMeta.seal ?? "—"}</b><br>
-                        Today seal: <b>${todayMeta.seal ?? "—"}</b><br>
-                        Temporal mode: <b>${tpSummary.temporalMode || "EXPLORE"}</b>
-                    </div>
+                <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;">${t("antiFail")}</div>
+                    <div style="font-size:24px;font-weight:800;margin-top:6px;color:#c084fc;">${antiFailRate}%</div>
+                </div>
+
+                <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:11px;color:#8b949e;text-transform:uppercase;">${t("avgPredictability")}</div>
+                    <div style="font-size:24px;font-weight:800;margin-top:6px;color:#f8fafc;">${avgPredictability}</div>
                 </div>
             </div>
 
             <div style="
                 display:grid;
-                grid-template-columns: 1.2fr 1fr;
-                gap: 14px;
-                margin-top: 14px;
+                grid-template-columns:1fr 1fr;
+                gap:14px;
+                margin-bottom:14px;
             ">
-                <div style="
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
-                        Do / Avoid
-                    </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-                        <div>
-                            <div style="font-weight:700; color:#00ff88; margin-bottom:8px;">Do</div>
-                            ${action.doList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.7;">• ${x}</div>`).join("")}
+                <div style="padding:16px;border-radius:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:12px;font-weight:700;color:#ffffff;margin-bottom:10px;">${t("modeEfficiency")}</div>
+                    ${modeStats.map(item => `
+                        <div style="
+                            display:grid;
+                            grid-template-columns:1fr auto auto auto;
+                            gap:12px;
+                            padding:8px 0;
+                            border-bottom:1px solid rgba(255,255,255,0.05);
+                            font-size:13px;
+                            color:#e5e7eb;
+                        ">
+                            <div><b>${historyModeLabel(item.mode)}</b></div>
+                            <div>${item.good}/${item.neutral}/${item.bad}</div>
+                            <div>${item.total}</div>
+                            <div style="color:${item.score >= 0 ? "#00ff88" : "#ff6666"};">${item.score.toFixed(2)}</div>
                         </div>
-                        <div>
-                            <div style="font-weight:700; color:#ffb347; margin-bottom:8px;">Avoid</div>
-                            ${action.avoidList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.7;">• ${x}</div>`).join("")}
-                        </div>
-                    </div>
+                    `).join("")}
                 </div>
 
-                <div style="
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
-                        Why This Day
-                    </div>
-                    ${whyList.length
-                        ? whyList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.75;">• ${x}</div>`).join("")
-                        : `<div style="color:#94a3b8; font-size:13px;">No dominant reason detected.</div>`
-                    }
+                <div style="padding:16px;border-radius:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:12px;font-weight:700;color:#ffffff;margin-bottom:10px;">${t("dayTypeEfficiency")}</div>
+                    ${dayTypeStats.map(item => `
+                        <div style="
+                            display:grid;
+                            grid-template-columns:1fr auto auto auto;
+                            gap:12px;
+                            padding:8px 0;
+                            border-bottom:1px solid rgba(255,255,255,0.05);
+                            font-size:13px;
+                            color:#e5e7eb;
+                        ">
+                            <div><b>${historyModeLabel(item.label)}</b></div>
+                            <div>${item.good}/${item.neutral}/${item.bad}</div>
+                            <div>${item.total}</div>
+                            <div style="color:${item.score >= 0 ? "#00ff88" : "#ff6666"};">${item.score.toFixed(2)}</div>
+                        </div>
+                    `).join("")}
                 </div>
-                </div>
-                            <div style="
-                margin-top:14px;
-                border:1px solid rgba(255,255,255,0.08);
-                border-radius:20px;
+            </div>
+
+            <div style="
                 padding:16px;
+                border-radius:20px;
                 background:rgba(255,255,255,0.03);
-                box-sizing:border-box;
-                text-align:left;
+                border:1px solid rgba(255,255,255,0.08);
             ">
-                <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
-                    Manual Feedback
-                </div>
+                <div style="font-size:12px;font-weight:700;color:#ffffff;margin-bottom:10px;">${t("recentDays")}</div>
 
-                <div style="font-size:14px; color:#cbd5e1; line-height:1.65; margin-bottom:12px;">
-                    ${selectedTarget
-                        ? `Was contact with <b style="color:#00ff88;">${selectedTarget.name}</b> actually useful today?`
-                        : `Was today's mode actually useful for you?`
-                    }
-                </div>
-
-                <div class="human-feedback">
-                    <button
-                        type="button"
-                        onclick="
-                            window.setHumanFeedbackFor(window.getCurrentRunDay(), window.getCurrentUserName(), 'good');
-                            if(window.MTOS_STATE?.decision?.selectedTarget){
-                                window.setRelationFeedbackFor(
-                                    window.getCurrentRunDay(),
-                                    window.getCurrentUserName(),
-                                    window.MTOS_STATE.decision.selectedTarget.name,
-                                    'good'
-                                );
-                            }
-                            window._rerenderMTOS && window._rerenderMTOS();
-                        "
-                        class="${currentRelationFeedbackValue === "good" ? "active" : ""}"
-                        style="${currentRelationFeedbackValue === "good" ? "border-color:#00ff88;color:#00ff88;" : ""}"
-                    >Good</button>
-
-                    <button
-                        type="button"
-                        onclick="
-                            window.setHumanFeedbackFor(window.getCurrentRunDay(), window.getCurrentUserName(), 'neutral');
-                            if(window.MTOS_STATE?.decision?.selectedTarget){
-                                window.setRelationFeedbackFor(
-                                    window.getCurrentRunDay(),
-                                    window.getCurrentUserName(),
-                                    window.MTOS_STATE.decision.selectedTarget.name,
-                                    'neutral'
-                                );
-                            }
-                            window._rerenderMTOS && window._rerenderMTOS();
-                        "
-                        class="${currentRelationFeedbackValue === "neutral" ? "active" : ""}"
-                        style="${currentRelationFeedbackValue === "neutral" ? "border-color:#d1d5db;color:#ffffff;" : ""}"
-                    >Neutral</button>
-
-                    <button
-                        type="button"
-                        onclick="
-                            window.setHumanFeedbackFor(window.getCurrentRunDay(), window.getCurrentUserName(), 'bad');
-                            if(window.MTOS_STATE?.decision?.selectedTarget){
-                                window.setRelationFeedbackFor(
-                                    window.getCurrentRunDay(),
-                                    window.getCurrentUserName(),
-                                    window.MTOS_STATE.decision.selectedTarget.name,
-                                    'bad'
-                                );
-                            }
-                            window._rerenderMTOS && window._rerenderMTOS();
-                        "
-                        class="${currentRelationFeedbackValue === "bad" ? "active" : ""}"
-                        style="${currentRelationFeedbackValue === "bad" ? "border-color:#ff6666;color:#ff6666;" : ""}"
-                    >Bad</button>
-                </div>
-
-                <div class="human-feedback-note">
-                    Manual feedback updates learning for similar states and also modifies the selected relation in Network / Collective.
-                </div>
-
-                ${showAck ? `
+                ${recentRows.map(row => `
                     <div style="
-                        margin-top:12px;
-                        display:inline-flex;
-                        align-items:center;
-                        gap:8px;
-                        padding:8px 12px;
-                        border:1px solid rgba(0,255,136,0.22);
-                        border-radius:999px;
-                        background:rgba(0,255,136,0.08);
-                        color:#00ff88;
-                        font-size:12px;
-                        font-weight:700;
+                        padding:10px 12px;
+                        margin-bottom:8px;
+                        border-radius:14px;
+                        background:rgba(0,0,0,0.18);
+                        border:1px solid rgba(255,255,255,0.06);
                     ">
-                        ✓ Feedback saved
-                        <span style="color:#cbd5e1;font-weight:400;">
-                            ${feedbackAck.a && feedbackAck.b ? `${feedbackAck.a} ↔ ${feedbackAck.b}` : ""}
-                            ${feedbackAck.value ? ` • ${String(feedbackAck.value).toUpperCase()}` : ""}
-                        </span>
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                            gap:12px;
+                            flex-wrap:wrap;
+                        ">
+                            <div style="font-size:13px;font-weight:700;color:#fff;">${row.day}</div>
+                            <div style="font-size:12px;color:#9ca3af;">
+    ${historyModeLabel(row.decisionMode || row.recommendedMode || "UNKNOWN")} · ${t("systemWord")} ${Number(row.systemPredictability ?? row.predictability ?? 0).toFixed(0)} · ${t("behaviorWord")} ${Number(row.behaviorEfficiency ?? 0).toFixed(2)}
+</div>
+                        </div>
+
+                        <div style="font-size:12px;color:#cbd5e1;margin-top:4px;">
+    ${historyModeLabel(row.decisionMode || row.recommendedMode || "UNKNOWN")} · ${translateRiskLabel(row.decisionRisk || "LOW")} · ${row.feedbackValue ? String(row.feedbackValue).toUpperCase() : t("unknownWord")}
+</div>
+
+                        <div style="font-size:12px;color:${
+                            row.feedbackValue === "good" ? "#00ff88" :
+                            row.feedbackValue === "bad" ? "#ff6666" : "#d1d5db"
+                        };margin-top:4px;">
+                            ${row.feedbackValue ? String(row.feedbackValue).toUpperCase() : t("no_feedback")}
+                        </div>
                     </div>
-                ` : ""}
+                `).join("")}
+
+                <div style="margin-top:10px;font-size:12px;color:#94a3b8;">
+                    ${t("averageTimePressure")}: <b style="color:#e5e7eb;">${avgTimePressure}</b>
+                </div>
             </div>
         </div>
     `
@@ -5682,9 +7001,6 @@ const shortAdvice =
         : "Good moment to explore, reinforce useful connections and try new paths."
 
     el.innerHTML = `
-        <div class="attr-panel">
-            <div class="attr-header">
-                <div class="attr-headline">Today's Interaction Panel</div>
                 <div class="attr-subline">
                     Field: <b>${attractorTypeMap[summary.attractorType] || summary.attractorType}</b> ·
                     Time pressure: <b>${timePressureText}</b> ·
@@ -5738,17 +7054,22 @@ const shortAdvice =
     let matrix = buildTodayInfluenceMatrix(activeKin, users)
 
     if (typeof applyTodayContactsToAttractorField === "function") {
-    matrix = applyTodayContactsToAttractorField(matrix, users)
-}
+        matrix = applyTodayContactsToAttractorField(matrix, users)
+    }
 
-window._matrix = matrix
+    window._matrix = matrix
 
-    // полностью скрываем старую карту/движок
+    mapEl.style.display = ""
     mapEl.innerHTML = ""
-    mapEl.style.display = "none"
 
-    const summary = getAttractorSummaryForUser(activeKin, users)
-    renderAttractorDecisionBoard("interactionAnalysis", summary)
+    drawAttractorMap("attractorMap", matrix, {
+        size: 20,
+        labels: window.SEALS || null,
+        meanings: window.SEAL_MEANING || null,
+        selectedSeal: ((Number(activeKin) - 1) % 20 + 20) % 20
+    })
+
+    panelEl.innerHTML = ""
 }
 
     function updateFieldLegend(mode) {
@@ -5904,12 +7225,13 @@ window._matrix = matrix
         }
 
         return {
-            focusBias: 0,
-            restBias: 0,
-            exploreBias: 0,
-            interactBias: 0,
-            history: []
-        }
+    focusBias: 0,
+    adjustBias: 0,
+    restBias: 0,
+    exploreBias: 0,
+    interactBias: 0,
+    history: []
+}
     }
 
     function saveModeAdaptation(state) {
@@ -5928,7 +7250,7 @@ window._matrix = matrix
         const adapt = loadModeAdaptation()
         const attractor = Number(ds.attractorField ?? 0.5)
 
-        const scores = {
+                const scores = {
             REST:
                 (ds.pressure * 0.9) +
                 ((1 - ds.stability) * 0.8) +
@@ -5948,6 +7270,13 @@ window._matrix = matrix
                 (ds.pressure * 0.45) -
                 (ds.conflict * 0.25) +
                 adapt.focusBias,
+
+            ADJUST:
+                (ds.attention * 0.55) +
+                (ds.stability * 0.35) +
+                (ds.pressure * 0.22) +
+                (Math.abs(ds.field - 0.58) < 0.18 ? 0.12 : 0) +
+                adapt.adjustBias,
 
             EXPLORE:
                 (ds.field * 0.7) +
@@ -5973,6 +7302,7 @@ window._matrix = matrix
         const delta = wasHelpful ? 0.025 : -0.025
 
         if (mode === "FOCUS") adapt.focusBias = clampBias(adapt.focusBias + delta)
+        if (mode === "ADJUST") adapt.adjustBias = clampBias(adapt.adjustBias + delta)
         if (mode === "REST") adapt.restBias = clampBias(adapt.restBias + delta)
         if (mode === "EXPLORE") adapt.exploreBias = clampBias(adapt.exploreBias + delta)
         if (mode === "INTERACT") adapt.interactBias = clampBias(adapt.interactBias + delta)
@@ -5998,13 +7328,14 @@ window._matrix = matrix
         window.mtosModeAdaptation = adapt
 
         logEvent("mode_feedback", {
-            mode,
-            wasHelpful: !!wasHelpful,
-            focusBias: adapt.focusBias,
-            restBias: adapt.restBias,
-            exploreBias: adapt.exploreBias,
-            interactBias: adapt.interactBias
-        })
+    mode,
+    wasHelpful: !!wasHelpful,
+    focusBias: adapt.focusBias,
+    adjustBias: adapt.adjustBias,
+    restBias: adapt.restBias,
+    exploreBias: adapt.exploreBias,
+    interactBias: adapt.interactBias
+})
     }
 
     window.registerModeFeedback = function (wasHelpful) {
@@ -6103,6 +7434,47 @@ window._matrix = matrix
                 return {
                     wasHelpful: false,
                     reason: "focus was contradicted by pressure/instability/excess switching"
+                }
+            }
+
+            return null
+        }
+
+                if (mode === "ADJUST") {
+            if (
+                attention >= 0.56 &&
+                pressure >= 0.42 &&
+                pressure <= 0.68 &&
+                stability >= 0.52 &&
+                conflict <= 0.38 &&
+                kinSelects >= 2 &&
+                kinSelects <= 8
+            ) {
+                return {
+                    wasHelpful: true,
+                    reason: "adjust matched controlled correction under moderate pressure"
+                }
+            }
+
+            if (
+                pressure <= 0.28 &&
+                stability >= 0.72 &&
+                attention >= 0.72
+            ) {
+                return {
+                    wasHelpful: false,
+                    reason: "adjust was unnecessary in a clean stable focus state"
+                }
+            }
+
+            if (
+                pressure >= 0.78 ||
+                stability <= 0.38 ||
+                safeTruth.overload
+            ) {
+                return {
+                    wasHelpful: false,
+                    reason: "adjust was too weak for overload or unstable collapse"
                 }
             }
 
@@ -6890,4 +8262,47 @@ window.confirmYesterday = function(realState){
 
     const el = document.getElementById("mtosPrompt")
     if(el) el.remove()
+}
+
+function updateMTOSLogo(){
+
+    const logo = document.querySelector(".mtos-logo")
+    if(!logo) return
+
+    const state = window.mtosCollectiveState || {}
+
+    const attractor = state.attractorType || "unknown"
+    const pressure = state.pressure || 0
+
+    // СБРОС
+    logo.style.filter = ""
+    logo.style.transform = ""
+
+    // 🔴 CHAOS
+    if(attractor === "chaos"){
+        logo.style.filter = "hue-rotate(120deg) brightness(1.4)"
+        logo.style.transform = "scale(1.08)"
+    }
+
+    // 🔵 STABLE
+    else if(attractor === "stable"){
+        logo.style.filter = "brightness(0.9)"
+    }
+
+    // 🟡 TREND
+    else if(attractor === "trend"){
+        logo.style.filter = "hue-rotate(40deg)"
+    }
+
+    // 🟣 CYCLE
+    else if(attractor === "cycle"){
+        logo.style.filter = "hue-rotate(200deg)"
+    }
+
+    // 🔥 давление системы
+    if(pressure > 0.6){
+        logo.style.boxShadow = "0 0 20px rgba(255,80,80,0.6)"
+    } else {
+        logo.style.boxShadow = "none"
+    }
 }

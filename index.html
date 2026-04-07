@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 
+<link rel="icon" type="image/png" href="favicon.png">
+
 <style>
 
 #app {
@@ -151,8 +153,9 @@ body {
 </style>
     
 <meta charset="UTF-8">
-<title>MTOS FULL SYSTEM</title>
+<title>MTOS SYSTEM</title>
 
+<script src="./js/lang.js"></script>
 <style>
 
     
@@ -239,19 +242,6 @@ canvas{
     color:#111;
     font-size:16px;
     cursor:pointer;
-}
-
-.status-pill{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-width:110px;
-    padding:6px 12px;
-    border:1px solid #2c2c2c;
-    border-radius:999px;
-    background:#0c0c0c;
-    color:#bdbdbd;
-    font-size:14px;
 }
 
 .hero-panel{
@@ -1497,6 +1487,83 @@ canvas{
         flex-direction:column;
     }
 }
+
+.view-switch{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:8px;
+    margin-bottom:8px;
+}
+
+.lang-switch{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:4px;
+    margin-bottom:8px;
+}
+
+.lang-switch button{
+    padding:10px 16px;
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:999px;
+    background:rgba(255,255,255,0.04);
+    color:#dbe2ea;
+    font-size:13px;
+    letter-spacing:0.08em;
+    cursor:pointer;
+    transition:all 0.16s ease;
+}
+
+.lang-switch button.active{
+    background:linear-gradient(90deg, rgba(255,210,80,0.90), rgba(255,160,80,0.86));
+    color:#111;
+    border-color:transparent;
+    box-shadow:0 0 20px rgba(255,210,80,0.20);
+}
+
+.view-switch button{
+    padding:10px 16px;
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:999px;
+    background:rgba(255,255,255,0.04);
+    color:#dbe2ea;
+    font-size:13px;
+    letter-spacing:0.08em;
+    cursor:pointer;
+    transition:all 0.16s ease;
+}
+
+.view-switch button.active{
+    background:linear-gradient(90deg, rgba(0,255,136,0.90), rgba(110,255,190,0.86));
+    color:#04110d;
+    border-color:transparent;
+    box-shadow:0 0 20px rgba(0,255,136,0.20);
+}
+
+.mtos-hidden{
+    display:none !important;
+}
+
+.mtos-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.mtos-logo {
+    width: 42px;
+    height: 42px;
+}
+
+.mtos-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+}
 </style>
 
 </head>
@@ -1511,17 +1578,28 @@ canvas{
     <div class="app-shell">
 
         <header class="topbar">
-            <div class="brand">MTOS</div>
+            <div class="mtos-header">
+    <img src="mtos-icon.png" class="mtos-logo">
+    <div class="mtos-title">MTOS</div>
+</div>
 
             <div class="controls-panel">
-                <input id="name" placeholder="Name">
-                <input id="year" placeholder="Year">
-                <input id="month" placeholder="Month">
-                <input id="day" placeholder="Day">
-                <button onclick="runMTOS()">START / NEW DAY</button>
+                <input id="name" data-i18n="name" placeholder="">
+                <input id="year" data-i18n="year" placeholder="">
+                <input id="month" data-i18n="month" placeholder="">
+                <input id="day" data-i18n="day" placeholder="">
+                <button onclick="runMTOS()" data-i18n="start_btn"></button>
             </div>
 
-            <div id="status" class="status-pill">Idle</div>
+            <div class="view-switch">
+                <button id="viewLiteBtn" type="button" onclick="setMTOSViewMode('lite')">LITE</button>
+                <button id="viewFullBtn" type="button" onclick="setMTOSViewMode('full')">FULL</button>
+            </div>
+
+            <div class="lang-switch">
+    <button id="langEnBtn" type="button" onclick="setMTOSLang('en')">EN</button>
+    <button id="langRuBtn" type="button" onclick="setMTOSLang('ru')">RU</button>
+</div>
         </header>
 
         <section id="todayBlock" class="hero-panel"></section>
@@ -1530,13 +1608,13 @@ canvas{
 
         <section id="humanLayer" class="mayan-card human-shell"></section>
 
-<section class="mayan-card">
-    <div class="section-title">SYSTEM EVENTS</div>
+<section class="mayan-card research-block">
+    <div class="section-title" id="systemEventsTitle">SYSTEM EVENTS</div>
     <div id="mtosEventPanel"></div>
 </section>
 
-<section class="mayan-card">
-    <div class="section-title">SYSTEM DECISION</div>
+<section class="mayan-card research-block">
+    <div class="section-title" id="systemDecisionTitle">SYSTEM DECISION</div>
     <div id="mtosDecisionPanel"></div>
 </section>
 
@@ -1544,42 +1622,47 @@ canvas{
     <div id="mtosTargetsPanel"></div>
 </section>
 
-<section class="mayan-card">
+<section class="mayan-card research-block">
     <div id="mtosTensionPanel"></div>
 </section>
 
-<section class="mayan-card">
+<section class="mayan-card research-block">
     <div id="mtosTracePanel"></div>
 </section>
 
-<section class="mayan-card weather-shell">
-    <div class="weather-title">COGNITIVE WEATHER</div>
+<section class="mayan-card weather-shell research-block">
+    <div class="weather-title" id="weatherTitle"></div>
     <div id="weatherMap"></div>
 </section>
 
-        <section class="mayan-card">
-            <div class="section-title">NETWORK</div>
+        <section class="mayan-card research-block">
+            <div class="section-title" data-i18n="network"></div>
             <div id="networkMap"></div>
         </section>
 
-        <section class="mayan-card">
-            <div class="section-title">COLLECTIVE</div>
-            <div id="collective"></div>
-        </section>
+        <section class="mayan-card research-block">
+    <div class="section-title" id="collectiveSectionTitle">COLLECTIVE</div>
+    <div id="collective"></div>
+</section>
 
-        <section class="mayan-card">
-    <div class="section-title">ATTRACTOR</div>
+<section class="mayan-card research-block">
+    <div class="section-title" id="attractorSectionTitle">ATTRACTOR</div>
     <div id="attractorMap" style="display:none;"></div>
     <div id="interactionAnalysis"></div>
 </section>
 
-        <section class="mayan-card">
-            <div class="section-title">SERIES</div>
-            <div id="seriesBlock"></div>
-        </section>
+<section class="mayan-card research-block">
+    <div class="section-title" id="historyEfficiencySectionTitle" data-i18n="history_efficiency"></div>
+    <div id="historyEfficiencyPanel"></div>
+</section>
 
-        <section class="mayan-card">
-    <div class="section-title">TOOLS</div>
+<section class="mayan-card research-block">
+    <div class="section-title" id="seriesSectionTitle">SERIES</div>
+    <div id="seriesBlock"></div>
+</section>
+
+<section class="mayan-card research-block">
+    <div class="section-title" id="toolsSectionTitle">TOOLS</div>
 
     <div style="
         display:flex;
@@ -1776,6 +1859,24 @@ initMTOS()
 </script>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+
+<script>
+window.applyStaticTranslations = function(){
+    document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key = el.dataset.i18n
+        if ("placeholder" in el) {
+            el.placeholder = t(key)
+        } else {
+            el.innerText = t(key)
+        }
+    })
+}
+</script>
+
+<script>
+setMTOSLang('ru')
+applyStaticTranslations()
+</script>
 
 </body>
 </html>

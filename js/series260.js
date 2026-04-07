@@ -14,6 +14,62 @@ export function drawSeries(id, weather, year, month, day){
         })
     }
 
+        function st(key){
+    const lang = window.mtosLang === "ru" ? "ru" : "en"
+
+    const local = {
+        en: {
+            seriesLegend: `These charts represent temporal dynamics inside the 260-state cognitive cycle.
+
+• 7 days — short-term attention dynamics
+• 30 days — medium-range behavioral drift
+• 260 days — full-cycle attention structure
+
+• Φ series — metabolic intensity / integrated cognitive load
+• T series — processing temperature / activation intensity
+• Consistency series — internal coherence of the current regime
+
+All charts are displayed on a fixed 0..1 scale for visual comparison.`,
+
+            series7days: "7 days",
+            series30days: "30 days",
+            series260days: "260 days",
+            seriesPhi: "Φ series",
+            seriesT: "T series",
+            seriesConsistency: "Consistency series"
+        },
+        ru: {
+            seriesLegend: `Эти графики показывают временную динамику внутри 260-состояний когнитивного цикла.
+
+• 7 дней — краткосрочная динамика внимания
+• 30 дней — среднесрочный поведенческий дрейф
+• 260 дней — полная структура цикла внимания
+
+• Φ серия — метаболическая интенсивность / интегральная когнитивная нагрузка
+• T серия — температура обработки / интенсивность активации
+• Серия согласованности — внутренняя целостность текущего режима
+
+Все графики отображаются в фиксированном диапазоне 0..1 для наглядного сравнения.`,
+
+            series7days: "7 дней",
+            series30days: "30 дней",
+            series260days: "260 дней",
+            seriesPhi: "Φ серия",
+            seriesT: "T серия",
+            seriesConsistency: "Серия согласованности"
+        }
+    }
+
+    if (local[lang] && local[lang][key]) return local[lang][key]
+
+    if (typeof window.t === "function") {
+        const translated = window.t(key)
+        if (translated && translated !== key) return translated
+    }
+
+    return key
+}
+
     function drawBlock(length, title){
 
         const wrap = document.createElement("div")
@@ -44,15 +100,18 @@ export function drawSeries(id, weather, year, month, day){
 
 let data = weather.slice(0, length).map(w => w.attention)
 
-if (title === "Φ series" && Array.isArray(window.mtosMetabolicMetrics?.phiSeries)) {
+if ((title === "Φ series" || title === "Φ серия") && Array.isArray(window.mtosMetabolicMetrics?.phiSeries)) {
     data = window.mtosMetabolicMetrics.phiSeries.slice(0, length)
 }
 
-if (title === "T series" && Array.isArray(window.mtosMetabolicMetrics?.temperatureSeries)) {
+if ((title === "T series" || title === "T серия") && Array.isArray(window.mtosMetabolicMetrics?.temperatureSeries)) {
     data = window.mtosMetabolicMetrics.temperatureSeries.slice(0, length)
 }
 
-if (title === "Consistency series" && Array.isArray(window.mtosMetabolicMetrics?.consistencySeries)) {
+if (
+    (title === "Consistency series" || title === "Серия согласованности") &&
+    Array.isArray(window.mtosMetabolicMetrics?.consistencySeries)
+) {
     data = window.mtosMetabolicMetrics.consistencySeries.slice(0, length)
 }
 
@@ -163,38 +222,26 @@ const norm = data.map(v => (v - visualMin) / visualRange)
         return wrap
     }
 
-    root.appendChild(drawBlock(7, "7 days"))
-root.appendChild(drawBlock(30, "30 days"))
-root.appendChild(drawBlock(260, "260 days"))
-root.appendChild(drawBlock(30, "Φ series"))
-root.appendChild(drawBlock(30, "T series"))
-root.appendChild(drawBlock(30, "Consistency series"))
+    root.appendChild(drawBlock(7, st("series7days")))
+root.appendChild(drawBlock(30, st("series30days")))
+root.appendChild(drawBlock(260, st("series260days")))
+root.appendChild(drawBlock(30, st("seriesPhi")))
+root.appendChild(drawBlock(30, st("seriesT")))
+root.appendChild(drawBlock(30, st("seriesConsistency")))
 
     // ===============================
     // DESCRIPTION (ENGLISH)
     // ===============================
     const desc = document.createElement("div")
-    desc.style.color = "#aaa"
-    desc.style.fontSize = "12px"
-    desc.style.marginTop = "10px"
-    desc.style.maxWidth = "600px"
-    desc.style.marginInline = "auto"
-    desc.style.lineHeight = "1.4"
+desc.style.color = "#aaa"
+desc.style.fontSize = "12px"
+desc.style.marginTop = "10px"
+desc.style.maxWidth = "600px"
+desc.style.marginInline = "auto"
+desc.style.lineHeight = "1.4"
+desc.style.whiteSpace = "pre-line"
 
-    desc.innerText = `
-These charts represent temporal dynamics inside the 260-state cognitive cycle.
-
-• 7 days — short-term attention dynamics
-• 30 days — medium-range behavioral drift
-• 260 days — full-cycle attention structure
-
-• Φ series — metabolic intensity / integrated cognitive load
-• T series — processing temperature / activation intensity
-• Consistency series — internal coherence of the current regime
-
-All charts are displayed on a fixed 0..1 scale for visual comparison.
-
-`
+desc.innerText = st("seriesLegend")
 
     root.appendChild(desc)
 }

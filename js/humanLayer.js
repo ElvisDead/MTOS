@@ -168,11 +168,11 @@ function getSimpleHumanState(ds, attractorState = {}) {
     const attention = safeNum(ds?.attention, 0.5)
     const attractorType = String(attractorState?.type || "unknown").toLowerCase()
 
-    if (label === "RECOVERY") return "RECOVERY"
-    if (label === "FATIGUE") return "HEAVY"
+    if (label === "REST") return "RECOVERY"
     if (attractorType === "chaos" || conflict >= 0.52 || pressure >= 0.70) return "CHAOTIC"
     if (label === "FOCUS" || (attention >= 0.70 && stability >= 0.60)) return "FOCUSED"
-    if (label === "FLOW") return "LIGHT"
+    if (label === "INTERACT") return "LIGHT"
+    if (label === "ADJUST") return "BALANCED"
     return "BALANCED"
 }
 
@@ -192,6 +192,13 @@ function getPlainAction(mode) {
         return {
             now: "Do one core task and finish it.",
             avoid: "Avoid multitasking and avoid noisy communication."
+        }
+    }
+
+    if (m === "ADJUST") {
+        return {
+            now: "Reopen one alternative before committing.",
+            avoid: "Avoid forcing certainty too early."
         }
     }
 
@@ -386,7 +393,11 @@ function renderHumanHistoryRows(rows, name) {
         ">
             <div style="font-size:12px;color:#9ca3af;">${escapeHtml(row?.day || "?")}</div>
             <div style="font-size:13px;color:#f3f4f6;">${escapeHtml(row?.dayLabel || "UNKNOWN")}</div>
-            <div style="font-size:11px;color:#8b8b8b;">${escapeHtml(row?.recommendedMode || "UNKNOWN")} · predictability ${Number(row?.predictability ?? 0).toFixed(0)}</div>
+            <div style="font-size:11px;color:#8b8b8b;">
+    ${escapeHtml(row?.recommendedMode || "UNKNOWN")}
+    · system ${Number(row?.systemPredictability ?? row?.predictability ?? 0).toFixed(0)}
+    · behavior ${Number(row?.behaviorEfficiency ?? 0).toFixed(2)}
+</div>
         </div>
     `).join("")
 }
@@ -407,10 +418,10 @@ function getRecommendedModeFallback(ds) {
     const label = String(ds?.dayLabel || "NEUTRAL").toUpperCase()
 
     if (label === "FOCUS") return "FOCUS"
-    if (label === "FLOW") return "EXPLORE"
-    if (label === "FATIGUE") return "REST"
-    if (label === "RECOVERY") return "REST"
-    return "EXPLORE"
+if (label === "ADJUST") return "ADJUST"
+if (label === "INTERACT") return "INTERACT"
+if (label === "REST") return "REST"
+return "EXPLORE"
 }
 
 function shortText(str) {

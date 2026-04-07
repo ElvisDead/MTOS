@@ -409,7 +409,7 @@ def attention_step(a,f,user_i,user_tone,day_i,day_tone,kin,user_name=None):
 
     network_field = avg * 0.025
 
-    noise = np.random.normal(0,0.015)
+    noise = np.random.normal(0,0.028)
 
     a = (
         a*0.72 +
@@ -971,6 +971,10 @@ def simulate(user_i,user_tone,start,days,user_name=None):
         
         a = a + wave*0.04
 
+        cycle260 = np.sin(2*np.pi*t/260) * 0.025
+        
+        a = a + cycle260
+
         tone_boost = (user_tone/13)*0.03
         a = a + tone_boost
 
@@ -1432,7 +1436,7 @@ def mtos_260_weather(name,year,month,day):
 
     weather = [None]*260
 
-    for k in range(1, 261, 26):
+    for k in range(1, 261, 13):
         kin_date = today + datetime.timedelta(days=k - 1)
         
         memory_backup_seal = SEAL_MEMORY.copy()
@@ -1469,8 +1473,9 @@ def mtos_260_weather(name,year,month,day):
 
     full_weather = [None]*260
 
-    for k in range(0,260,8):
-        full_weather[k] = weather[k]
+    for k in range(0,260):
+        if weather[k] is not None:
+            full_weather[k] = weather[k]
 
     for k in range(260):
 
@@ -1521,7 +1526,7 @@ def mtos_260_weather(name,year,month,day):
     new_field_input = np.array([w["attention"] if w and "attention" in w else 0.5 for w in weather])
 
     # инерция (память системы)
-    INERTIA = 0.6
+    INERTIA = 0.35
 
     field = prev_field * INERTIA + new_field_input * (1 - INERTIA)
 
@@ -1534,7 +1539,7 @@ def mtos_260_weather(name,year,month,day):
         ]
 
     # сколько шагов "времени"
-    STEPS = 1
+    STEPS = 3
 
     for step in range(STEPS):
 

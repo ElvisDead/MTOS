@@ -69,24 +69,24 @@ summaryCard.className = "weather-summary-card"
 summaryCard.innerHTML = `
     <div class="weather-summary-top">
         <div class="weather-summary-pill">
-            Today Mode: <b>${escapeHtml(summary.mode)}</b>
+            ${window.t("today_mode") || "Режим дня"}: <b>${escapeHtml(translateWeatherMode(summary.mode))}</b>
         </div>
         <div class="weather-summary-pill">
-            Day Type: <b style="color:${summary.dayColor};">${escapeHtml(summary.dayType)}</b>
+            ${window.t("day_type") || "Тип дня"}: <b style="color:${summary.dayColor};">${escapeHtml(translateWeatherDayType(summary.dayType))}</b>
         </div>
         <div class="weather-summary-pill">
-            Energy: <b>${escapeHtml(summary.energy)}</b>
+            ${window.t("energy") || "Энергия"}: <b>${escapeHtml(window.t(summary.energy) || summary.energy)}</b>
         </div>
         <div class="weather-summary-pill">
-            Risk: <b style="color:${summary.riskColor};">${escapeHtml(summary.risk)}</b>
+           ${window.t("risk") || "Риск"}: <b style="color:${summary.riskColor};">${escapeHtml(window.t(summary.risk) || summary.risk)}</b>
         </div>
     </div>
 
     <div class="weather-summary-meta">
-        <span>Trust <b>${summary.trust}%</b></span>
-        <span>Time pressure <b>${escapeHtml(summary.timePressureLabel)}</b></span>
-        <span>Real contacts <b>${summary.realContacts}</b></span>
-        <span>Attractor <b>${escapeHtml(summary.attractorType)}</b></span>
+        <span>${window.t("trust") || "Доверие"} <b>${summary.trust}%</b></span>
+        <span>${window.t("time_pressure") || "Давление времени"} <b>${escapeHtml(summary.timePressureLabel)}</b></span>
+        <span>${window.t("real_contacts") || "Реальные контакты"} <b>${summary.realContacts}</b></span>
+        <span>${window.t("attractor") || "Аттрактор"} <b>${escapeHtml(summary.attractorType)}</b></span>
         <span>Φ <b>${Number(window.mtosMetabolicMetrics?.phi ?? 0).toFixed(3)}</b></span>
         <span>k <b>${Number(window.mtosMetabolicMetrics?.k ?? 0).toFixed(3)}</b></span>
         <span>T <b>${Number(window.mtosMetabolicMetrics?.T ?? 0).toFixed(3)}</b></span>
@@ -264,15 +264,15 @@ cell.style.height = `${cellSize}px`
 cell.style.background = `linear-gradient(180deg, rgba(${r},${g},${b},0.96) 0%, rgba(${Math.max(0, r - 18)},${Math.max(0, g - 18)},${Math.max(0, b - 18)},0.98) 100%)`
 
 if (isRisk) {
-    cell.style.background = `linear-gradient(180deg, rgba(255,70,70,0.92) 0%, rgba(${Math.max(0, r - 28)},${Math.max(0, g - 40)},${Math.max(0, b - 40)},0.98) 100%)`
+    cell.style.background = `linear-gradient(180deg, rgba(255,70,70,0.20) 0%, rgba(${Math.max(0, r - 10)},${Math.max(0, g - 12)},${Math.max(0, b - 12)},0.98) 100%)`
 }
 
 if (isHot) {
-    cell.style.background = `linear-gradient(180deg, rgba(0,255,136,0.22) 0%, rgba(${r},${Math.min(255, g + 26)},${b},0.98) 100%)`
+    cell.style.background = `linear-gradient(180deg, rgba(0,255,136,0.10) 0%, rgba(${r},${Math.min(255, g + 10)},${b},0.98) 100%)`
 }
 
 if (isCold) {
-    cell.style.background = `linear-gradient(180deg, rgba(80,190,255,0.22) 0%, rgba(${r},${g},${Math.min(255, b + 30)},0.98) 100%)`
+    cell.style.background = `linear-gradient(180deg, rgba(80,190,255,0.10) 0%, rgba(${r},${g},${Math.min(255, b + 10)},0.98) 100%)`
 }
 
 cell.style.boxSizing = "border-box"
@@ -281,46 +281,39 @@ cell.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.03)"
 
 let extraShadow = []
 let extraBorder = "1px solid rgba(255,255,255,0.14)"
-let extraOutline = ""
 let zoneStripe = null
+
 if (!isRisk && !isHot && !isCold) {
     extraBorder = "1px solid rgba(255,255,255,0.10)"
-    extraOutline = "2px solid rgba(160,170,190,0.18)"
     extraShadow.push(
         "0 0 0 1px rgba(255,255,255,0.04) inset"
     )
 }
 
-            if (isRisk) {
-    extraBorder = "1px solid rgba(255,255,255,0.14)"
-    extraOutline = "3px solid #ff4d4f"
-    zoneStripe = "#ff4d4f"
+if (isRisk) {
+    extraBorder = "2px solid rgba(255,77,79,0.82)"
+    zoneStripe = null
     extraShadow.push(
-        "0 0 0 1px rgba(255,255,255,0.08) inset",
-        "0 0 0 2px rgba(255,77,79,0.26) inset",
-        "0 0 16px rgba(255,77,79,0.34)"
+        "0 0 0 1px rgba(255,255,255,0.04) inset",
+        "0 0 8px rgba(255,77,79,0.10)"
     )
 }
 
 if (isHot) {
-    extraBorder = "1px solid rgba(255,255,255,0.14)"
-    extraOutline = "3px solid #00ff88"
-    zoneStripe = "#00ff88"
+    extraBorder = "2px solid rgba(0,255,136,0.82)"
+    zoneStripe = null
     extraShadow.push(
-        "0 0 0 1px rgba(255,255,255,0.08) inset",
-        "0 0 0 2px rgba(0,255,136,0.26) inset",
-        "0 0 16px rgba(0,255,136,0.34)"
+        "0 0 0 1px rgba(255,255,255,0.04) inset",
+        "0 0 8px rgba(0,255,136,0.10)"
     )
 }
 
 if (isCold) {
-    extraBorder = "1px solid rgba(255,255,255,0.14)"
-    extraOutline = "3px solid #50beff"
-    zoneStripe = "#50beff"
+    extraBorder = "2px solid rgba(80,190,255,0.92)"
+    zoneStripe = null
     extraShadow.push(
-        "0 0 0 1px rgba(255,255,255,0.08) inset",
-        "0 0 0 2px rgba(80,190,255,0.26) inset",
-        "0 0 16px rgba(80,190,255,0.34)"
+        "0 0 0 1px rgba(255,255,255,0.04) inset",
+        "0 0 8px rgba(80,190,255,0.12)"
     )
 }
 
@@ -333,81 +326,14 @@ if (isCold) {
             }
 
             cell.style.border = extraBorder
+            cell.style.outline = "none"
 
-            if (extraOutline) {
-    cell.style.outline = extraOutline
-    cell.style.outlineOffset = "-2px"
-} else {
-    cell.style.outline = "none"
-}
-
-            if (zoneStripe) {
-    const stripe = document.createElement("div")
-    stripe.style.position = "absolute"
-    stripe.style.left = "0"
-    stripe.style.top = "0"
-    stripe.style.bottom = "0"
-    stripe.style.width = "4px"
-    stripe.style.background = zoneStripe
-    stripe.style.borderTopLeftRadius = isMobile ? "7px" : "9px"
-    stripe.style.borderBottomLeftRadius = isMobile ? "7px" : "9px"
-    stripe.style.pointerEvents = "none"
-    stripe.style.boxShadow = `0 0 10px ${zoneStripe}`
-    cell.appendChild(stripe)
-}
+            zoneStripe = null
 
             cell.style.boxShadow = [
                 "inset 0 0 0 1px rgba(255,255,255,0.03)",
                 ...extraShadow
             ].join(", ")
-
-            if (kinState.zone === "Risk zone") {
-                const badge = document.createElement("div")
-                badge.textContent = "!"
-                badge.style.position = "absolute"
-                badge.style.left = "4px"
-                badge.style.top = "2px"
-                badge.style.width = isMobile ? "12px" : "15px"
-                badge.style.height = isMobile ? "12px" : "15px"
-                badge.style.display = "flex"
-                badge.style.alignItems = "center"
-                badge.style.justifyContent = "center"
-                badge.style.borderRadius = "999px"
-                badge.style.background = "rgba(255,50,50,0.95)"
-                badge.style.border = "1px solid rgba(255,255,255,0.55)"
-                badge.style.fontSize = isMobile ? "9px" : "11px"
-                badge.style.fontWeight = "900"
-                badge.style.color = "#ffffff"
-                badge.style.lineHeight = "1"
-                badge.style.textShadow = "0 1px 2px rgba(0,0,0,0.7)"
-                badge.style.boxShadow = "0 0 10px rgba(255,60,60,0.55)"
-                badge.style.pointerEvents = "none"
-                cell.appendChild(badge)
-            }
-
-            if (kinState.zone === "Hot zone") {
-                const badge = document.createElement("div")
-                badge.textContent = "●"
-                badge.style.position = "absolute"
-                badge.style.left = "4px"
-                badge.style.top = "2px"
-                badge.style.width = isMobile ? "12px" : "15px"
-                badge.style.height = isMobile ? "12px" : "15px"
-                badge.style.display = "flex"
-                badge.style.alignItems = "center"
-                badge.style.justifyContent = "center"
-                badge.style.borderRadius = "999px"
-                badge.style.background = "rgba(0,255,136,0.16)"
-                badge.style.border = "1px solid rgba(0,255,136,0.75)"
-                badge.style.fontSize = isMobile ? "10px" : "12px"
-                badge.style.fontWeight = "900"
-                badge.style.color = "#00ff88"
-                badge.style.lineHeight = "1"
-                badge.style.textShadow = "0 0 8px rgba(0,255,136,0.75)"
-                badge.style.boxShadow = "0 0 10px rgba(0,255,136,0.40)"
-                badge.style.pointerEvents = "none"
-                cell.appendChild(badge)
-            }
 
             if (usersInKin.length > 0) {
                 const marker = document.createElement("div")
@@ -469,56 +395,56 @@ if (isCold) {
     const legend = document.createElement("div")
     legend.className = "weather-legend-card"
     legend.innerHTML = `
-        <div class="weather-mode-title">Map mode</div>
+    <div class="weather-mode-title">${window.t("map_mode") || "Режим карты"}</div>
 
-        <div id="modeButtons" class="weather-mode-buttons">
-            <button data-mode="full" onclick="setWeatherMode('full')">Full</button>
-            <button data-mode="field" onclick="setWeatherMode('field')">Users / Field</button>
-            <button data-mode="pressure" onclick="setWeatherMode('pressure')">Pressure</button>
+    <div id="modeButtons" class="weather-mode-buttons">
+        <button data-mode="full" onclick="setWeatherMode('full')">${window.t("mode_full") || "Поле"}</button>
+        <button data-mode="field" onclick="setWeatherMode('field')">${window.t("mode_users_field") || "Пользователи / Поле"}</button>
+        <button data-mode="pressure" onclick="setWeatherMode('pressure')">${window.t("mode_pressure") || "Давление"}</button>
+    </div>
+
+    <div class="weather-copy">
+        <b>${window.t("mode_full") || "Поле"}</b> — ${window.t("desc_full") || "Общее состояние поля."}<br>
+        <b>${window.t("mode_users_field") || "Пользователи / Поле"}</b> — ${window.t("desc_users") || "Где сосредоточены участники и активные зоны."}<br>
+        <b>${window.t("mode_pressure") || "Давление"}</b> — ${window.t("desc_pressure") || "Где накапливается перегрузка и напряжение."}
+    </div>
+
+    <div class="weather-legend-title" style="margin-top:14px;">${window.t("legend") || "Легенда"}</div>
+
+    <div class="weather-dots">
+        <div class="weather-dot-item">
+            <span class="weather-dot" style="background:#60a5fa;"></span>
+            <span>${window.t("low_field") || "Низкое поле"}</span>
         </div>
-
-        <div class="weather-copy">
-            <b>Full</b> — overall cognitive climate.<br>
-            <b>Users / Field</b> — where participants and active zones are concentrated.<br>
-            <b>Pressure</b> — where overload and tension accumulate.
+        <div class="weather-dot-item">
+            <span class="weather-dot" style="background:#8b5cf6;"></span>
+            <span>${window.t("balanced") || "Сбалансированное"}</span>
         </div>
-
-        <div class="weather-legend-title" style="margin-top:14px;">Legend</div>
-
-        <div class="weather-dots">
-            <div class="weather-dot-item">
-                <span class="weather-dot" style="background:#60a5fa;"></span>
-                <span>Low field</span>
-            </div>
-            <div class="weather-dot-item">
-                <span class="weather-dot" style="background:#8b5cf6;"></span>
-                <span>Balanced</span>
-            </div>
-            <div class="weather-dot-item">
-                <span class="weather-dot" style="background:#fb7185;"></span>
-                <span>High field</span>
-            </div>
+        <div class="weather-dot-item">
+            <span class="weather-dot" style="background:#fb7185;"></span>
+            <span>${window.t("high_field") || "Высокое поле"}</span>
         </div>
+    </div>
 
-        <div class="weather-legend-title" style="margin-top:14px;">Quick reading</div>
+    <div class="weather-legend-title" style="margin-top:14px;">${window.t("quick_reading") || "Быстрое чтение"}</div>
 
-        <div class="weather-copy">
-            <b style="color:#00ff88;">● Hot zone</b> — better for movement, focus, and active steps.<br>
-            <b style="color:#66ccff;">◌ Cold zone</b> — better for rest, observation, and low-pressure tasks.<br>
-            <b style="color:#ff6b6b;">! Risk zone</b> — tension, overload, or conflict may rise here.<br>
-            <b>White frame</b> — your current kin.<br>
-            <b>Yellow frame</b> — today’s kin.
-        </div>
+    <div class="weather-copy">
+        <b style="color:#00ff88;">${window.t("hot_zone") || "Горячая зона"}</b> — ${window.t("hot_zone_desc") || "Лучше подходит для движения, фокуса и активных шагов."}<br>
+        <b style="color:#66ccff;">${window.t("cold_zone") || "Холодная зона"}</b> — ${window.t("cold_zone_desc") || "Лучше подходит для отдыха, наблюдения и задач с низким давлением."}<br>
+        <b style="color:#ff6b6b;">${window.t("risk_zone") || "Рисковая зона"}</b> — ${window.t("risk_zone_desc") || "Здесь может расти напряжение, перегрузка или конфликт."}<br>
+        <b>${window.t("white_frame") || "Белая рамка"}</b> — ${window.t("white_frame_desc") || "твой текущий кин."}<br>
+        <b>${window.t("yellow_frame") || "Жёлтая рамка"}</b> — ${window.t("yellow_frame_desc") || "сегодняшний кин."}
+    </div>
 
-        <div class="weather-legend-title" style="margin-top:14px;">About this map</div>
+    <div class="weather-legend-title" style="margin-top:14px;">${window.t("about_map") || "О карте"}</div>
 
-        <div class="weather-copy">
-            13×20 cognitive field (260 states).<br><br>
-            Horizontal → Seal (1–20)<br>
-            Vertical → Tone (1–13)<br><br>
-            Click any cell to inspect the current state.
-        </div>
-    `
+    <div class="weather-copy">
+        ${window.t("map_desc") || "Поле 13×20 (260 состояний)."}<br><br>
+        ${window.t("horizontal") || "Горизонталь"} → Seal (1 – 20)<br>
+        ${window.t("vertical") || "Вертикаль"} → Tone (1 – 13)<br><br>
+        ${window.t("click_hint") || "Нажмите на клетку для анализа состояния."}
+    </div>
+`
 
     const stage = document.createElement("div")
     stage.className = "weather-stage"
@@ -536,6 +462,15 @@ if (isCold) {
     root.appendChild(stage)
 
     setTimeout(updateModeButtons, 0)
+}
+
+function getKinTitle(kin){
+    const sealIndex = ((Number(kin) - 1) % 20 + 20) % 20
+    const sealName = Array.isArray(window.SEALS) && window.SEALS[sealIndex]
+        ? window.SEALS[sealIndex]
+        : `Seal ${sealIndex + 1}`
+
+    return `Kin ${kin} · ${sealName}`
 }
 
 function onCellClick(kin, e){
@@ -558,21 +493,21 @@ function onCellClick(kin, e){
     const mode = String(window.mtosDecision?.mode || "EXPLORE").toUpperCase()
     const usersHere = window._weatherUsersByKin?.[kin] || []
 
-    let advice = "Observe the zone."
-    let avoid = "Avoid overreaction."
+    let advice = window.t("advice_default") || "Наблюдай зону"
+    let avoid = window.t("avoid_default") || "Избегай переоценки"
 
     if (state.zone === "Hot zone") {
-        advice = "Good zone for action, movement, and active decisions."
-        avoid = "Avoid wasting the window."
+        advice = window.t("advice_hot") || "Хорошая зона для действий, движения и активных решений."
+        avoid = window.t("avoid_hot") || "Избегай траты окна."
     } else if (state.zone === "Cold zone") {
-        advice = "Better for rest, observation, or low-pressure tasks."
-        avoid = "Avoid forcing output."
+        advice = window.t("advice_cold") || "Лучше для отдыха, наблюдения или задач с низким давлением."
+        avoid = window.t("avoid_cold") || "Избегай принудительного вывода."
     } else if (state.zone === "Risk zone") {
-        advice = "Tension is high here. Move carefully."
-        avoid = "Avoid conflict, overload, and irreversible moves."
+        advice = window.t("advice_risk") || "Здесь высокое напряжение. Двигайтесь осторожно."
+        avoid = window.t("avoid_risk") || "Избегай конфликта, перегрузки и необратимых действий."
     } else {
-        advice = "Balanced zone for moderate work."
-        avoid = "Avoid reading too much into weak signals."
+        advice = window.t("advice_balanced") || "Сбалансированная зона для умеренной работы."
+        avoid = window.t("avoid_balanced") || "Избегай чрезмерной интерпретации слабых сигналов."
     }
 
     const uniqueUsers = []
@@ -592,58 +527,60 @@ const usersHtml = uniqueUsers.length
             : ""
         return `<div>• ${escapeHtml(u.name)}${escapeHtml(loc)}</div>`
     }).join("")
-    : `<div style="color:#888;">No participants in this kin</div>`
+    : `<div style="color:#888;">${window.t("no_participants_in_kin") || "В этом кине нет участников"}</div>`
 
     popup.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-weight:bold; font-size:14px;">
-                Kin ${kin} · ${escapeHtml(state.zone)}
-            </div>
-            <button id="closeKinPopup" style="
-                background:#111827;
-                color:#cbd5e1;
-                border:1px solid #334155;
-                border-radius:6px;
-                cursor:pointer;
-                font-size:11px;
-                padding:2px 6px;
-            ">×</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:bold; font-size:14px;">
+            ${escapeHtml(getKinTitle(kin))} · ${escapeHtml(window.t(state.zone) || state.zone)}
         </div>
+        <button id="closeKinPopup" style="
+            background:#111827;
+            color:#cbd5e1;
+            border:1px solid #334155;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:11px;
+            padding:2px 6px;
+        ">×</button>
+    </div>
 
-        <div style="display:grid; gap:4px; margin-bottom:10px;">
-            <div>Attention: <b>${state.attention.toFixed(2)}</b></div>
-            <div>Pressure: <b>${clamp01(Number(pressureRaw)).toFixed(2)}</b></div>
-            <div>Conflict: <b>${state.conflict.toFixed(2)}</b></div>
-            <div>Attractor: <b>${attractor.toFixed(2)}</b></div>
-            <div>Φ: <b>${Number(phi).toFixed(2)}</b></div>
+    <div style="display:grid; gap:4px; margin-bottom:10px;">
+        <div>${window.t("attention") || "Внимание"}: <b>${state.attention.toFixed(2)}</b></div>
+        <div>${window.t("pressure") || "Давление"}: <b>${clamp01(Number(pressureRaw)).toFixed(2)}</b></div>
+        <div>${window.t("conflict") || "Конфликт"}: <b>${state.conflict.toFixed(2)}</b></div>
+        <div>${window.t("attractor") || "Аттрактор"}: <b>${attractor.toFixed(2)}</b></div>
+        <div>Φ: <b>${Number(phi).toFixed(2)}</b></div>
+    </div>
+
+    <div style="margin-top:8px; padding:8px 10px; border:1px solid rgba(255,255,255,0.08); border-radius:10px; background:rgba(255,255,255,0.03);">
+        <div style="font-size:11px; letter-spacing:0.08em; color:#8b949e; text-transform:uppercase; margin-bottom:6px;">
+            ${window.t("what_to_do_here") || "Что делать здесь"}
         </div>
+        <div style="color:#f3f4f6; margin-bottom:6px;">${escapeHtml(advice)}</div>
+        <div style="color:#9ca3af;">${window.t("avoid") || "Избегать"}: ${escapeHtml(avoid)}</div>
+    </div>
 
-        <div style="margin-top:8px; padding:8px 10px; border:1px solid rgba(255,255,255,0.08); border-radius:10px; background:rgba(255,255,255,0.03);">
-            <div style="font-size:11px; letter-spacing:0.08em; color:#8b949e; text-transform:uppercase; margin-bottom:6px;">What to do here</div>
-            <div style="color:#f3f4f6; margin-bottom:6px;">${escapeHtml(advice)}</div>
-            <div style="color:#9ca3af;">Avoid: ${escapeHtml(avoid)}</div>
-        </div>
+    <div style="margin-top:10px; padding-top:8px; border-top:1px solid #333;">
+        <div style="font-weight:bold; margin-bottom:4px;">${window.t("participants") || "Участники"}:</div>
+        ${usersHtml}
+    </div>
 
+    ${
+        ds ? `
         <div style="margin-top:10px; padding-top:8px; border-top:1px solid #333;">
-            <div style="font-weight:bold; margin-bottom:4px;">Participants:</div>
-            ${usersHtml}
-        </div>
-
-        ${
-            ds ? `
-            <div style="margin-top:10px; padding-top:8px; border-top:1px solid #333;">
-                <div style="color:${escapeHtml(ds.dayColor || "#d1d5db")}; font-weight:bold;">
-                    Your day type: ${escapeHtml(ds.dayLabel || "UNKNOWN")}
-                </div>
-                <div>Current mode: ${escapeHtml(mode)}</div>
-                <div>Day index: ${Number(ds.dayIndex ?? 0).toFixed(2)}</div>
+            <div style="color:${escapeHtml(ds.dayColor || "#d1d5db")}; font-weight:bold;">
+                ${window.t("your_day_type") || "Тип твоего дня"}: ${escapeHtml(translateWeatherDayType(ds.dayLabel || "UNKNOWN"))}
             </div>
-            ` : ""
-        }
-
-        <div style="margin-top:8px; color:#aaa;">
-            Tone: ${((kin - 1) % 13) + 1} · Seal: ${((kin - 1) % 20) + 1}
+            <div>${window.t("current_mode") || "Текущий режим"}: ${escapeHtml(translateWeatherMode(mode))}</div>
+            <div>${window.t("day_index") || "Индекс дня"}: ${Number(ds.dayIndex ?? 0).toFixed(2)}</div>
         </div>
+        ` : ""
+    }
+
+    <div style="margin-top:8px; color:#aaa;">
+        ${window.t("tone") || "Тон"}: ${((kin - 1) % 13) + 1} · ${window.t("seal") || "Печать"}: ${((kin - 1) % 20) + 1}
+    </div>
     `
 
     popup.style.display = "block"
@@ -713,18 +650,18 @@ const usersHtml = uniqueUsers.length
             : ""
         return `<div>• ${escapeHtml(u.name)}${loc}</div>`
     }).join("")
-    : `<div style="color:#888;">No users</div>`
+    : `<div style="color:#888;">${window.t("no_users") || "Нет пользователей"}</div>`
 
     popup.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:6px;">Kin ${kin} · ${escapeHtml(state.zone)}</div>
-        <div>Φ: ${Number(phi).toFixed(3)}</div>
-        <div>Attention: ${state.attention.toFixed(2)}</div>
-        <div>Pressure: ${state.pressure.toFixed(2)}</div>
-        <div style="margin-top:8px; padding-top:6px; border-top:1px solid #333;">
-            <div style="font-weight:bold; margin-bottom:4px;">Users:</div>
-            ${usersHtml}
-        </div>
-    `
+    <div style="font-weight:bold; margin-bottom:6px;">${escapeHtml(getKinTitle(kin))} · ${window.t(state.zone) || state.zone}</div>
+    <div>Φ: ${Number(phi).toFixed(3)}</div>
+    <div>${window.t("attention") || "Внимание"}: ${state.attention.toFixed(2)}</div>
+    <div>${window.t("pressure") || "Давление"}: ${state.pressure.toFixed(2)}</div>
+    <div style="margin-top:8px; padding-top:6px; border-top:1px solid #333;">
+        <div style="font-weight:bold; margin-bottom:4px;">${window.t("users") || "Пользователи"}:</div>
+        ${usersHtml}
+    </div>
+`
 
     popup.style.display = "block"
 }
@@ -792,6 +729,25 @@ function escapeHtml(value){
         .replaceAll(">", "&gt;")
         .replaceAll("\"", "&quot;")
         .replaceAll("'", "&#039;")
+}
+
+function translateWeatherMode(mode){
+    const m = String(mode || "").toUpperCase()
+    if (m === "FOCUS") return window.t("modeFocus") || "ФОКУС"
+    if (m === "ADJUST") return window.t("modeAdjust") || "ПОДСТРОЙКА"
+    if (m === "REST") return window.t("modeRest") || "ОТДЫХ"
+    if (m === "INTERACT") return window.t("modeInteract") || "КОНТАКТ"
+    return window.t("modeExplore") || "ИССЛЕДОВАНИЕ"
+}
+
+function translateWeatherDayType(dayType){
+    const d = String(dayType || "").toUpperCase()
+    if (d === "FOCUS") return window.t("modeFocus") || "ФОКУС"
+    if (d === "ADJUST") return window.t("modeAdjust") || "ПОДСТРОЙКА"
+    if (d === "REST") return window.t("modeRest") || "ОТДЫХ"
+    if (d === "INTERACT") return window.t("modeInteract") || "КОНТАКТ"
+    if (d === "EXPLORE") return window.t("modeExplore") || "ИССЛЕДОВАНИЕ"
+    return dayType || ""
 }
 
 function getWeatherEnergyLabel(ds = {}){
@@ -907,25 +863,25 @@ function getKinHumanState(kin){
         ? clamp01(Number(window._attractorField[i] ?? 0.5))
         : 0.5
 
-        let zone = "Balanced zone"
+let zone = "Balanced zone"
 
 const riskScore =
-    pressure * 0.72 +
-    conflict * 0.28
+    pressure * 0.68 +
+    conflict * 0.32
 
 const hotScore =
-    attention * 0.64 +
-    attractor * 0.36
+    attention * 0.58 +
+    attractor * 0.42
 
 const coldScore =
-    (1 - attention) * 0.64 +
-    (1 - attractor) * 0.36
+    (1 - attention) * 0.58 +
+    (1 - attractor) * 0.42
 
-if (riskScore >= 0.34) {
+if (riskScore >= 0.28) {
     zone = "Risk zone"
-} else if (hotScore >= 0.54) {
+} else if (hotScore >= 0.50) {
     zone = "Hot zone"
-} else if (coldScore >= 0.54) {
+} else if (coldScore >= 0.50) {
     zone = "Cold zone"
 }
 
