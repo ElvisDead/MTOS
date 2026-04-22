@@ -90,7 +90,10 @@ function maybeAnonId(value) {
     if (!clean) return value
 
     if (/^u\d{3,}$/.test(clean)) return clean
-    if (isDateLikeString(clean)) return clean
+
+    if (isDateLikeString(clean)) {
+        return "[redacted-date]"
+    }
 
     return getAnonId(clean)
 }
@@ -203,16 +206,28 @@ function anonymizeFeedbackMap(obj) {
         if (!value || typeof value !== "object") continue
 
         const anonId = getAnonId(value.name || value.user_id)
-        const safeDay = "session_day"
-        const anonKey = `${safeDay}__${anonId || "u000"}`
+        const anonKey = `session_day__${anonId || "u000"}`
 
         out[anonKey] = {
-            ...value,
-            day: safeDay,
-            user_id: anonId
+            user_id: anonId,
+            day: "session_day",
+            value: String(value.value || "neutral"),
+            userKin: Number(value.userKin ?? 0) || 0,
+            todayKin: Number(value.todayKin ?? 0) || 0,
+            label: String(value.label || ""),
+            mode: String(value.mode || ""),
+            attention: Number(value.attention ?? 0) || 0,
+            activity: Number(value.activity ?? 0) || 0,
+            pressure: Number(value.pressure ?? 0) || 0,
+            conflict: Number(value.conflict ?? 0) || 0,
+            field: Number(value.field ?? 0) || 0,
+            stability: Number(value.stability ?? 0) || 0,
+            attractorType: String(value.attractorType || ""),
+            attractorIntensity: Number(value.attractorIntensity ?? 0) || 0,
+            temporalMode: String(value.temporalMode || ""),
+            timePressure: Number(value.timePressure ?? 0) || 0,
+            auto: Boolean(value.auto)
         }
-
-        delete out[anonKey].name
     }
 
     return out
@@ -228,17 +243,14 @@ function anonymizeRelationFeedbackMap(obj) {
 
         const aId = getAnonId(value.a || value.user_a_id)
         const bId = getAnonId(value.b || value.user_b_id)
-        const anonKey = `${value.day || "unknown"}__${[aId, bId].filter(Boolean).sort().join("::")}`
+        const anonKey = `session_day__${[aId, bId].filter(Boolean).sort().join("::")}`
 
         out[anonKey] = {
-            ...value,
             user_a_id: aId,
-            user_b_id: bId
+            user_b_id: bId,
+            value: String(value.value || "neutral"),
+            day: "session_day"
         }
-
-        delete out[anonKey].a
-        delete out[anonKey].b
-        delete out[anonKey].name
     }
 
     return out
@@ -247,12 +259,12 @@ function anonymizeRelationFeedbackMap(obj) {
 function anonymizeTodayContacts(obj) {
     if (!obj || typeof obj !== "object") return {}
 
-    const out = {}
+    const out = {
+        session_day: {}
+    }
 
-    for (const [dayKey, row] of Object.entries(obj)) {
+    for (const row of Object.values(obj)) {
         if (!row || typeof row !== "object") continue
-
-        out[dayKey] = {}
 
         for (const item of Object.values(row)) {
             if (!item || typeof item !== "object") continue
@@ -261,11 +273,9 @@ function anonymizeTodayContacts(obj) {
             const bId = getAnonId(item.b || item.user_b_id)
             const pairKey = [aId, bId].filter(Boolean).sort().join("::")
 
-            out[dayKey][pairKey] = {
+            out.session_day[pairKey] = {
                 user_a_id: aId,
                 user_b_id: bId,
-                t: Number(item.t ?? 0) || 0,
-                expiresAt: Number(item.expiresAt ?? 0) || 0,
                 weight: Number(item.weight ?? 0) || 0
             }
         }
@@ -314,7 +324,7 @@ function anonymizeUserMemory(obj) {
     const out = {}
 
     for (const [key, value] of Object.entries(obj)) {
-        out[getAnonId(key)] = value
+        out[getAnonId(key)] = anonymizeDeep(value, "userMemoryEntry")
     }
 
     return out
@@ -398,6 +408,40 @@ function anonymizeDeep(value, keyName = "") {
 
     for (const [k, v] of Object.entries(value)) {
         const lowerKey = String(k).toLowerCase()
+
+                if (
+            lowerKey === "birth" ||
+            lowerKey === "birthdate" ||
+            lowerKey === "birthday" ||
+            lowerKey === "dateofbirth" ||
+            lowerKey === "dob"
+        ) {
+            continue
+        }
+
+        if (typeof v === "string" && isDateLikeString(v)) {
+            if (
+                lowerKey.includes("birth") ||
+                lowerKey.includes("dob") ||
+                lowerKey.includes("date")
+            ) {
+                continue
+            }
+        }
+
+                if (
+            lowerKey === "exportedat" ||
+            lowerKey === "updatedat" ||
+            lowerKey === "createdat" ||
+            lowerKey === "resolvedat" ||
+            lowerKey === "targettime" ||
+            lowerKey === "laststamp" ||
+            lowerKey === "t" ||
+            lowerKey === "day" ||
+            lowerKey === "date"
+        ) {
+            continue
+        }
 
         if (
             lowerKey === "name" ||
@@ -532,19 +576,23 @@ function anonymizeDeep(value, keyName = "") {
             continue
         }
 
-        if (lowerKey === "laststamp" && typeof v === "string") {
-    const parts = String(v).split("_")
-    if (parts.length >= 3) {
-        const originalName = parts[0]
-        const rest = parts.slice(1).join("_")
-        out[k] = `${getAnonId(originalName)}_${rest}`
-    } else {
-        out[k] = maybeAnonId(v)
-    }
-    continue
-}
+        if (lowerKey === "laststamp") {
+            continue
+        }
 
         if (typeof v === "string") {
+
+            if (isDateLikeString(v)) {
+                if (
+                    lowerKey.includes("birth") ||
+                    lowerKey.includes("dob") ||
+                    lowerKey.includes("date") ||
+                    lowerKey.includes("stamp")
+                ) {
+                    out[k] = "[redacted-date]"
+                    continue
+                }
+            }
     if (
         lowerKey === "user_id" ||
         lowerKey === "userid" ||
@@ -575,6 +623,15 @@ function anonymizeDeep(value, keyName = "") {
             }
 
             out[k] = v
+            continue
+        }
+
+                if (lowerKey === "dayevolution" && isPlainObject(v)) {
+            const copy = { ...v }
+            delete copy.updatedAt
+            delete copy.day
+            delete copy.date
+            out[k] = anonymizeDeep(copy, k)
             continue
         }
 
@@ -632,9 +689,24 @@ function anonymizePayload(payload) {
     }
 
     cleaned.input.user_id = inputAnonId
-    delete cleaned.input.name
-    delete cleaned.input.date
-    delete cleaned.input.currentRunDay
+    delete cleaned.exportedAt
+delete cleaned.input.name
+delete cleaned.input.date
+delete cleaned.input.currentRunDay
+delete cleaned.input.year
+delete cleaned.input.month
+delete cleaned.input.day
+delete cleaned.input.birth
+delete cleaned.input.birthDate
+delete cleaned.input.birthday
+
+    if (cleaned.logs && typeof cleaned.logs === "object") {
+        delete cleaned.logs.exportedAt
+    }
+
+    if (cleaned.localStorageState && typeof cleaned.localStorageState === "object") {
+        delete cleaned.localStorageState.dayEvolution
+    }
 
     cleaned.anonymized = true
     cleaned.anonymization = {

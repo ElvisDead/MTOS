@@ -2,6 +2,7 @@ import { KinRegistry } from "./kinRegistry.js"
 import { getRecommendedTemporalMode } from "./timePressure.js"
 import { loadNetworkHistory, saveNetworkState } from "./networkHistory.js"
 import { getRelationLabel } from "./relationTypes.js"
+import { t } from "./mtosUI/mtosI18n.js"
 
 let historyIndex = null
 
@@ -110,6 +111,32 @@ function resolveNetworkScore(rawScore) {
     return window.resolveSharedRelationScore
         ? window.resolveSharedRelationScore(rawScore, attractorState, timePressureState)
         : Math.max(-1, Math.min(1, Number(rawScore || 0)))
+}
+
+function isTodayContactResolved(aName, bName) {
+    const aId = typeof window.getUserId === "function" ? window.getUserId(aName) : aName
+    const bId = typeof window.getUserId === "function" ? window.getUserId(bName) : bName
+
+    if (!aId || !bId) return false
+
+    const pairKey = [String(aId), String(bId)].sort().join("::")
+    const dayKey = typeof window.getCurrentRunDay === "function"
+        ? window.getCurrentRunDay()
+        : new Date().toISOString().slice(0, 10)
+
+    const storageKey = String(window.MTOS_TODAY_CONTACTS_KEY || "mtos_today_contacts_v2")
+    let db = {}
+
+    try {
+        db = JSON.parse(localStorage.getItem(storageKey) || "{}")
+    } catch (e) {
+        db = {}
+    }
+
+    const row = db && typeof db === "object" ? db[dayKey] : null
+    if (!row || typeof row !== "object") return false
+
+    return !!row[pairKey]
 }
 
 function getRelationBucket(scoreAB, scoreBA, isTodayRealContact) {
@@ -265,6 +292,15 @@ function getNodeStrokeColor(state) {
     return "rgba(255,255,255,0.16)"
 }
 
+window._networkInvalidate = () => {
+    window._networkEdgesCache = {
+        key: "",
+        edges: null,
+        allKey: "",
+        allEdges: null
+    }
+}
+
 function buildEdges(users, memory, locked, matrix) {
     const edges = []
 
@@ -276,15 +312,22 @@ function buildEdges(users, memory, locked, matrix) {
             const key1 = `${u1.name}->${u2.name}`
             const key2 = `${u2.name}->${u1.name}`
 
-            if (locked[key1] || locked[key2]) continue
+            //if (locked[key1] || locked[key2]) continue
 
-const rawAB = Number(memory[key1] || 0)
-const rawBA = Number(memory[key2] || 0)
+let rawAB = Number(memory[key1] ?? 0)
+let rawBA = Number(memory[key2] ?? 0)
 
-if (rawAB === 0 || rawBA === 0) continue
+const isTodayRealContact = isTodayContactResolved(u1.name, u2.name)
 
-const baseScoreAB = resolveNetworkScore(rawAB)
-const baseScoreBA = resolveNetworkScore(rawBA)
+if (rawAB === 0 && rawBA === 0 && !isTodayRealContact) {
+    continue
+}
+
+const effectiveAB = rawAB !== 0 ? rawAB : (isTodayRealContact ? 0.01 : rawBA)
+const effectiveBA = rawBA !== 0 ? rawBA : (isTodayRealContact ? 0.01 : rawAB)
+
+const baseScoreAB = resolveNetworkScore(effectiveAB)
+const baseScoreBA = resolveNetworkScore(effectiveBA)
 
 const feedbackDay = typeof window.getCurrentRunDay === "function"
     ? window.getCurrentRunDay()
@@ -299,7 +342,6 @@ const scoreAB = clamp(baseScoreAB + relationFeedbackScalar, -1, 1)
 const scoreBA = clamp(baseScoreBA + relationFeedbackScalar, -1, 1)
 
 const displayScore = (scoreAB + scoreBA) / 2
-const isTodayRealContact = !!(window.isTodayContact && window.isTodayContact(u1.name, u2.name))
 
             if (!relationPassesFilter(scoreAB, scoreBA, isTodayRealContact)) continue
 
@@ -327,29 +369,6 @@ edges.push({
 })
         }
     }
-
-    window.currentNetworkRelations = edges.map(edge => {
-        const relationVisual = getRelationVisual(
-            edge.scoreAB,
-            edge.scoreBA,
-            edge.isTodayRealContact
-        )
-
-        return {
-    id: `${edge.a}->${edge.b}`,
-    source: edge.a,
-    target: edge.b,
-    type: relationVisual.label,
-    strength: Number(edge.displayScore ?? 0),
-    scoreAB: Number(edge.scoreAB ?? 0),
-    scoreBA: Number(edge.scoreBA ?? 0),
-    baseScoreAB: Number(edge.baseScoreAB ?? 0),
-    baseScoreBA: Number(edge.baseScoreBA ?? 0),
-    relationFeedbackScalar: Number(edge.relationFeedbackScalar ?? 0),
-    isTodayRealContact: !!edge.isTodayRealContact,
-    attractorValue: edge.attractorValue
-}
-    })
 
     return edges
 }
@@ -442,17 +461,73 @@ function computeNetworkFeedback(users, edges) {
 }
 
 function ensureRelationFilterSetter() {
-    if (typeof window.setNetworkRelationFilter === "function") return
-
     window.setNetworkRelationFilter = (filter) => {
         window.networkRelationFilter = filter || "all"
-        if (typeof window._rerenderMTOS === "function") {
-            window._rerenderMTOS()
+
+        if (typeof window._networkRedraw === "function") {
+            window._networkRedraw()
+        } else if (typeof window._rerenderNetworkOnly === "function") {
+            window._rerenderNetworkOnly()
         }
     }
 }
 
+function ensureNetworkModeSetter() {
+    window.setNetworkMode = (mode) => {
+        if (mode === "edit") {
+            window.networkMode = "edit"
+        } else if (mode === "link") {
+            window.networkMode = "link"
+        } else if (mode === "contact") {
+            window.networkMode = "contact"
+        } else {
+            window.networkMode = "interaction"
+        }
+
+        const btnEdit = document.getElementById("modeEdit")
+        const btnLink = document.getElementById("modeLink")
+        const btnContact = document.getElementById("modeContact")
+
+        if (btnEdit) {
+            const isEdit = window.networkMode === "edit"
+            btnEdit.style.background = isEdit ? "#00ff88" : "rgba(255,255,255,0.04)"
+            btnEdit.style.color = isEdit ? "#04110d" : "#e5e7eb"
+            btnEdit.style.borderColor = isEdit ? "transparent" : "rgba(255,255,255,0.12)"
+            btnEdit.style.boxShadow = isEdit
+                ? "0 0 20px rgba(0,255,136,0.20)"
+                : "0 8px 24px rgba(0,0,0,0.22)"
+        }
+
+        if (btnLink) {
+            const isLink = window.networkMode === "link"
+            btnLink.style.background = isLink ? "#66ccff" : "rgba(255,255,255,0.04)"
+            btnLink.style.color = isLink ? "#041018" : "#e5e7eb"
+            btnLink.style.borderColor = isLink ? "transparent" : "rgba(255,255,255,0.12)"
+            btnLink.style.boxShadow = isLink
+                ? "0 0 20px rgba(102,204,255,0.18)"
+                : "0 8px 24px rgba(0,0,0,0.22)"
+        }
+
+        if (btnContact) {
+            const isContact = window.networkMode === "contact"
+            btnContact.style.background = isContact ? "#ffd166" : "rgba(255,255,255,0.04)"
+            btnContact.style.color = isContact ? "#1a1405" : "#e5e7eb"
+            btnContact.style.borderColor = isContact ? "transparent" : "rgba(255,255,255,0.12)"
+            btnContact.style.boxShadow = isContact
+                ? "0 0 20px rgba(255,209,102,0.20)"
+                : "0 8px 24px rgba(0,0,0,0.22)"
+        }
+
+        if (typeof window._networkRedraw === "function") {
+            window._networkRedraw()
+        } else if (typeof window._rerenderNetworkOnly === "function") {
+    window._rerenderNetworkOnly()
+}
+    }
+}
+
 export function drawNetwork(id, users, onSelect, matrix = null) {
+
     if (window._networkRAF) {
         cancelAnimationFrame(window._networkRAF)
         window._networkRAF = null
@@ -464,6 +539,7 @@ export function drawNetwork(id, users, onSelect, matrix = null) {
     }
 
     ensureRelationFilterSetter()
+    ensureNetworkModeSetter()
 
     const root = document.getElementById(id)
     if (!root) return
@@ -482,7 +558,19 @@ try {
 }
 window._memoryCache = memory
 
+function reloadMemoryFromStorage() {
+    try {
+        memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    } catch (e) {
+        memory = {}
+    }
+    window._memoryCache = memory
+    reloadLockedFromStorage()
+}
+
     let activeUsers = Array.isArray(users) ? users.slice() : []
+
+    window.currentUsers = JSON.parse(JSON.stringify(activeUsers))
 
     if (historyIndex !== null) {
         const history = loadNetworkHistory()
@@ -493,8 +581,18 @@ window._memoryCache = memory
         }
     }
 
-    const locked = window._lockedCache || JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+    let locked = {}
+
+function reloadLockedFromStorage() {
+    try {
+        locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+    } catch (e) {
+        locked = {}
+    }
     window._lockedCache = locked
+}
+
+reloadLockedFromStorage()
 
     const N = activeUsers.length
 
@@ -504,6 +602,73 @@ window._memoryCache = memory
     panel.style.gap = "10px"
     panel.style.flexWrap = "wrap"
     panel.style.marginBottom = "14px"
+
+    window._networkEdgesCache = window._networkEdgesCache || {
+    key: "",
+    edges: null,
+    allKey: "",
+    allEdges: null
+}
+
+function makeAllEdgesKey() {
+    const sortedMemory = Object.keys(memory || {})
+        .sort()
+        .map(key => [key, Number(memory[key] ?? 0)])
+
+    const sortedLocked = Object.keys(locked || {})
+        .sort()
+        .map(key => [key, !!locked[key]])
+
+    return JSON.stringify({
+        users: activeUsers.map(u => ({
+            name: u.name,
+            kin: u.kin,
+            weight: u.weight
+        })),
+        day: typeof window.getCurrentRunDay === "function"
+            ? window.getCurrentRunDay()
+            : "",
+        tp: Number(window.mtosTimePressureSummary?.value ?? 0),
+        attractorType: String(window.mtosAttractorState?.type || "unknown"),
+        attractorIntensity: Number(window.mtosAttractorState?.intensity ?? 0),
+        memory: sortedMemory,
+        locked: sortedLocked
+    })
+}
+
+function getAllEdges() {
+    return buildEdges(activeUsers, memory, locked, matrix)
+}
+
+function getEdges() {
+    const filter = String(window.networkRelationFilter || "all")
+    const cacheKey = makeAllEdgesKey() + "::filter=" + filter
+
+    if (
+        window._networkEdgesCache &&
+        window._networkEdgesCache.key === cacheKey &&
+        Array.isArray(window._networkEdgesCache.edges)
+    ) {
+        return window._networkEdgesCache.edges
+    }
+
+    const edges = getAllEdges()
+
+    window._networkEdgesCache.key = cacheKey
+    window._networkEdgesCache.edges = edges
+
+    return edges
+}
+
+function invalidateEdgesCache() {
+    window._networkEdgesCache = {
+        key: "",
+        edges: null,
+        allKey: "",
+        allEdges: null
+    }
+    physicsEdges = []
+}
 
     function styleModeBtn(btn) {
         btn.style.background = "rgba(255,255,255,0.04)"
@@ -870,18 +1035,19 @@ edgePopup.innerHTML = `
         edgePopup.style.display = "block"
     }
 
-    function getEdges() {
-        return buildEdges(activeUsers, memory, locked, matrix)
-    }
-
     function getEdgeAt(mx, my) {
         const edges = getEdges()
 
         for (const edge of edges) {
-            const x1 = positions[edge.i].x
-            const y1 = positions[edge.i].y
-            const x2 = positions[edge.j].x
-            const y2 = positions[edge.j].y
+    const p1 = positions[edge.i]
+    const p2 = positions[edge.j]
+
+    if (!p1 || !p2) continue
+
+    const x1 = p1.x
+    const y1 = p1.y
+    const x2 = p2.x
+    const y2 = p2.y
 
             const A = mx - x1
             const B = my - y1
@@ -936,29 +1102,38 @@ edgePopup.innerHTML = `
         return null
     }
 
+    let physicsEdges = []
+    window.physicsEdges = physicsEdges
+
+function rebuildPhysicsEdges() {
+    const edges = getEdges()
+
+    physicsEdges = edges
+    window.physicsEdges = physicsEdges
+}
+
     function applyClustering() {
-        const edges = getEdges()
-        const tp = getTimePressureState()
-        const clusterThreshold = 0.3 + tp.pressure * 0.12
+    const tp = getTimePressureState()
+    const clusterThreshold = 0.3 + tp.pressure * 0.12
 
-        edges.forEach(edge => {
-            const score = edge.displayScore
-            if (score <= clusterThreshold) return
+    physicsEdges.forEach(edge => {
+        const score = edge.displayScore
+        if (score <= clusterThreshold) return
 
-            const dx = positions[edge.j].x - positions[edge.i].x
-            const dy = positions[edge.j].y - positions[edge.i].y
+        const dx = positions[edge.j].x - positions[edge.i].x
+        const dy = positions[edge.j].y - positions[edge.i].y
 
-            const clusterMul =
-                tp.pressure >= 0.62
-                    ? (1 - tp.pressure * 0.35)
-                    : (1 + (1 - tp.pressure) * 0.08)
+        const clusterMul =
+            tp.pressure >= 0.62
+                ? (1 - tp.pressure * 0.35)
+                : (1 + (1 - tp.pressure) * 0.08)
 
-            positions[edge.i].x += dx * 0.01 * score * clusterMul
-            positions[edge.i].y += dy * 0.01 * score * clusterMul
-            positions[edge.j].x -= dx * 0.01 * score * clusterMul
-            positions[edge.j].y -= dy * 0.01 * score * clusterMul
-        })
-    }
+        positions[edge.i].x += dx * 0.01 * score * clusterMul
+        positions[edge.i].y += dy * 0.01 * score * clusterMul
+        positions[edge.j].x -= dx * 0.01 * score * clusterMul
+        positions[edge.j].y -= dy * 0.01 * score * clusterMul
+    })
+}
 
     function applyForces() {
         const tp = getTimePressureState()
@@ -970,10 +1145,10 @@ edgePopup.innerHTML = `
                 const dist = Math.sqrt(dx * dx + dy * dy) + 0.01
                 const forceBase = 42 / dist
 
-                const isTodayRealContact = !!(
-                    window.isTodayContact &&
-                    window.isTodayContact(activeUsers[i].name, activeUsers[j].name)
-                )
+                const isTodayRealContact = isTodayContactResolved(
+    activeUsers[i].name,
+    activeUsers[j].name
+)
 
                 let contactBoost = 1
                 if (isTodayRealContact) {
@@ -1010,9 +1185,22 @@ edgePopup.innerHTML = `
         }
     }
 
-    function draw() {
-        const edges = getEdges()
-        computeNetworkFeedback(activeUsers, edges)
+    let lastFeedbackTime = 0
+
+function draw() {
+    const edges = physicsEdges
+    if (!Array.isArray(edges)) return
+
+    const now = performance.now()
+
+if (
+    !Array.isArray(window.currentNetworkRelations) ||
+    window.currentNetworkRelations.length !== edges.length ||
+    now - lastFeedbackTime > 1200
+) {
+    computeNetworkFeedback(activeUsers, edges)
+    lastFeedbackTime = now
+}
 
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.save()
@@ -1020,6 +1208,10 @@ edgePopup.innerHTML = `
         ctx.scale(scale, scale)
 
         for (const edge of edges) {
+    const p1 = positions[edge.i]
+    const p2 = positions[edge.j]
+
+    if (!p1 || !p2) continue
             const isHover =
                 hoverEdge &&
                 (
@@ -1036,9 +1228,9 @@ edgePopup.innerHTML = `
 const adjustedScore = relationVisual.dominantScore
 const normalizedScore = adjustedScore
 
-            ctx.beginPath()
-            ctx.moveTo(positions[edge.i].x, positions[edge.i].y)
-            ctx.lineTo(positions[edge.j].x, positions[edge.j].y)
+                ctx.beginPath()
+    ctx.moveTo(p1.x, p1.y)
+    ctx.lineTo(p2.x, p2.y)
 
             if (selected !== null && edge.i !== selected && edge.j !== selected) {
                 ctx.globalAlpha = 0.05
@@ -1049,20 +1241,25 @@ const normalizedScore = adjustedScore
                     (edge.isTodayRealContact ? 0.10 : 0)
             }
 
-            ctx.strokeStyle = relationVisual.color
+            ctx.strokeStyle = edge.isTodayRealContact ? "#ffd166" : relationVisual.color
 
-            if (edge.isTodayRealContact) {
-                ctx.shadowBlur = isHover ? 18 : 10
-                ctx.shadowColor = "#ffd166"
-            } else {
-                ctx.shadowBlur = 0
-                ctx.shadowColor = "transparent"
-            }
+if (edge.isTodayRealContact) {
+    ctx.shadowBlur = isHover ? 10 : 6
+    ctx.shadowColor = "#ffd166"
+} else {
+    ctx.shadowBlur = 0
+    ctx.shadowColor = "transparent"
+}
 
-            const negativeBoost = adjustedScore < 0 ? 1.15 : 1
-            ctx.lineWidth = isHover
-                ? Math.max(edge.isTodayRealContact ? 5.5 : 4.2, Math.abs(normalizedScore) * 8.5 * negativeBoost + 2)
-                : Math.max(edge.isTodayRealContact ? 2.8 : 1.1, Math.abs(normalizedScore) * 4.8 * negativeBoost + 0.6)
+const negativeBoost = adjustedScore < 0 ? 1.15 : 1
+
+if (edge.isTodayRealContact) {
+    ctx.lineWidth = isHover ? 6.5 : 4.2
+} else {
+    ctx.lineWidth = isHover
+        ? Math.max(4.2, Math.abs(normalizedScore) * 8.5 * negativeBoost + 2)
+        : Math.max(1.1, Math.abs(normalizedScore) * 4.8 * negativeBoost + 0.6)
+}
 
             if (isHover) ctx.globalAlpha = 1
             ctx.stroke()
@@ -1093,10 +1290,7 @@ const normalizedScore = adjustedScore
 
             roundRectPath(ctx, x, y, bubbleWidth, bubbleHeight, bubbleHeight / 2)
 
-            const grad = ctx.createLinearGradient(x, y, x, y + bubbleHeight)
-            grad.addColorStop(0, "rgba(18,22,30,0.98)")
-            grad.addColorStop(1, "rgba(4,6,10,0.98)")
-            ctx.fillStyle = grad
+            ctx.fillStyle = "rgba(10,12,18,0.96)"
             ctx.fill()
 
             ctx.strokeStyle = getNodeStrokeColor(visual.state)
@@ -1111,6 +1305,33 @@ const normalizedScore = adjustedScore
 
         ctx.restore()
     }
+
+    window._networkRedraw = () => {
+    hideEdgePopup()
+
+    paintRelationButtons()
+    paintModeButtons()
+
+    rebuildPhysicsEdges()
+    computeNetworkFeedback(activeUsers, physicsEdges)
+    draw()
+
+    if (typeof window.updateMTOSBranch === "function") {
+        window.updateMTOSBranch("network", {
+            relations: window.currentNetworkRelations || [],
+            relationSummary: {
+                supportCount: physicsEdges.filter(e => e.displayScore > 0).length,
+                conflictCount: physicsEdges.filter(e => e.displayScore < 0).length,
+                ultraCount: physicsEdges.filter(e => Math.abs(e.displayScore) > 0.8).length
+            },
+            timePressure: Number(window.mtosTimePressureSummary?.value ?? 0)
+        })
+    }
+}
+
+window._networkInvalidate = () => {
+    invalidateEdgesCache()
+}
 
     function getNodeAt(mx, my) {
         for (let i = 0; i < N; i++) {
@@ -1142,72 +1363,181 @@ const normalizedScore = adjustedScore
         const contactMode = window.networkMode === "contact"
 
         if (linkMode || shiftLink) {
-            if (nodeIndex !== null) {
-                if (selected !== null && selected !== nodeIndex) {
-                    const a = activeUsers[selected].name
-                    const b = activeUsers[nodeIndex].name
-                    if (window.addConnection) window.addConnection(a, b)
-                    selected = null
-                    hideEdgePopup()
-                    draw()
-                    return
-                }
+    if (nodeIndex !== null) {
+        if (selected !== null && selected !== nodeIndex) {
+            const a = activeUsers[selected].name
+            const b = activeUsers[nodeIndex].name
 
-                selected = nodeIndex
-                hideEdgePopup()
-                draw()
-            }
+            {
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    const lockedNow = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    memory[`${a}->${b}`] = 1
+    memory[`${b}->${a}`] = 1
+
+    delete lockedNow[`${a}->${b}`]
+    delete lockedNow[`${b}->${a}`]
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(lockedNow))
+
+    window._lockedCache = null
+}
+
+window.__mtos_force_fresh_run = true
+
+reloadMemoryFromStorage()
+invalidateEdgesCache()
+rebuildPhysicsEdges()
+computeNetworkFeedback(activeUsers, physicsEdges)
+draw()
+
+            selected = null
+            hoverEdge = null
+            hideEdgePopup()
             return
         }
+
+        selected = nodeIndex
+        hideEdgePopup()
+        draw()
+    }
+    return
+}
 
         if (contactMode) {
-            if (nodeIndex !== null) {
-                if (selected !== null && selected !== nodeIndex) {
-                    const a = activeUsers[selected].name
-                    const b = activeUsers[nodeIndex].name
+    if (nodeIndex !== null) {
+        if (selected !== null && selected !== nodeIndex) {
+            const a = activeUsers[selected].name
+            const b = activeUsers[nodeIndex].name
 
-                    const dayKey = window._date
-                        ? `${window._date.year}-${String(window._date.month).padStart(2, "0")}-${String(window._date.day).padStart(2, "0")}`
-                        : new Date().toISOString().slice(0, 10)
+            const dayKey = typeof window.getCurrentRunDay === "function"
+    ? window.getCurrentRunDay()
+    : new Date().toISOString().slice(0, 10)
 
-                    if (window.isTodayContact && window.isTodayContact(a, b)) {
-                        if (window.unmarkTodayContact) window.unmarkTodayContact(a, b)
-                    } else {
-                        if (window.markTodayContact) window.markTodayContact(a, b, dayKey)
-                    }
+const alreadyMarked =
+    typeof window.isTodayContact === "function"
+        ? window.isTodayContact(a, b)
+        : false
 
-                    selected = null
-                    hideEdgePopup()
-                    draw()
-                    return
-                }
+        if (typeof window.getUserId === "function") {
+    window.getUserId(a)
+    window.getUserId(b)
+}
 
-                selected = nodeIndex
-                hideEdgePopup()
-                draw()
-            }
-            return
+window.currentUsers = JSON.parse(JSON.stringify(activeUsers))
+
+window.__mtos_force_fresh_run = true;
+
+if (alreadyMarked) {
+    if (typeof window.unmarkTodayContact === "function") {
+        window.unmarkTodayContact(a, b)
+    }
+} else {
+    if (typeof window.markTodayContact === "function") {
+        window.markTodayContact(a, b, dayKey)
+    }
+}
+
+window.__mtos_force_fresh_run = true;
+
+window.networkRelationFilter = "contact"
+paintRelationButtons()
+selected = null
+hoverEdge = null
+hideEdgePopup()
+
+activeUsers = Array.isArray(window.currentUsers) ? window.currentUsers.slice() : activeUsers
+reloadMemoryFromStorage()
+invalidateEdgesCache()
+rebuildPhysicsEdges()
+computeNetworkFeedback(activeUsers, physicsEdges)
+draw()
+
+return
+
         }
 
+        selected = nodeIndex
+        hideEdgePopup()
+        draw()
+    }
+    return
+}
+
         if (currentMode === "edit") {
-            if (nodeIndex !== null) {
-                const name = activeUsers[nodeIndex].name
-                if (confirm(`Удалить ${name}?`)) {
-                    if (window.removeUser) window.removeUser(name)
-                }
-                return
-            }
+    if (nodeIndex !== null) {
+        const name = activeUsers[nodeIndex].name
+        if (confirm(`Удалить ${name}?`)) {
+            const nextUsers = activeUsers.filter(u => u && u.name !== name)
+
+window.currentUsers = JSON.parse(JSON.stringify(nextUsers))
+
+selected = null
+hoverEdge = null
+hideEdgePopup()
+
+if (typeof window._networkInvalidate === "function") {
+    window._networkInvalidate()
+}
+
+window._networkRedraw = null
+
+if (typeof window._rerenderNetworkOnly === "function") {
+    window._rerenderNetworkOnly()
+}
+
+if (window.removeUser) {
+    window.removeUser(name)
+}
+
+window.__mtos_force_fresh_run = true
+
+            selected = null
+            hoverEdge = null
+            hideEdgePopup()
+
+            if (typeof window._networkInvalidate === "function") {
+    window._networkInvalidate()
+}
+
+window._networkRedraw = null
+
+if (typeof window._rerenderNetworkOnly === "function") {
+    window._rerenderNetworkOnly()
+}
+        }
+        return
+    }
 
             const edge = getEdgeAt(mx, my)
             if (edge) {
                 if (confirm(`Удалить связь ${edge.a} ↔ ${edge.b}?`)) {
-                    if (window.removeConnection) {
-                        if (e.shiftKey && window.removeConnectionHard) {
-                            window.removeConnectionHard(edge.a, edge.b)
-                        } else {
-                            window.removeConnection(edge.a, edge.b)
-                        }
-                    }
+                    {
+    const memory = JSON.parse(localStorage.getItem("collective_relations_memory") || "{}")
+    const lockedNow = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
+
+    memory[`${edge.a}->${edge.b}`] = 0
+    memory[`${edge.b}->${edge.a}`] = 0
+
+    if (e.shiftKey) {
+        lockedNow[`${edge.a}->${edge.b}`] = true
+        lockedNow[`${edge.b}->${edge.a}`] = true
+    } else {
+        delete lockedNow[`${edge.a}->${edge.b}`]
+        delete lockedNow[`${edge.b}->${edge.a}`]
+    }
+
+    localStorage.setItem("collective_relations_memory", JSON.stringify(memory))
+    localStorage.setItem("mtos_locked_relations", JSON.stringify(lockedNow))
+
+    window._lockedCache = null
+}
+
+window.__mtos_force_fresh_run = true
+
+window._networkRedraw = null
+window._rerenderNetworkOnly()
                 }
             }
 
@@ -1337,48 +1667,67 @@ const normalizedScore = adjustedScore
         draw()
     }
 
-    canvas.onmousemove = (e) => {
-        const rect = canvas.getBoundingClientRect()
-        const mx = (e.clientX - rect.left - offsetX) / scale
-        const my = (e.clientY - rect.top - offsetY) / scale
+    let prevHoverEdgeKey = null
 
-        hover = null
-        hoverEdge = null
+    let lastHoverCheck = 0
+const HOVER_INTERVAL = 60
 
-        const nodeIndex = getNodeAt(mx, my)
-        if (nodeIndex !== null) {
-            hover = nodeIndex
-            canvas.style.cursor = "pointer"
-        } else {
-            const edge = getEdgeAt(mx, my)
-            if (edge) {
-                hoverEdge = edge
-                canvas.style.cursor = "pointer"
-            } else {
-                canvas.style.cursor = isDragging ? "grabbing" : "grab"
-            }
+canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect()
+    const mx = (e.clientX - rect.left - offsetX) / scale
+    const my = (e.clientY - rect.top - offsetY) / scale
+
+    const oldHover = hover
+    const oldHoverEdgeKey = prevHoverEdgeKey
+
+    hover = null
+    hoverEdge = null
+
+    const nodeIndex = getNodeAt(mx, my)
+if (nodeIndex !== null) {
+    hover = nodeIndex
+    canvas.style.cursor = "pointer"
+} else {
+    const now = performance.now()
+
+    if (now - lastHoverCheck > HOVER_INTERVAL) {
+        hoverEdge = getEdgeAt(mx, my)
+        lastHoverCheck = now
+    }
+
+    if (hoverEdge) {
+        canvas.style.cursor = "pointer"
+    } else {
+        canvas.style.cursor = isDragging ? "grabbing" : "grab"
+    }
+}
+
+    const newHoverEdgeKey = hoverEdge ? `${hoverEdge.a}|${hoverEdge.b}` : null
+    prevHoverEdgeKey = newHoverEdgeKey
+
+    if (isDragging) {
+        const dxScreen = e.clientX - dragStartX
+        const dyScreen = e.clientY - dragStartY
+
+        if (!dragMoved && Math.sqrt(dxScreen * dxScreen + dyScreen * dyScreen) > dragThreshold) {
+            dragMoved = true
         }
 
-        if (isDragging) {
-            const dxScreen = e.clientX - dragStartX
-            const dyScreen = e.clientY - dragStartY
-
-            if (!dragMoved && Math.sqrt(dxScreen * dxScreen + dyScreen * dyScreen) > dragThreshold) {
-                dragMoved = true
-            }
-
-            if (dragMoved) {
-                offsetX += dxScreen
-                offsetY += dyScreen
-                dragStartX = e.clientX
-                dragStartY = e.clientY
-            }
-        }
-
-        if (hover !== null || hoverEdge !== null || isDragging) {
+        if (dragMoved) {
+            offsetX += dxScreen
+            offsetY += dyScreen
+            dragStartX = e.clientX
+            dragStartY = e.clientY
             draw()
         }
+
+        return
     }
+
+    //if (oldHover !== hover || oldHoverEdgeKey !== newHoverEdgeKey) {
+        //draw()
+    //}
+}
 
     window._networkDocClickHandler = (evt) => {
         const popupHit = evt.target.closest("#networkEdgePopup")
@@ -1390,6 +1739,8 @@ const normalizedScore = adjustedScore
 
     document.addEventListener("click", window._networkDocClickHandler)
 
+    let frameCount = 0
+
     function relaxNetwork(iterations = 1) {
         for (let k = 0; k < iterations; k++) {
             applyClustering()
@@ -1397,8 +1748,12 @@ const normalizedScore = adjustedScore
         }
     }
 
-    function loop() {
-        relaxNetwork(1)
+
+function loop() {
+    if (frameCount % 3 === 0) {
+    relaxNetwork(1)
+}
+    frameCount++
         draw()
         window._networkRAF = requestAnimationFrame(loop)
     }
@@ -1408,6 +1763,8 @@ const normalizedScore = adjustedScore
             historyIndex = i
         }
     }
+
+    rebuildPhysicsEdges()
 
     draw()
     loop()

@@ -1,4 +1,5 @@
 import { KinRegistry } from "./kinRegistry.js"
+import { t } from "./mtosUI/mtosI18n.js"
 
 const densityColors = [
     "#1e293b",
@@ -16,12 +17,64 @@ const densityColors = [
     "#ef4444"
 ]
 
+const VIRIDIS_STOPS = [
+    [0.00, [68, 1, 84]],
+    [0.13, [71, 44, 122]],
+    [0.25, [59, 81, 139]],
+    [0.38, [44, 113, 142]],
+    [0.50, [33, 144, 141]],
+    [0.63, [39, 173, 129]],
+    [0.75, [92, 200, 99]],
+    [0.88, [170, 220, 50]],
+    [1.00, [253, 231, 37]]
+]
+
+function lerp(a, b, t){
+    return a + (b - a) * t
+}
+
+function viridisColor(value, alpha = 1){
+    const v = clamp01(value)
+
+    for(let i = 0; i < VIRIDIS_STOPS.length - 1; i++){
+        const [p1, c1] = VIRIDIS_STOPS[i]
+        const [p2, c2] = VIRIDIS_STOPS[i + 1]
+
+        if(v >= p1 && v <= p2){
+            const k = (v - p1) / Math.max(1e-6, (p2 - p1))
+            const r = Math.round(lerp(c1[0], c2[0], k))
+            const g = Math.round(lerp(c1[1], c2[1], k))
+            const b = Math.round(lerp(c1[2], c2[2], k))
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`
+        }
+    }
+
+    const last = VIRIDIS_STOPS[VIRIDIS_STOPS.length - 1][1]
+    return `rgba(${last[0]}, ${last[1]}, ${last[2]}, ${alpha})`
+}
+
 const sealNames = [
     "Dragon","Wind","Night","Seed","Serpent",
     "WorldBridger","Hand","Star","Moon","Dog",
     "Monkey","Human","Skywalker","Wizard","Eagle",
     "Warrior","Earth","Mirror","Storm","Sun"
 ]
+
+function normalizeField(values){
+    if(!Array.isArray(values) || !values.length) return []
+
+    let min = Infinity
+    let max = -Infinity
+
+    for(const v of values){
+        if(v < min) min = v
+        if(v > max) max = v
+    }
+
+    const range = Math.max(1e-6, max - min)
+
+    return values.map(v => (v - min) / range)
+}
 
 let selectedFieldKin = null
 
@@ -95,8 +148,13 @@ function getCellMetrics(mode, kin, weather, fieldValues){
     const spike = clamp01(Math.abs(field - neighborAvg))
 
     if(mode === "global"){
-        return {
-            primary: 0,
+    return {
+        primary: clamp01(
+            attention * 0.35 +
+            activity * 0.25 +
+            field * 0.25 +
+            attractor * 0.15
+        ),
             attention,
             activity,
             pressure,
@@ -182,6 +240,70 @@ function getCellMetrics(mode, kin, weather, fieldValues){
         attractor,
         spike
     }
+}
+
+function getFieldIntensity(mode, kin, weather, fieldValues){
+    const m = getCellMetrics(mode, kin, weather, fieldValues)
+
+    if(mode === "global"){
+        return clamp01(
+            m.attention * 0.35 +
+            m.activity * 0.25 +
+            m.field * 0.25 +
+            m.attractor * 0.15
+        )
+    }
+
+    if(mode === "activity"){
+        return clamp01(m.activity)
+    }
+
+    if(mode === "pressure"){
+        return clamp01(m.pressure)
+    }
+
+    if(mode === "hybrid"){
+        return clamp01(m.hybrid)
+    }
+
+    if(mode === "landscape"){
+        return clamp01(m.field)
+    }
+
+    if(mode === "attractor"){
+        return clamp01(m.attractor)
+    }
+
+    return clamp01(m.primary)
+}
+
+function getFieldBaseFill(mode, kin, weather, fieldValues){
+    const intensityRaw = getFieldIntensity(mode, kin, weather, fieldValues)
+
+    // усиление + контраст
+const intensity = Math.pow(intensityRaw, 0.55)
+
+    if(mode === "pressure"){
+        return viridisColor(intensity * 0.92, 0.92)
+    }
+
+    if(mode === "activity"){
+        return viridisColor(intensity, 0.90)
+    }
+
+    if(mode === "hybrid"){
+        return viridisColor(Math.min(1, intensity * 1.05), 0.92)
+    }
+
+    if(mode === "landscape"){
+        return viridisColor(intensity, 0.88)
+    }
+
+    if(mode === "attractor"){
+        return viridisColor(intensity, 0.90)
+    }
+
+    return viridisColor(intensity, 0.86)
 }
 
 function getCellState(mode, count, kin, weather, fieldValues){
@@ -363,22 +485,22 @@ function ensureFieldPopup(root){
 }
 
 function getModeTitle(mode){
-    if(mode === "global") return "Global"
-    if(mode === "activity") return "Activity"
-    if(mode === "pressure") return "Pressure"
-    if(mode === "hybrid") return "Hybrid"
-    if(mode === "landscape") return "Landscape"
-    if(mode === "attractor") return "Attractor"
-    return "Field"
+    if(mode === "global") return t("field_mode_global")
+    if(mode === "activity") return t("field_mode_activity")
+    if(mode === "pressure") return t("field_mode_pressure")
+    if(mode === "hybrid") return t("field_mode_hybrid")
+    if(mode === "landscape") return t("field_mode_landscape")
+    if(mode === "attractor") return t("field_mode_attractor")
+    return t("fieldSectionTitle")
 }
 
 function getModeMeaning(mode){
-    if(mode === "global") return "Shows where participants are located."
-    if(mode === "activity") return "Shows where attention and activation are alive."
-    if(mode === "pressure") return "Shows where tension, overload, and conflict accumulate."
-    if(mode === "hybrid") return "Shows the strongest synthetic zones of the whole system."
-    if(mode === "landscape") return "Shows the field itself, regardless of participant positions."
-    if(mode === "attractor") return "Shows where attention is naturally pulled."
+    if(mode === "global") return t("field_mode_global_desc")
+    if(mode === "activity") return t("field_mode_activity_desc")
+    if(mode === "pressure") return t("field_mode_pressure_desc")
+    if(mode === "hybrid") return t("field_mode_hybrid_desc")
+    if(mode === "landscape") return t("field_mode_landscape_desc")
+    if(mode === "attractor") return t("field_mode_attractor_desc")
     return ""
 }
 
@@ -391,48 +513,48 @@ function showFieldPopup(root, popup, x, y, kin, usersHere, mode, weather, fieldV
     const m = getCellMetrics(mode, kin, weather, fieldValues)
 
     const names = count
-        ? usersHere.map((u, i) => `${i + 1}. ${u.name} (${u.kin})`).join("<br>")
-        : "No users"
+    ? usersHere.map((u, i) => `${i + 1}. ${u.name} (${u.kin})`).join("<br>")
+    : t("field_users_none")
 
     popup.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-weight:bold;color:#f8fafc;">Kin ${kin}</div>
-            <button class="field-popup-close" style="
-                background:#111827;
-                color:#cbd5e1;
-                border:1px solid #334155;
-                border-radius:6px;
-                cursor:pointer;
-                font-size:11px;
-                padding:2px 6px;
-            ">×</button>
-        </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-weight:bold;color:#f8fafc;">${t("field_kin")} ${kin}</div>
+        <button class="field-popup-close" style="
+            background:#111827;
+            color:#cbd5e1;
+            border:1px solid #334155;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:11px;
+            padding:2px 6px;
+        ">×</button>
+    </div>
 
-        <div style="color:#94a3b8;margin-bottom:8px;">
-            Tone: ${tone} | Seal: ${sealName}<br>
-            Mode: ${getModeTitle(mode)}<br>
-            ${getModeMeaning(mode)}
-        </div>
+    <div style="color:#94a3b8;margin-bottom:8px;">
+        ${t("field_tone")}: ${tone} | ${t("field_seal")}: ${sealName}<br>
+        ${t("field_mode")}: ${getModeTitle(mode)}<br>
+        ${getModeMeaning(mode)}
+    </div>
 
-        <div style="margin-bottom:8px;">
-            Users in kin: <b>${count}</b>
-        </div>
+    <div style="margin-bottom:8px;">
+        ${t("field_users_in_kin")}: <b>${count}</b>
+    </div>
 
-        <div style="margin-bottom:8px;color:#cbd5e1;">
-            State: <b>${state}</b><br>
-            Attention: ${m.attention.toFixed(2)}<br>
-            Activity: ${m.activity.toFixed(2)}<br>
-            Pressure: ${m.pressure.toFixed(2)}<br>
-            Hybrid: ${m.hybrid.toFixed(2)}<br>
-            Field: ${m.field.toFixed(2)}<br>
-            Attractor: ${m.attractor.toFixed(2)}<br>
-            Spike: ${m.spike.toFixed(2)}
-        </div>
+    <div style="margin-bottom:8px;color:#cbd5e1;">
+        ${t("field_state")}: <b>${state}</b><br>
+        ${t("field_attention")}: ${m.attention.toFixed(2)}<br>
+        ${t("field_activity")}: ${m.activity.toFixed(2)}<br>
+        ${t("field_pressure")}: ${m.pressure.toFixed(2)}<br>
+        ${t("field_hybrid")}: ${m.hybrid.toFixed(2)}<br>
+        ${t("field_field")}: ${m.field.toFixed(2)}<br>
+        ${t("field_attractor")}: ${m.attractor.toFixed(2)}<br>
+        ${t("field_spike")}: ${m.spike.toFixed(2)}
+    </div>
 
-        <div style="color:#e2e8f0;">
-            ${names}
-        </div>
-    `
+    <div style="color:#e2e8f0;">
+        ${names}
+    </div>
+`
 
     popup.style.display = "block"
 
@@ -452,6 +574,74 @@ function showFieldPopup(root, popup, x, y, kin, usersHere, mode, weather, fieldV
             popup.style.display = "none"
         }
     }
+}
+
+function updateFieldLegend(mode){
+    const el = document.getElementById("fieldLegend")
+    if(!el) return
+
+    const modeTitle = getModeTitle(mode)
+    const modeText = getModeMeaning(mode)
+
+    el.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+        <div class="weather-legend-title">${t("field_about_title")}</div>
+
+        <div class="weather-copy" style="max-width:700px; margin-bottom:10px;">
+            ${t("field_about_what")}
+        </div>
+
+        <div class="weather-copy" style="max-width:700px; margin-bottom:10px;">
+            ${t("field_about_reading")}
+        </div>
+
+        <div class="weather-copy" style="max-width:700px; margin-bottom:12px;">
+            ${t("field_about_click")}
+        </div>
+
+        <div class="weather-copy" style="max-width:700px; margin-bottom:12px;">
+            <b>${t("field_mode")}:</b> ${getModeTitle(mode)}<br>
+            ${getModeMeaning(mode)}
+        </div>
+
+        <div style="
+            width:min(680px, 100%);
+            height:16px;
+            border-radius:999px;
+            margin:6px 0 10px;
+            background:linear-gradient(
+                90deg,
+                rgb(68,1,84) 0%,
+                rgb(59,81,139) 25%,
+                rgb(33,144,141) 50%,
+                rgb(92,200,99) 75%,
+                rgb(253,231,37) 100%
+            );
+            border:1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+        "></div>
+
+        <div class="weather-copy" style="max-width:700px; margin-bottom:12px;">
+    ${t("field_viridis_scale")}<br>
+    ${t("field_weather_sync")}
+</div>
+
+        <div class="weather-copy" style="max-width:700px;">
+            <b>${t("field_state_types")}:</b><br>
+            <span style="color:#22c55e;">${t("field_cluster")}</span> — ${t("field_cluster_desc")}<br>
+            <span style="color:#ef4444;">${t("field_pressure_label")}</span> — ${t("field_pressure_desc2")}<br>
+            <span style="color:#38bdf8;">${t("field_active_label")}</span> — ${t("field_active_desc2")}<br>
+            <span style="color:#a855f7;">${t("field_resonance")}</span> — ${t("field_resonance_desc")}<br>
+            <span style="color:#f59e0b;">${t("field_stable_label")}</span> — ${t("field_stable_desc2")}<br>
+            <span style="color:#ffffff;">${t("field_event_label")}</span> — ${t("field_event_desc2")}
+        </div>
+
+        <div class="weather-copy" style="max-width:700px; margin-bottom:12px;">
+    ${t("field_viridis_scale")}<br>
+    ${t("field_weather_sync")}
+</div>
+    </div>
+`
 }
 
 function kinToCoords(kin, cols = 20, rows = 13){
@@ -593,7 +783,7 @@ function selectFieldKin(root, users, mode, kin, cellCenterX, cellCenterY, weathe
     }
 }
 
-function drawCellBase(ctx, x, y, cellW, cellH, mode, state, intensity){
+function drawCellBase(ctx, x, y, cellW, cellH, mode, state, intensity, kin, weather, fieldValues){
     ctx.fillStyle = "#020617"
     ctx.fillRect(x, y, cellW, cellH)
 
@@ -601,12 +791,18 @@ function drawCellBase(ctx, x, y, cellW, cellH, mode, state, intensity){
     ctx.lineWidth = 1
     ctx.strokeRect(x, y, cellW, cellH)
 
-    const baseFill = getStateFill(mode, state, intensity)
+    const viridisFill = getFieldBaseFill(mode, kin, weather, fieldValues)
     const stroke = getStateStroke(mode, state)
 
-    ctx.fillStyle = baseFill
-    ctx.fillRect(x + 4, y + 4, cellW - 8, cellH - 8)
+    // основная непрерывная заливка viridis
+    ctx.fillStyle = viridisFill
+    ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4)
 
+    // лёгкое затемнение по центру, чтобы цифры и рамки лучше читались
+    ctx.fillStyle = "rgba(2, 6, 23, 0.18)"
+    ctx.fillRect(x + 6, y + 6, cellW - 12, cellH - 12)
+
+    // state-рамка остаётся как второй слой
     if(state !== "empty"){
         ctx.strokeStyle = stroke
         ctx.lineWidth = intensity >= 0.78 ? 2.2 : 1.4
@@ -655,12 +851,15 @@ export function drawField(rootOrId, users = [], mode = "global", weather = [], f
     root.innerHTML = ""
     root.style.position = "relative"
 
+    fieldValues = Array.isArray(fieldValues) ? normalizeField(fieldValues) : []
+
     const canvas = document.createElement("canvas")
     canvas.width = 760
     canvas.height = 420
     canvas.style.display = "block"
     canvas.style.margin = "0 auto"
     root.appendChild(canvas)
+    updateFieldLegend(mode)
 
     const popup = ensureFieldPopup(root)
     const ctx = canvas.getContext("2d")
@@ -701,11 +900,8 @@ export function drawField(rootOrId, users = [], mode = "global", weather = [], f
             const state = getCellState(mode, count, kin, weather, fieldValues)
             const intensity = m.primary
 
-            drawCellBase(ctx, x, y, cellW, cellH, mode, state, intensity)
-
-            if(mode === "global"){
-                drawUserOverlay(ctx, x, y, cellW, cellH, count)
-            }else if(mode === "landscape" || mode === "attractor"){
+            drawCellBase(ctx, x, y, cellW, cellH, mode, state, intensity, kin, weather, fieldValues)
+            if(mode === "landscape" || mode === "attractor"){
                 drawLandscapeOnlyOverlay(ctx, x, y, cellW, cellH, state, intensity, mode)
             }else{
                 if(count > 0){

@@ -413,7 +413,7 @@ const minV = Math.min(...allValues)
 const maxV = Math.max(...allValues)
 const rangeV = Math.max(0.0001, maxV - minV)
 
-        const now = Date.now() * 0.0025
+        const now = 0
 
         for (let row = 0; row < size; row++) {
             for (let col = 0; col < size; col++) {
@@ -421,7 +421,7 @@ const rangeV = Math.max(0.0001, maxV - minV)
                 const x = labelPad + col * (cell + gap)
                 const y = topPad + row * (cell + gap)
 
-                const pulse = 0.90 + 0.10 * Math.sin(now + row * 0.55 + col * 0.35)
+                const pulse = 1
 
 // 1. глобальная нормализация
 let vv = (flow.value - minV) / rangeV
@@ -696,7 +696,6 @@ ${
     drawGrid()
 
     if (selectedSeal !== null) {
-    if (selectedSeal !== null) {
     selectedCell = { row: selectedSeal, col: selectedSeal }
     updateAnalysisPanel(selectedSeal, selectedSeal)
     drawGrid()
@@ -712,34 +711,8 @@ ${
         </div>
     `
 }
-} else {
-    selectedCell = null
-    drawGrid()
-    analysisPanel.innerHTML = `
-        <div style="font-size:13px; color:#fff; margin-bottom:10px;">
-            <b>${at("attractorMapTitle")}</b>
-        </div>
-        <div style="color:#9ca3af; line-height:1.7;">
-            ${at("clickAnyCellInspect")}
-        </div>
-    `
-}
 
-    let raf = null
-    let running = true
-
-    function animate() {
-        if (!running) return
-        drawGrid()
-        raf = requestAnimationFrame(animate)
-    }
-
-    animate()
-
-    root._destroyAttractorMap = () => {
-        running = false
-        if (raf) cancelAnimationFrame(raf)
-    }
+    root._destroyAttractorMap = () => {}
 
     const legend = document.createElement("div")
     legend.style.marginTop = "12px"
