@@ -3,6 +3,8 @@ let currentDay = 0
 
 export function initTimeControls(runStep){
 
+    currentDay = 0
+
     const box = document.getElementById("timeControls")
     if(!box) return
 

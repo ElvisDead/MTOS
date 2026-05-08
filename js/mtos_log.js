@@ -20,12 +20,46 @@ try {
 // делаем глобально доступным
 window.MTOS_LOG = MTOS_LOG
 
+function sanitizePayload(payload) {
+    if (!payload || typeof payload !== "object") return {}
+
+    const clean = {}
+
+    const blocked = [
+    "name",
+    "birth",
+    "birthdate",
+    "birthday",
+    "dateofbirth",
+    "dob"
+]
+
+    for (const key in payload) {
+        const lower = key.toLowerCase()
+
+        if (blocked.some(b => lower.includes(b))) continue
+
+        if (typeof payload[key] === "object") continue
+
+        if (lower === "user" && typeof window.getStableAnonId === "function") {
+            clean["user_id"] = window.getStableAnonId(payload[key])
+            continue
+        }
+
+        clean[key] = payload[key]
+    }
+
+    return clean
+}
+
 export function logEvent(type, payload = {}) {
+
+    const safePayload = sanitizePayload(payload)
 
     const entry = {
         t: Date.now(),
         type,
-        ...payload
+        ...safePayload
     }
 
     MTOS_LOG.push(entry)
@@ -55,9 +89,6 @@ export function logEvent(type, payload = {}) {
     }
     
 }
-
-// доступ снаружи
-window.MTOS_LOG = MTOS_LOG
 
 const FORECAST_KEY = "mtos_forecasts"
 const FORECAST_RESULTS_KEY = "mtos_forecast_results"
@@ -289,10 +320,15 @@ export function saveDailySnapshots(list){
 export function alreadyLoggedDailySnapshot(day, name, userKin){
     const list = loadDailySnapshots()
 
+    const userId =
+        typeof window.getStableAnonId === "function"
+            ? window.getStableAnonId(name)
+            : String(name || "").trim()
+
     return list.some(row =>
         row &&
         row.day === day &&
-        row.name === name &&
+        row.user_id === userId &&
         Number(row.userKin) === Number(userKin)
     )
 }

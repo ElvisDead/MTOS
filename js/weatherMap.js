@@ -84,9 +84,12 @@ summaryCard.innerHTML = `
 
     <div class="weather-summary-meta">
         <span>${window.t("trust") || "Доверие"} <b>${summary.trust}%</b></span>
-        <span>${window.t("time_pressure") || "Давление времени"} <b>${escapeHtml(summary.timePressureLabel)}</b></span>
+        <span>${window.t("time_pressure") || "Давление времени"} <b>${escapeHtml(translateTimePressure(summary.timePressureLabel))}</b></span>
         <span>${window.t("real_contacts") || "Реальные контакты"} <b>${summary.realContacts}</b></span>
-        <span>${window.t("attractor") || "Аттрактор"} <b>${escapeHtml(summary.attractorType)}</b></span>
+        <span>${window.t("attractor") || "Аттрактор"} <b>${escapeHtml(translateAttractor(summary.attractorType))}</b></span>
+        <span>${window.t("stateLabel") || "State"} <b>${Number(window.mtosResolvedState ?? 0)}</b></span>
+        <span>${window.t("stateCountLabel") || "States (N)"} <b>${Number(window._adaptiveModel?.N ?? 0)}</b></span>
+        <span>${window.t("diversityLabel") || "Diversity"} <b>${Number(window._adaptiveModel?.diversity ?? 0).toFixed(2)}</b></span>
         <span>Φ <b>${Number(window.mtosMetabolicMetrics?.phi ?? 0).toFixed(3)}</b></span>
         <span>k <b>${Number(window.mtosMetabolicMetrics?.k ?? 0).toFixed(3)}</b></span>
         <span>T <b>${Number(window.mtosMetabolicMetrics?.T ?? 0).toFixed(3)}</b></span>
@@ -222,6 +225,11 @@ summaryCard.innerHTML = `
                     }
 
             combined = clamp01(combined)
+
+            const resolution = Number(window._adaptiveModel?.N ?? 36)
+            const resolutionFactor = resolution / 36
+
+            combined = combined * (0.4 + resolutionFactor * 1.4)
 
             let r = Math.floor(255 * combined)
             let g = Math.floor(120 * (1 - Math.abs(combined - 0.5) * 2))
@@ -734,7 +742,7 @@ function escapeHtml(value){
 function translateWeatherMode(mode){
     const m = String(mode || "").toUpperCase()
     if (m === "FOCUS") return window.t("modeFocus") || "ФОКУС"
-    if (m === "ADJUST") return window.t("modeAdjust") || "ПОДСТРОЙКА"
+    if (m === "ADJUST") return window.t("modeAdjust") || "КОРРЕКЦИЯ"
     if (m === "REST") return window.t("modeRest") || "ОТДЫХ"
     if (m === "INTERACT") return window.t("modeInteract") || "КОНТАКТ"
     return window.t("modeExplore") || "ИССЛЕДОВАНИЕ"
@@ -743,7 +751,7 @@ function translateWeatherMode(mode){
 function translateWeatherDayType(dayType){
     const d = String(dayType || "").toUpperCase()
     if (d === "FOCUS") return window.t("modeFocus") || "ФОКУС"
-    if (d === "ADJUST") return window.t("modeAdjust") || "ПОДСТРОЙКА"
+    if (d === "ADJUST") return window.t("modeAdjust") || "КОРРЕКЦИЯ"
     if (d === "REST") return window.t("modeRest") || "ОТДЫХ"
     if (d === "INTERACT") return window.t("modeInteract") || "КОНТАКТ"
     if (d === "EXPLORE") return window.t("modeExplore") || "ИССЛЕДОВАНИЕ"
@@ -893,4 +901,31 @@ if (riskScore >= 0.28) {
         attractor,
         zone
     }
+}
+
+function translateTimePressure(label){
+    const l = String(label || "").toLowerCase()
+    const ru = getLang() === "ru"
+
+    if (l === "low") return ru ? "низкое" : "low"
+    if (l === "medium") return ru ? "среднее" : "medium"
+    if (l === "high") return ru ? "высокое" : "high"
+
+    return label || ""
+}
+
+function translateAttractor(type){
+    const t = String(type || "").toLowerCase()
+    const ru = getLang() === "ru"
+
+    if (t === "cycle") return ru ? "цикл" : "cycle"
+    if (t === "chaos") return ru ? "хаос" : "chaos"
+    if (t === "trend") return ru ? "направление" : "trend"
+    if (t === "stable") return ru ? "стабильность" : "stable"
+
+    return type || ""
+}
+
+function getLang(){
+    return window.mtosLang === "ru" ? "ru" : "en"
 }

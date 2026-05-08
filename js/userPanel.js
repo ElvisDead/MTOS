@@ -30,9 +30,6 @@ export function renderUserPanel(data){
                 Action: <b>${mode}</b>
             </div>
 
-            <div style="font-size:14px;color:#aaa;">
-                ${decision.explanation || "No explanation"}
-            </div>
         </div>
     `
 

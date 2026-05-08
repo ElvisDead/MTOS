@@ -234,12 +234,7 @@ box.appendChild(timePressureEl)
 
             // === БАЗОВАЯ ЛОГИКА (потом заменишь на MTOS) ===
             const key = a.name + "->" + b.name
-            const locked = JSON.parse(localStorage.getItem("mtos_locked_relations") || "{}")
 
-            if(locked[key]){
-                continue
-            }
-            // ❌ если связь заблокирована — вообще не трогаем
             if(locked[key]){
                 continue
             }
@@ -470,6 +465,15 @@ window.mtosCollectiveState = {
     temporalMode: String(timePressureState.temporalMode || "EXPLORE"),
     label: String(timePressureState.label || "low"),
     updatedAt: new Date().toISOString()
+}
+
+window.mtosCollective = {
+    ...window.mtosCollectiveState,
+    stability: Number((1 - conflictRatio * 0.75 - Math.abs(temperature - 0.5) * 0.35).toFixed(4)),
+    tension: Number((conflictRatio * 0.68 + Math.max(0, temperature - 0.5) * 0.32).toFixed(4)),
+    coherence: Number((supportRatio * 0.52 + (1 - conflictRatio) * 0.28 + (1 - Math.abs(temperature - 0.5)) * 0.20).toFixed(4)),
+    activity: Number((supportRatio * 0.30 + Number(timePressureState.pressure ?? 0) * 0.40 + Number(timePressureState.urgency ?? 0) * 0.30).toFixed(4)),
+    resonance: Number((supportRatio * 0.60 + neutrality * 0.15 + (1 - conflictRatio) * 0.25).toFixed(4))
 }
 
     root.appendChild(box)

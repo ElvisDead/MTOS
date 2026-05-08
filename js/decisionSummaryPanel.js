@@ -40,6 +40,137 @@ export function renderDecisionSummaryPanel(targetId = "todayPanel"){
     const primaryDriver = String(risk.topVectors?.[0] || "none")
     const secondDriver = String(risk.topVectors?.[1] || "")
 
+        function getLang(){
+        return window.mtosLang === "ru" ? "ru" : "en"
+    }
+
+    const interpretation =
+    typeof window.interpretMTOSState === "function"
+        ? window.interpretMTOSState({
+            pressure: Number(ds?.pressure ?? 0) * 100,
+            attention: Number(ds?.attention ?? 0.5) * 100,
+            activity: Number(ds?.activity ?? 0.5) * 100,
+            entropy: Number(window.mtosUnifiedMetrics?.entropy ?? 0),
+            predictability: Number(window.mtosUnifiedMetrics?.predictability ?? 0),
+            timePressure: Number(window.mtosTimePressureSummary?.value ?? 0) * 100,
+                noise: Number(window.mtosUnifiedMetrics?.noise ?? 0),
+                relationTension: Number(window.mtosNetworkFeedback?.conflictRatio ?? 0) * 100,
+                mode: mode,
+                risk: riskLabel,
+                attractorType: String(
+    window.mtosRunAttractorState?.type ||
+    window.mtosAttractorState?.type ||
+    "neutral"
+),
+                deltaPredictability: 0,
+                deltaEntropy: 0,
+                deltaPressure: 0,
+                deltaActivity: 0
+            }, getLang())
+            : null
+
+    const attractorSource = window.mtosRunAttractorState || window.mtosAttractorState || {}
+const attractorType = String(attractorSource?.type || "unknown").toLowerCase()
+const attractorIntensity = Number(attractorSource?.intensity ?? 0)
+    const systemStateIndex = Number(window.mtosResolvedState ?? 0)
+    const systemN = Number(window._adaptiveModel?.N ?? 0)
+
+    function getSystemStateLabel(type){
+    const x = String(type || "unknown").toLowerCase()
+    if (x === "chaos") return getLang() === "ru" ? "ХАОС" : "CHAOTIC"
+    if (x === "trend") return getLang() === "ru" ? "НАПРАВЛЕНИЕ" : "TREND"
+    if (x === "cycle") return getLang() === "ru" ? "ЦИКЛ" : "CYCLIC"
+    if (x === "stable") return getLang() === "ru" ? "СТАБИЛЬНОСТЬ" : "STABLE"
+    return getLang() === "ru" ? "НЕИЗВЕСТНО" : "UNKNOWN"
+}
+
+function getAttractorTypeLabel(type){
+    const x = String(type || "unknown").toLowerCase()
+    const ru = getLang() === "ru"
+
+    if (x === "chaos") return ru ? "ХАОС" : "CHAOS"
+    if (x === "trend") return ru ? "ТРЕНД" : "TREND"
+    if (x === "cycle") return ru ? "ЦИКЛ" : "CYCLE"
+    if (x === "stable") return ru ? "СТАБИЛЬНОСТЬ" : "STABLE"
+    return ru ? "НЕИЗВЕСТНО" : "UNKNOWN"
+}
+
+    function getSystemStateColor(type){
+        const x = String(type || "unknown").toLowerCase()
+        if (x === "chaos") return "#ff6666"
+        if (x === "trend") return "#ffb347"
+        if (x === "cycle") return "#66ccff"
+        if (x === "stable") return "#00ff88"
+        return "#d1d5db"
+    }
+
+    function getBehaviorStateLabel(mode, riskLabel){
+    if (interpretation?.title) {
+        return String(interpretation.title).toUpperCase()
+    }
+
+    const m = String(mode || "EXPLORE").toUpperCase()
+    const r = String(riskLabel || "LOW").toUpperCase()
+    const ru = getLang() === "ru"
+
+    if (m === "REST" && r === "HIGH") return ru ? "ЗАЩИТА" : "PROTECTIVE"
+    if (m === "ADJUST") return ru ? "АДАПТИВНОСТЬ" : "ADAPTIVE"
+    if (m === "FOCUS") return ru ? "КОНТРОЛЬ" : "CONTROLLED"
+    if (m === "INTERACT") return ru ? "ОТКРЫТОСТЬ" : "OPEN"
+    return ru ? "ИССЛЕДОВАНИЕ" : "EXPLORATORY"
+}
+
+    function getBehaviorStateColor(mode, riskLabel){
+    const key = String(interpretation?.stateKey || "").toLowerCase()
+
+    if (key === "recovery") return "#c084fc"
+    if (key === "compression") return "#ffb347"
+    if (key === "overheating") return "#ff6666"
+    if (key === "contactwindow") return "#66ccff"
+    if (key === "focusflow") return "#00ff88"
+    if (key === "transition") return "#d1d5db"
+    if (key === "exploration") return "#00ff88"
+
+    const m = String(mode || "EXPLORE").toUpperCase()
+    const r = String(riskLabel || "LOW").toUpperCase()
+
+    if (m === "REST" && r === "HIGH") return "#ff6666"
+    if (m === "ADJUST") return "#00ff88"
+    if (m === "FOCUS") return "#00ff88"
+    if (m === "INTERACT") return "#66ccff"
+    return "#d1d5db"
+}
+
+    function getLayerBridgeText(systemType, mode, riskScore){
+    const sys = String(systemType || "unknown").toLowerCase()
+    const m = String(mode || "EXPLORE").toUpperCase()
+    const r = Number(riskScore ?? 0)
+
+    if (sys === "chaos" && r < 0.30) {
+        return getText("bridgeSystemChaosControlled")
+    }
+    if (sys === "chaos" && m === "ADJUST") {
+        return getText("bridgeSystemChaosAdaptive")
+    }
+    if (sys === "trend" && m === "ADJUST") {
+        return getText("bridgeSystemTrendAdaptive")
+    }
+    if (sys === "cycle" && m === "INTERACT") {
+        return getText("bridgeSystemCycleInteract")
+    }
+    if (sys === "stable" && m === "FOCUS") {
+        return getText("bridgeSystemStableFocus")
+    }
+
+    return getText("bridgeSystemBehaviorRelated")
+}
+
+    const systemStateLabel = getSystemStateLabel(attractorType)
+    const systemStateColor = getSystemStateColor(attractorType)
+    const behaviorStateLabel = getBehaviorStateLabel(mode, riskLabel)
+    const behaviorStateColor = getBehaviorStateColor(mode, riskLabel)
+    const layerBridgeText = interpretation?.trajectoryText || getLayerBridgeText(attractorType, mode, Number(risk.score ?? 0))
+
     function resolveNextStepKey(mode){
     if (mode === "FOCUS") return "doFocus"
     if (mode === "ADJUST") return "doAdjust"
@@ -48,7 +179,7 @@ export function renderDecisionSummaryPanel(targetId = "todayPanel"){
     return "doExplore"
 }
 
-const nextStep = getText(resolveNextStepKey(mode))
+const nextStep = interpretation?.lite?.do?.[0] || getText(resolveNextStepKey(mode))
 
     function resolveAvoidKey(mode){
     if (mode === "FOCUS") return "avoidFocus"
@@ -58,11 +189,7 @@ const nextStep = getText(resolveNextStepKey(mode))
     return "avoidExplore"
 }
 
-const avoidNow = getText(resolveAvoidKey(mode))
-
-    function getLang(){
-        return window.mtosLang === "ru" ? "ru" : "en"
-    }
+const avoidNow = interpretation?.lite?.avoid?.[0] || getText(resolveAvoidKey(mode))
 
     function t(key){
         if (typeof window.t === "function") return window.t(key)
@@ -74,7 +201,6 @@ const avoidNow = getText(resolveAvoidKey(mode))
 
         const TEXT = {
             en: {
-                decisionBridge: "Decision Bridge",
                 learningSignal: "Learning Signal",
                 feedback: "Feedback",
                 mode: "Mode",
@@ -82,7 +208,6 @@ const avoidNow = getText(resolveAvoidKey(mode))
                 nextMove: "Next Move",
                 avoid: "Avoid",
                 do: "Do",
-                whyThisDay: "Why This Day",
                 currentBestPosture: "Current best posture",
                 adjustedByLearning: "Adjusted by learning",
                 primary: "Primary",
@@ -153,10 +278,26 @@ const avoidNow = getText(resolveAvoidKey(mode))
                 avoidExplore: "avoid premature final decisions",
 
                 notEnoughFeedback1: "Not enough feedback yet.",
-                notEnoughFeedback2: "Use Good / Neutral / Bad for several days so the system can adapt to your real patterns."
+                notEnoughFeedback2: "Use Good / Neutral / Bad for several days so the system can adapt to your real patterns.",
+
+                systemVsBehavior: "System State vs Behavior State",
+systemState: "System State",
+behaviorState: "Behavior State",
+attractor: "Attractor",
+state: "State",
+intensity: "Intensity",
+behaviorRisk: "Behavior Risk",
+nextMoveLabel: "Next move",
+
+bridgeSystemChaosControlled: "System field is unstable, but behavior is still controlled.",
+bridgeSystemChaosAdaptive: "System field is unstable, so behavior shifts to adaptive control.",
+bridgeSystemTrendAdaptive: "System pushes in one direction, so behavior stays flexible instead of locking in.",
+bridgeSystemCycleInteract: "System is in a cyclic resonance window, and behavior is open for coordination.",
+bridgeSystemStableFocus: "System is stable enough for concentrated behavior.",
+bridgeSystemBehaviorRelated: "System state and behavior are related, but not identical.",
+
             },
             ru: {
-                decisionBridge: "Мост решения",
                 learningSignal: "Сигнал обучения",
                 feedback: "Обратная связь",
                 mode: "Режим",
@@ -164,13 +305,11 @@ const avoidNow = getText(resolveAvoidKey(mode))
                 nextMove: "Следующий шаг",
                 avoid: "Избегать",
                 do: "Делать",
-                whyThisDay: "Почему такой день",
                 currentBestPosture: "Лучшее текущее положение",
                 adjustedByLearning: "Скорректировано обучением",
                 primary: "Основной",
                 secondary: "Вторичный",
                 noSecondaryDriver: "Нет вторичного фактора",
-                modeRiskAligned: "Режим / риск согласованы",
                 learningAdjusted: "Скорректировано обучением",
                 selectedTarget: "Выбранная цель",
                 wasContactUseful: "Был ли контакт с этим человеком полезен сегодня?",
@@ -182,7 +321,7 @@ const avoidNow = getText(resolveAvoidKey(mode))
                 bad: "Плохо",
                 todaySummary: "Сводка дня",
                 modeFocus: "ФОКУС",
-                modeAdjust: "ПОДСТРОЙКА",
+                modeAdjust: "КОРРЕКЦИЯ",
                 modeRest: "ОТДЫХ",
                 modeExplore: "ИССЛЕДОВАНИЕ",
                 modeInteract: "КОНТАКТ",
@@ -201,7 +340,7 @@ const avoidNow = getText(resolveAvoidKey(mode))
                 social: "реактивность во взаимодействиях",
                 backgroundDynamics: "фоновая динамика",
 
-                bridgeAdjustRigidity: "Риск низкий, но фиксация растёт. Лучшее положение: подстроиться, а не зажиматься.",
+                bridgeAdjustRigidity: "Риск низкий, но фиксация растёт. Лучшее положение: корректировать курс, а не зажиматься.",
                 bridgeFocusLowDrift: "Риск низкий, но внимание может распасться. Лучшее положение: фокус.",
                 bridgeRestLow: "Общий риск низкий, но главным фактором всё ещё остаётся перегрузка. Лучше упростить, чем расширять.",
                 bridgeInteractLow: "Риск низкий, и поле открыто для контакта. Предпочтителен один чистый контакт.",
@@ -235,7 +374,24 @@ const avoidNow = getText(resolveAvoidKey(mode))
                 avoidExplore: "избегать преждевременных финальных решений",
 
                 notEnoughFeedback1: "Пока недостаточно обратной связи.",
-                notEnoughFeedback2: "Используй Хорошо / Нейтрально / Плохо несколько дней, чтобы система подстроилась под твои паттерны."
+                notEnoughFeedback2: "Используй Хорошо / Нейтрально / Плохо несколько дней, чтобы система подстроилась под твои паттерны.",
+
+                systemVsBehavior: "Состояние системы vs состояние поведения",
+systemState: "Состояние системы",
+behaviorState: "Состояние поведения",
+attractor: "Аттрактор",
+state: "Состояние",
+intensity: "Интенсивность",
+behaviorRisk: "Риск поведения",
+nextMoveLabel: "Следующий ход",
+
+bridgeSystemChaosControlled: "Системное поле нестабильно, но поведение всё ещё остаётся управляемым.",
+bridgeSystemChaosAdaptive: "Системное поле нестабильно, поэтому поведение смещается в адаптивный режим.",
+bridgeSystemTrendAdaptive: "Система толкает в одном направлении, поэтому поведение остаётся гибким и не фиксируется слишком рано.",
+bridgeSystemCycleInteract: "Система вошла в циклическое окно резонанса, и поведение открыто для координации.",
+bridgeSystemStableFocus: "Система достаточно стабильна для концентрированного поведения.",
+bridgeSystemBehaviorRelated: "Состояние системы и поведение связаны, но не тождественны.",
+
             }
         }
 
@@ -267,6 +423,9 @@ function getRiskLabelText(riskLabel){
     }
 
     function explainModeConflict(mode, riskLabel, primaryDriver){
+        if (String(window.mtosAttractorState?.type || "").toLowerCase() === "chaos" && String(riskLabel || "").toUpperCase() === "LOW") {
+            return getText("bridgeSystemChaosControlled")
+        }
         if (mode === "ADJUST" && primaryDriver === "rigidity") return getText("bridgeAdjustRigidity")
         if (mode === "FOCUS" && riskLabel === "LOW" && primaryDriver === "drift") return getText("bridgeFocusLowDrift")
         if (mode === "REST" && riskLabel === "LOW") return getText("bridgeRestLow")
@@ -275,7 +434,7 @@ function getRiskLabelText(riskLabel){
         if (mode === "FOCUS" && riskLabel === "MEDIUM") return getText("bridgeFocusMedium")
         if (mode === "REST") return getText("bridgeRest")
         if (mode === "INTERACT") return getText("bridgeInteract")
-        return String(decision.reason || decision.text || getText("bridgeFallback"))
+        return getText("bridgeFallback")
     }
 
     const feedbackLearning = decision.feedbackLearning || null
@@ -520,61 +679,122 @@ return (getLang() === "ru")
                     </div>
                 </div>
 
-                <div style="
-                    grid-column: 3 / span 8;
-                    width:100%;
+                                <div style="
+                    grid-column: span 12;
                     border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
+                    border-radius:22px;
+                    padding:18px;
                     background:rgba(255,255,255,0.03);
-                    min-height:118px;
                     box-sizing:border-box;
-                    text-align:center;
                 ">
                     <div style="
-                        width:100%;
-                        max-width:520px;
-                        margin:0 auto 10px auto;
-                        border:1px solid rgba(255,255,255,0.08);
-                        border-radius:20px;
-                        padding:12px 16px;
-                        background:rgba(255,255,255,0.03);
-                        box-sizing:border-box;
-                        text-align:center;
-                    ">
-                        ${decision.feedbackAdjusted ? getText("learningAdjusted") : getText("modeRiskAligned")}
-                    </div>
-
-                    <div style="
                         font-size:11px;
-                        opacity:0.5;
-                        margin-bottom:8px;
-                        letter-spacing:1px;
+                        letter-spacing:0.14em;
+                        text-transform:uppercase;
+                        color:#8b949e;
+                        margin-bottom:12px;
                         text-align:center;
                     ">
-                        ${getText("decisionBridge")}
+                        ${getText("systemVsBehavior")}
                     </div>
 
                     <div style="
-                        max-width:640px;
-                        margin:0 auto;
-                        text-align:center;
-                        color:#e5e7eb;
+                        display:grid;
+                        grid-template-columns:repeat(12, minmax(0, 1fr));
+                        gap:14px;
+                        align-items:stretch;
+                    ">
+                        <div style="
+                            grid-column:span 6;
+                            border:1px solid rgba(255,255,255,0.06);
+                            border-radius:18px;
+                            padding:16px;
+                            background:rgba(255,255,255,0.02);
+                            box-sizing:border-box;
+                            min-height:120px;
+                        ">
+                            <div style="
+                                font-size:11px;
+                                letter-spacing:0.12em;
+                                text-transform:uppercase;
+                                color:#8b949e;
+                                margin-bottom:8px;
+                            ">
+                                ${getText("systemState")}
+                            </div>
+
+                            <div style="
+                                font-size:24px;
+                                font-weight:800;
+                                color:${systemStateColor};
+                                line-height:1.1;
+                            ">
+                                ${systemStateLabel}
+                            </div>
+
+                            <div style="
+                                margin-top:10px;
+                                color:#cbd5e1;
+                                font-size:13px;
+                                line-height:1.8;
+                            ">
+                                ${getText("attractor")}: <b>${getAttractorTypeLabel(attractorType)}</b><br>
+${getText("state")}: <b>${systemStateIndex}</b>${systemN > 0 ? ` / ${systemN}` : ""}<br>
+${getText("intensity")}: <b>${(attractorIntensity * 100).toFixed(0)}%</b>
+                            </div>
+                        </div>
+
+                        <div style="
+                            grid-column:span 6;
+                            border:1px solid rgba(255,255,255,0.06);
+                            border-radius:18px;
+                            padding:16px;
+                            background:rgba(255,255,255,0.02);
+                            box-sizing:border-box;
+                            min-height:120px;
+                        ">
+                            <div style="
+                                font-size:11px;
+                                letter-spacing:0.12em;
+                                text-transform:uppercase;
+                                color:#8b949e;
+                                margin-bottom:8px;
+                            ">
+                                ${getText("behaviorState")}
+                            </div>
+
+                            <div style="
+                                font-size:24px;
+                                font-weight:800;
+                                color:${behaviorStateColor};
+                                line-height:1.1;
+                            ">
+                                ${behaviorStateLabel}
+                            </div>
+
+                            <div style="
+                                margin-top:10px;
+                                color:#cbd5e1;
+                                font-size:13px;
+                                line-height:1.8;
+                            ">
+                                ${getText("mode")}: <b>${modeLabel}</b><br>
+${getText("behaviorRisk")}: <b style="color:${riskColor};">${riskLabelText}</b><br>
+${getText("nextMoveLabel")}: <b>${nextStep}</b>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="
+                        margin-top:14px;
+                        padding-top:14px;
+                        border-top:1px solid rgba(255,255,255,0.06);
+                        color:#dbe4ee;
                         font-size:14px;
-                        line-height:1.6;
-                    ">
-                        ${bridgeText}
-                    </div>
-
-                    <div style="
-                        margin:12px auto 0 auto;
-                        max-width:640px;
-                        color:#94a3b8;
-                        font-size:13px;
-                        line-height:1.65;
+                        line-height:1.8;
                         text-align:center;
                     ">
-                        ${""}
+                        ${layerBridgeText}
                     </div>
                 </div>
             </div>
@@ -605,22 +825,6 @@ return (getLang() === "ru")
                             ${avoidList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.7;">• ${x}</div>`).join("")}
                         </div>
                     </div>
-                </div>
-
-                <div style="
-                    border:1px solid rgba(255,255,255,0.08);
-                    border-radius:20px;
-                    padding:16px;
-                    background:rgba(255,255,255,0.03);
-                    box-sizing:border-box;
-                ">
-                    <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#8b949e; margin-bottom:10px;">
-                        ${getText("whyThisDay")}
-                    </div>
-                    ${whyList.length
-                        ? whyList.map(x => `<div style="color:#e5e7eb; font-size:13px; line-height:1.75;">• ${x}</div>`).join("")
-                        : `<div style="color:#94a3b8; font-size:13px;">${getText("noDominantReason")}</div>`
-                    }
                 </div>
             </div>
 
@@ -662,7 +866,7 @@ return (getLang() === "ru")
                                 'good'
                             );
                         }
-                        window._rerenderMTOS && window._rerenderMTOS();
+                        window._rerenderDecisionOnly && window._rerenderDecisionOnly();
                     "
                     class="${currentRelationFeedbackValue === "good" ? "active" : ""}"
                     style="${currentRelationFeedbackValue === "good" ? "border-color:#00ff88;color:#00ff88;" : ""}"
@@ -680,7 +884,7 @@ return (getLang() === "ru")
                                 'neutral'
                             );
                         }
-                        window._rerenderMTOS && window._rerenderMTOS();
+                        window._rerenderDecisionOnly && window._rerenderDecisionOnly();
                     "
                     class="${currentRelationFeedbackValue === "neutral" ? "active" : ""}"
                     style="${currentRelationFeedbackValue === "neutral" ? "border-color:#d1d5db;color:#ffffff;" : ""}"
@@ -698,7 +902,7 @@ return (getLang() === "ru")
                                 'bad'
                             );
                         }
-                        window._rerenderMTOS && window._rerenderMTOS();
+                        window._rerenderDecisionOnly && window._rerenderDecisionOnly();
                     "
                     class="${currentRelationFeedbackValue === "bad" ? "active" : ""}"
                     style="${currentRelationFeedbackValue === "bad" ? "border-color:#ff6666;color:#ff6666;" : ""}"

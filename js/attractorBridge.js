@@ -172,25 +172,89 @@
         return base;
     }
 
+    function applyCollectiveToAttractorState(state, collective) {
+    const baseState = state && typeof state === "object"
+        ? { ...state }
+        : {
+            type: "unknown",
+            intensity: 0,
+            score: 0
+        };
+
+    const c = collective && typeof collective === "object" ? collective : {};
+
+    const supportRatio = clamp(safeNumber(c.supportRatio, 0), 0, 1);
+    const conflictRatio = clamp(safeNumber(c.conflictRatio, 0), 0, 1);
+    const temperature = clamp(safeNumber(c.temperature, 0.5), 0, 1);
+    const coherence = clamp(safeNumber(c.coherence, 0.5), 0, 1);
+    const tension = clamp(safeNumber(c.tension, 0.5), 0, 1);
+    const stability = clamp(safeNumber(c.stability, 0.5), 0, 1);
+    const resonance = clamp(safeNumber(c.resonance, 0.5), 0, 1);
+
+    let nextType = String(baseState.type || "unknown").toLowerCase();
+    let nextIntensity = clamp(safeNumber(baseState.intensity, 0), 0, 1);
+    let nextScore = safeNumber(baseState.score, 0);
+
+    const collectivePush =
+        conflictRatio * 0.28 +
+        tension * 0.22 +
+        Math.max(0, temperature - 0.5) * 0.20 -
+        supportRatio * 0.18 -
+        coherence * 0.14 -
+        stability * 0.12 +
+        resonance * 0.04;
+
+    nextIntensity = clamp(nextIntensity + collectivePush, 0, 1);
+    nextScore = Number((nextScore + collectivePush * 0.5).toFixed(4));
+
+    if (conflictRatio >= 0.52 || tension >= 0.68 || temperature >= 0.78) {
+        nextType = "chaos";
+    }
+    else if (supportRatio >= 0.55 && coherence >= 0.58 && resonance >= 0.55) {
+        nextType = "cycle";
+    }
+    else if (supportRatio >= 0.42 && stability >= 0.58 && conflictRatio <= 0.22) {
+        nextType = "stable";
+    }
+    else if (Math.abs(supportRatio - conflictRatio) >= 0.18 || temperature >= 0.62) {
+        nextType = "trend";
+    }
+
+    return {
+        ...baseState,
+        type: nextType,
+        intensity: Number(nextIntensity.toFixed(4)),
+        score: nextScore
+    };
+}
+
     function syncAttractorWithSystem(payload) {
         const result = payload && typeof payload === "object" ? payload : {};
 
-        const state = setAttractorState(
-            result.type || "unknown",
-            result.intensity || 0,
-            result.score || 0
-        );
+        const collective = result.collective && typeof result.collective === "object"
+    ? result.collective
+    : (window.mtosCollective || window.mtosCollectiveState || {});
+
+const collectiveAdjustedState = applyCollectiveToAttractorState({
+    type: result.type || "unknown",
+    intensity: result.intensity || 0,
+    score: result.score || 0
+}, collective);
+
+const state = setAttractorState(
+    collectiveAdjustedState.type,
+    collectiveAdjustedState.intensity,
+    collectiveAdjustedState.score
+);
 
         const networkLinks = Array.isArray(result.networkLinks)
             ? result.networkLinks
             : (Array.isArray(window.mtosNetworkLinks) ? window.mtosNetworkLinks : []);
 
-        const collective = result.collective && typeof result.collective === "object"
-            ? result.collective
-            : (window.mtosCollective || {});
+        const collectiveForSync = collective;
 
         const updatedLinks = applyAttractorToLinks(networkLinks, state);
-        const updatedCollective = applyAttractorToCollective(collective, state);
+        const updatedCollective = applyAttractorToCollective(collectiveForSync, state);
 
         window.mtosNetworkLinks = updatedLinks;
         window.mtosCollective = updatedCollective;
@@ -203,11 +267,12 @@
     }
 
     window.MTOSBridge = {
-        clamp,
-        safeNumber,
-        setAttractorState,
-        applyAttractorToLinks,
-        applyAttractorToCollective,
-        syncAttractorWithSystem
-    };
+    clamp,
+    safeNumber,
+    setAttractorState,
+    applyAttractorToLinks,
+    applyAttractorToCollective,
+    applyCollectiveToAttractorState,
+    syncAttractorWithSystem
+};
 })();

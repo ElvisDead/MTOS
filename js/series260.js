@@ -5,7 +5,8 @@ export function drawSeries(id, weather, year, month, day){
 
     root.innerHTML = ""
 
-    const startDate = new Date()
+    const startDate = new Date(year, month - 1, day)
+    startDate.setHours(0, 0, 0, 0)
 
     function formatDate(d){
         return d.toLocaleDateString("en-GB", {
@@ -98,7 +99,20 @@ All charts are displayed on a fixed 0..1 scale for visual comparison.`,
         const innerW = width - padLeft - padRight
         const innerH = height - padTop - padBottom
 
-let data = weather.slice(0, length).map(w => w.attention)
+let data = weather.slice(0, length).map(w => {
+    const attention = Number(w?.attention ?? 0.5)
+    const activity = Number(w?.activity ?? attention)
+    const pressure = Number(w?.pressure ?? 0)
+    const conflict = Number(w?.conflict ?? 0)
+
+    const composite =
+        attention * 0.42 +
+        activity * 0.28 +
+        (1 - pressure) * 0.18 +
+        (1 - conflict) * 0.12
+
+    return Math.max(0, Math.min(1, composite))
+})
 
 if ((title === "Φ series" || title === "Φ серия") && Array.isArray(window.mtosMetabolicMetrics?.phiSeries)) {
     data = window.mtosMetabolicMetrics.phiSeries.slice(0, length)
